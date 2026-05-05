@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="1" author="demo">
+        <createTable tableName="DEPARTMENT">
+            <column name="ID" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="VERSION" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(300)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="PARENT_DEPARTMENT_ID" type="UUID"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="2" author="demo">
+        <createTable tableName="EMPLOYEE">
+            <column name="ID" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="VERSION" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="FIRST_NAME" type="VARCHAR(300)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="LAST_NAME" type="VARCHAR(300)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="POSITION" type="VARCHAR(300)"/>
+            <column name="DEPARTMENT_ID" type="UUID"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="3" author="demo">
+        <addForeignKeyConstraint baseTableName="DEPARTMENT" baseColumnNames="PARENT_DEPARTMENT_ID"
+                                 constraintName="FK_DEPARTMENT_ON_PARENT_DEPARTMENT"
+                                 referencedTableName="DEPARTMENT"
+                                 referencedColumnNames="ID"/>
+    </changeSet>
+
+    <changeSet id="4" author="demo">
+        <addForeignKeyConstraint baseTableName="EMPLOYEE" baseColumnNames="DEPARTMENT_ID"
+                                 constraintName="FK_EMPLOYEE_ON_DEPARTMENT"
+                                 referencedTableName="DEPARTMENT"
+                                 referencedColumnNames="ID"/>
+    </changeSet>
+
+    <changeSet id="5" author="demo">
+        <createIndex tableName="DEPARTMENT" indexName="IDX_DEPARTMENT_PARENT">
+            <column name="PARENT_DEPARTMENT_ID"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="6" author="demo">
+        <createIndex tableName="EMPLOYEE" indexName="IDX_EMPLOYEE_DEPARTMENT">
+            <column name="DEPARTMENT_ID"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

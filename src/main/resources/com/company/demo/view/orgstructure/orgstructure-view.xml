@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://OrgStructureView.title">
+    <data>
+        <collection id="departmentsDc" class="com.company.demo.entity.Department">
+            <fetchPlan extends="_base"/>
+            <loader id="departmentsDl">
+                <query>
+                    <![CDATA[select e from demo_Department e]]>
+                </query>
+            </loader>
+        </collection>
+        <collection id="employeesDc" class="com.company.demo.entity.Employee">
+            <fetchPlan extends="_base">
+                <property name="department" fetchPlan="_instance_name"/>
+            </fetchPlan>
+            <loader id="employeesDl">
+                <query>
+                    <![CDATA[select e from demo_Employee e]]>
+                </query>
+            </loader>
+        </collection>
+    </data>
+
+    <layout>
+        <split id="splitLayout" orientation="HORIZONTAL" width="100%" height="100%">
+            <!-- Левая панель: подразделения -->
+            <vbox id="departmentsPanel" width="50%" height="100%">
+                <textField id="departmentSearchField"
+                           placeholder="msg://departmentSearch"
+                           width="100%"
+                           clearButtonVisible="true"/>
+
+            </vbox>
+
+            <!-- Правая панель: сотрудники -->
+            <vbox id="employeesPanel" width="50%" height="100%">
+                <textField id="employeeSearchField"
+                           placeholder="msg://employeeSearch"
+                           width="100%"
+                           clearButtonVisible="true"/>
+                <dataGrid id="employeesDataGrid"
+                          dataContainer="employeesDc"
+                          width="100%"
+                          height="100%">
+                    <columns>
+                        <column property="firstName"/>
+                        <column property="lastName"/>
+                        <column property="position"/>
+                        <column property="department"/>
+                    </columns>
+                </dataGrid>
+            </vbox>
+        </split>
+    </layout>
+</view>
