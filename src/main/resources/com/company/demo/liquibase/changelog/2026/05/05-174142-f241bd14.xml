@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd"
+        objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS">
+    <changeSet id="1" author="demo">
+        <modifyDataType columnName="FIRST_NAME" newDataType="VARCHAR(255)" tableName="EMPLOYEE"/>
+    </changeSet>
+    <changeSet id="2" author="demo">
+        <modifyDataType columnName="LAST_NAME" newDataType="VARCHAR(255)" tableName="EMPLOYEE"/>
+    </changeSet>
+    <changeSet id="3" author="demo">
+        <modifyDataType columnName="NAME" newDataType="VARCHAR(255)" tableName="DEPARTMENT"/>
+    </changeSet>
+    <changeSet id="4" author="demo">
+        <modifyDataType columnName="POSITION" newDataType="VARCHAR(255)" tableName="EMPLOYEE"/>
+    </changeSet>
+</databaseChangeLog>
