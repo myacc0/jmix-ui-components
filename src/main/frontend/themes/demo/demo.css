@@ -1,1 +1,5 @@
 /* Define your styles here */
+
+vaadin-grid.jmix-tree-data-grid[theme~="no-header"]::part(header) {
+    display: none;
+}
