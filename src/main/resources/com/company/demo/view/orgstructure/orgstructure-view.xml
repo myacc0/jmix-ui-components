@@ -18,7 +18,7 @@
             </fetchPlan>
             <loader id="employeesDl" readOnly="true">
                 <query>
-                    <![CDATA[select e from demo_Employee e]]>
+                    <![CDATA[select e from demo_Employee e where e.department = :department]]>
                 </query>
             </loader>
         </collection>
@@ -30,7 +30,11 @@
                 <textField id="departmentSearchField"
                            placeholder="msg://departmentSearch"
                            width="100%"
-                           clearButtonVisible="true"/>
+                           clearButtonVisible="true">
+                    <suffix>
+                        <icon icon="SEARCH"/>
+                    </suffix>
+                </textField>
 
                 <treeDataGrid id="departmentsTreeDataGrid"
                               dataContainer="departmentsDc"
@@ -45,10 +49,6 @@
             </vbox>
 
             <vbox id="employeesPanel" width="70%" height="100%">
-                <textField id="employeeSearchField"
-                           placeholder="msg://employeeSearch"
-                           width="40%"
-                           clearButtonVisible="true"/>
                 <dataGrid id="employeesDataGrid"
                           dataContainer="employeesDc"
                           width="100%"

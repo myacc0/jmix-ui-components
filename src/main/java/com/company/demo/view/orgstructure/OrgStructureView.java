@@ -3,6 +3,7 @@ package com.company.demo.view.orgstructure;
 import com.company.demo.entity.Department;
 import com.company.demo.entity.Employee;
 import com.company.demo.view.main.MainView;
+import com.vaadin.flow.data.selection.SelectionEvent;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Route;
 import io.jmix.flowui.component.SupportsTypedValue;
@@ -27,9 +28,6 @@ public class OrgStructureView extends StandardView {
     private TypedTextField<String> departmentSearchField;
 
     @ViewComponent
-    private TypedTextField<String> employeeSearchField;
-
-    @ViewComponent
     private CollectionLoader<Department> departmentsDl;
     @ViewComponent
     private CollectionContainer<Department> departmentsDc;
@@ -43,7 +41,6 @@ public class OrgStructureView extends StandardView {
     @Subscribe
     public void onInit(InitEvent event) {
         departmentSearchField.setValueChangeMode(ValueChangeMode.LAZY);
-        employeeSearchField.setValueChangeMode(ValueChangeMode.LAZY);
     }
 
     @Subscribe
@@ -54,6 +51,7 @@ public class OrgStructureView extends StandardView {
     @Subscribe(id = "departmentsDl", target = Target.DATA_LOADER)
     public void onDepartmentsDlPostLoad(final CollectionLoader.PostLoadEvent<Department> e) {
         allDepartments = new ArrayList<>(departmentsDc.getItems());
+        expandDepartmentTreeAllNodes();
     }
 
     @Subscribe("departmentSearchField")
@@ -78,17 +76,14 @@ public class OrgStructureView extends StandardView {
         expandDepartmentTreeAllNodes();
     }
 
-    @Subscribe("employeeSearchField")
-    public void onEmployeeSearchFieldTypedValueChange(final SupportsTypedValue.TypedValueChangeEvent<TypedTextField<String>, String> e) {
-        String searchTerm = e.getValue();
-        if (searchTerm == null || searchTerm.trim().isEmpty()) {
-            employeesDl.setQuery("select e from demo_Employee e");
-            employeesDl.removeParameter("search");
-        } else {
-            employeesDl.setQuery("select e from demo_Employee e where lower(e.firstName) like :search or lower(e.lastName) like :search");
-            employeesDl.setParameter("search", "%" + searchTerm.toLowerCase() + "%");
+    @Subscribe("departmentsTreeDataGrid")
+    public void onDepartmentsTreeDataGridSelection(final SelectionEvent<TreeDataGrid<Department>, Department> e) {
+        Department d = e.getFirstSelectedItem().orElse(null);
+        if (d != null) {
+            employeesDl.setQuery("select e from demo_Employee e where e.department = :department");
+            employeesDl.setParameter("department", d);
+            employeesDl.load();
         }
-        employeesDl.load();
     }
 
     private Set<Department> collectWithParents(Department d) {
