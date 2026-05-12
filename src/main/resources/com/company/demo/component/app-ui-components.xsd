@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<xs:schema xmlns="http://com.company.demo/schema/app-ui-components"
+           elementFormDefault="qualified"
+           targetNamespace="http://com.company.demo/schema/app-ui-components"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:layout="http://jmix.io/schema/flowui/layout">
+
+    <xs:element name="searchField" type="searchFieldComponent"/>
+
+    <xs:complexType name="searchFieldComponent">
+        <xs:complexContent>
+            <xs:extension base="layout:textFieldComponent">
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+</xs:schema>

@@ -3,3 +3,20 @@
 vaadin-grid.jmix-tree-data-grid[theme~="no-header"]::part(header) {
     display: none;
 }
+
+vaadin-popover-overlay::part(content) {
+    padding: 0;
+}
+.popover-inner-list {
+    padding: 0;
+    height: 100%;
+}
+.btn-list-item {
+    padding: 5px 10px;
+    cursor: pointer;
+    user-select: none;
+    text-align: left;
+}
+.btn-list-item:hover {
+    background-color: #bfbfc1;
+}

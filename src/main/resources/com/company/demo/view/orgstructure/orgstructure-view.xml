@@ -30,6 +30,7 @@
                 <textField id="departmentSearchField"
                            placeholder="msg://departmentSearch"
                            width="100%"
+                           valueChangeMode="LAZY"
                            clearButtonVisible="true">
                     <suffix>
                         <icon icon="SEARCH"/>
@@ -49,6 +50,15 @@
             </vbox>
 
             <vbox id="employeesPanel" width="70%" height="100%">
+                <textField id="employeeSearchField"
+                           placeholder="msg://employeeSearch"
+                           width="40%"
+                           valueChangeMode="LAZY"
+                           clearButtonVisible="true">
+                    <suffix>
+                        <icon icon="SEARCH"/>
+                    </suffix>
+                </textField>
                 <dataGrid id="employeesDataGrid"
                           dataContainer="employeesDc"
                           width="100%"
