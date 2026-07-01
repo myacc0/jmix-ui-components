@@ -1,0 +1,226 @@
+package com.company.demo.entity;
+
+import com.company.demo.enums.DqDimension;
+import com.company.demo.enums.DqRuleType;
+import com.company.demo.enums.DqSeverity;
+import io.jmix.core.DeletePolicy;
+import io.jmix.core.entity.annotation.JmixGeneratedValue;
+import io.jmix.core.entity.annotation.OnDeleteInverse;
+import io.jmix.core.metamodel.annotation.InstanceName;
+import io.jmix.core.metamodel.annotation.JmixEntity;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@JmixEntity
+@Table(name = "DEMO_DQ_RULE", indexes = {
+        @Index(name = "IDX_DEMO_DQ_RULE_OWNER", columnList = "OWNER_ID"),
+        @Index(name = "IDX_DEMO_DQ_RULE_CATEGORY", columnList = "CATEGORY_ID")
+})
+@Entity(name = "demo_DqRule")
+public class DqRule {
+    @JmixGeneratedValue
+    @Column(name = "ID", nullable = false)
+    @Id
+    private UUID id;
+
+    @InstanceName
+    @Column(name = "NAME", nullable = false)
+    @NotNull
+    private String name;
+
+    @Column(name = "DESCRIPTION", columnDefinition = "text")
+    private String description;
+
+    @Column(name = "DATA_SOURCE", nullable = false, length = 100)
+    @NotNull
+    private String dataSource;
+
+    @Column(name = "TABLE_NAME")
+    private String tableName;
+
+    @Column(name = "COLUMN_NAME")
+    private String columnName;
+
+    @Column(name = "DIMENSION", nullable = false, length = 50)
+    @NotNull
+    private String dimension;
+
+    @Column(name = "RULE_TYPE", nullable = false, length = 50)
+    @NotNull
+    private String ruleType;
+
+    @Column(name = "RULE_CONFIG", nullable = false, columnDefinition = "jsonb")
+    @NotNull
+    private String ruleConfig;
+
+    @Column(name = "SEVERITY", nullable = false, length = 50)
+    @NotNull
+    private String severity;
+
+    @Column(name = "ACTIVE", nullable = false, columnDefinition = "boolean default true")
+    @NotNull
+    private Boolean active = false;
+
+    @OnDeleteInverse(DeletePolicy.UNLINK)
+    @JoinColumn(name = "OWNER_ID")
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User owner;
+
+    @OnDeleteInverse(DeletePolicy.UNLINK)
+    @JoinColumn(name = "CATEGORY_ID")
+    @ManyToOne(fetch = FetchType.LAZY)
+    private DqRuleCategory category;
+
+    @Column(name = "VERSION", nullable = false)
+    @Version
+    private Integer version;
+
+    @Column(name = "CREATED_AT", nullable = false, columnDefinition = "TIMESTAMP")
+    @NotNull
+    private LocalDateTime createdAt;
+
+    @Column(name = "UPDATED_AT", columnDefinition = "TIMESTAMP")
+    private LocalDateTime updatedAt;
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
+
+    public DqRuleCategory getCategory() {
+        return category;
+    }
+
+    public void setCategory(DqRuleCategory category) {
+        this.category = category;
+    }
+
+    public User getOwner() {
+        return owner;
+    }
+
+    public void setOwner(User owner) {
+        this.owner = owner;
+    }
+
+    public Boolean getActive() {
+        return active;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
+    }
+
+    public DqSeverity getSeverity() {
+        return severity == null ? null : DqSeverity.fromId(severity);
+    }
+
+    public void setSeverity(DqSeverity severity) {
+        this.severity = severity == null ? null : severity.getId();
+    }
+
+    public String getRuleConfig() {
+        return ruleConfig;
+    }
+
+    public void setRuleConfig(String ruleConfig) {
+        this.ruleConfig = ruleConfig;
+    }
+
+    public DqRuleType getRuleType() {
+        return ruleType == null ? null : DqRuleType.fromId(ruleType);
+    }
+
+    public void setRuleType(DqRuleType ruleType) {
+        this.ruleType = ruleType == null ? null : ruleType.getId();
+    }
+
+    public DqDimension getDimension() {
+        return dimension == null ? null : DqDimension.fromId(dimension);
+    }
+
+    public void setDimension(DqDimension dimension) {
+        this.dimension = dimension == null ? null : dimension.getId();
+    }
+
+    public String getColumnName() {
+        return columnName;
+    }
+
+    public void setColumnName(String columnName) {
+        this.columnName = columnName;
+    }
+
+    public String getTableName() {
+        return tableName;
+    }
+
+    public void setTableName(String tableName) {
+        this.tableName = tableName;
+    }
+
+    public String getDataSource() {
+        return dataSource;
+    }
+
+    public void setDataSource(String dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+}
