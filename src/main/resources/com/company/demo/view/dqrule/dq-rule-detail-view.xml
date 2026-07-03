@@ -27,7 +27,7 @@
             </responsiveSteps>
             <textField id="nameField" property="name"/>
             <textField id="descriptionField" property="description"/>
-            <textField id="dataSourceField" property="dataSource"/>
+            <select id="dataSourceField" property="dataSource"/>
             <textField id="tableNameField" property="tableName"/>
             <textField id="columnNameField" property="columnName"/>
             <select id="dimensionField" property="dimension"/>

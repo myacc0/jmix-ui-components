@@ -3,6 +3,7 @@ package com.company.demo.entity;
 import com.company.demo.enums.DqDimension;
 import com.company.demo.enums.DqRuleType;
 import com.company.demo.enums.DqSeverity;
+import com.company.demo.persistence.JsonbStringConverter;
 import io.jmix.core.DeletePolicy;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
 import io.jmix.core.entity.annotation.OnDeleteInverse;
@@ -10,6 +11,8 @@ import io.jmix.core.metamodel.annotation.InstanceName;
 import io.jmix.core.metamodel.annotation.JmixEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import org.eclipse.persistence.annotations.Convert;
+import org.eclipse.persistence.annotations.Converter;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -54,6 +57,8 @@ public class DqRule {
 
     @Column(name = "RULE_CONFIG", nullable = false, columnDefinition = "jsonb")
     @NotNull
+    @Converter(name = "ruleConfigJsonbConverter", converterClass = JsonbStringConverter.class)
+    @Convert("ruleConfigJsonbConverter")
     private String ruleConfig;
 
     @Column(name = "SEVERITY", nullable = false, length = 50)

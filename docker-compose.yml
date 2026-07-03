@@ -2,6 +2,7 @@ services:
   postgres:
     image: "postgres:16.1"
     container_name: "jmix-postgres"
+    restart: always
     ports:
       - "15432:5432"
     environment:
@@ -17,23 +18,23 @@ services:
       retries: 5
       start_period: 80s
 
-  postgres-dwh:
-    image: "postgres:16.1"
-    container_name: "jmix-dwh"
-    ports:
-      - "16432:5432"
-    environment:
-      - POSTGRES_DB=dwh
-      - POSTGRES_USER=dwh_reporting
-      - POSTGRES_PASSWORD=qweasd123
-    volumes:
-      - jmix-dwh-db:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U dwh_reporting -d dwh" ]
-      interval: 30s
-      timeout: 60s
-      retries: 5
-      start_period: 80s
+  # postgres-dwh:
+  #   image: "postgres:16.1"
+  #   container_name: "jmix-dwh"
+  #   ports:
+  #     - "16432:5432"
+  #   environment:
+  #     - POSTGRES_DB=dwh
+  #     - POSTGRES_USER=dwh_reporting
+  #     - POSTGRES_PASSWORD=qweasd123
+  #   volumes:
+  #     - jmix-dwh-db:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: [ "CMD-SHELL", "pg_isready -U dwh_reporting -d dwh" ]
+  #     interval: 30s
+  #     timeout: 60s
+  #     retries: 5
+  #     start_period: 80s
 
   adminer:
     image: adminer
@@ -45,5 +46,5 @@ services:
 volumes:
   jmix-main-db:
     driver: local
-  jmix-dwh-db:
-    driver: local
+  # jmix-dwh-db:
+  #   driver: local
