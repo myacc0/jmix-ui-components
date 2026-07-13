@@ -33,6 +33,12 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
     @ViewComponent
     private JmixSelect<String> dataSourceField;
 
+    @ViewComponent
+    private JmixSelect<String> tableNameField;
+
+    @ViewComponent
+    private JmixSelect<String> columnNameField;
+
     @Install(to = "dqRuleDl", target = Target.DATA_LOADER, subject = "loadFromRepositoryDelegate")
     private Optional<DqRule> loadDelegate(UUID id, FetchPlan fetchPlan) {
         return repository.findById(id, fetchPlan);
@@ -47,6 +53,29 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
                 .map(SelectDto::getName)
                 .findFirst()
                 .orElse(id));
+
+        dataSourceField.addValueChangeListener(e -> {
+            String dataSource = e.getValue();
+            tableNameField.setItems(dataSource != null
+                    ? dataSourceProvider.getDataSourceTables(dataSource)
+                    : List.of());
+            if (e.isFromClient()) {
+                tableNameField.setValue(null);
+                columnNameField.setItems(List.of());
+                columnNameField.setValue(null);
+            }
+        });
+
+        tableNameField.addValueChangeListener(e -> {
+            String dataSource = dataSourceField.getValue();
+            String tableName = e.getValue();
+            columnNameField.setItems(dataSource != null && tableName != null
+                    ? dataSourceProvider.getTableColumns(dataSource, tableName)
+                    : List.of());
+            if (e.isFromClient()) {
+                columnNameField.setValue(null);
+            }
+        });
     }
 
     @Install(target = Target.DATA_CONTEXT)

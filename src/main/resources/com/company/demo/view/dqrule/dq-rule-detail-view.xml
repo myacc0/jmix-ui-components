@@ -76,10 +76,10 @@
                     <select id="dataSourceField" property="dataSource" />
                 </formItem>
                 <formItem label="msg://com.company.demo.entity/DqRule.tableName">
-                    <textField id="tableNameField" property="tableName"/>
+                    <select id="tableNameField" property="tableName"/>
                 </formItem>
                 <formItem label="msg://com.company.demo.entity/DqRule.columnName">
-                    <textField id="columnNameField" property="columnName"/>
+                    <select id="columnNameField" property="columnName"/>
                 </formItem>
             </formRow>
 
