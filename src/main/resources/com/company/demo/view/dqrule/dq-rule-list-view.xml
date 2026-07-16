@@ -44,12 +44,14 @@
                 <button id="removeButton" action="dqRulesDataGrid.removeAction"/>
             </startSlot>
             <endSlot>
-                <simplePagination id="pagination" dataLoader="dqRulesDl"/>
+                <simplePagination id="pagination" dataLoader="dqRulesDl" itemsPerPageDefaultValue="20"/>
             </endSlot>
         </hbox>
         <dataGrid id="dqRulesDataGrid"
                   width="100%"
                   minHeight="20em"
+                  allRowsVisible="true"
+                  pageSize="20"
                   dataContainer="dqRulesDc"
                   columnReorderingAllowed="true">
             <actions>
@@ -58,16 +60,16 @@
                 <action id="removeAction" type="list_remove"/>
             </actions>
             <columns resizable="true">
-                <column property="name"/>
-                <column property="dataSource"/>
-                <column property="dimension"/>
-                <column property="ruleType"/>
-                <column property="severity"/>
-                <column property="active"/>
-                <column property="owner"/>
-                <column property="category"/>
-                <column property="createdAt"/>
-                <column property="updatedAt"/>
+                <column property="name" autoWidth="true"/>
+                <column property="dataSource" autoWidth="true"/>
+                <column property="dimension" autoWidth="true"/>
+                <column property="ruleType" autoWidth="true"/>
+                <column property="severity" autoWidth="true"/>
+                <column property="active" autoWidth="true"/>
+                <column property="owner" autoWidth="true"/>
+                <column property="category" autoWidth="true"/>
+                <column property="createdAt" autoWidth="true"/>
+                <column property="updatedAt" autoWidth="true"/>
             </columns>
         </dataGrid>
         <hbox id="lookupActions" visible="false">

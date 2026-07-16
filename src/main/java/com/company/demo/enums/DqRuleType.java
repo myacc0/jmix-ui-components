@@ -14,7 +14,7 @@ public enum DqRuleType implements EnumClass<String> {
     UNIQUENESS("uniqueness"),
     REFERENTIAL("referential"),
     CUSTOM_SQL("custom_sql"),
-    CROSS_SOURCE("cross_source");
+    CROSS_SOURCE_AGGREGATED("cross_source_aggregated");
 
     private final String id;
 

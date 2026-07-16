@@ -29,3 +29,4 @@ vite.generated.ts
 webpack.generated.js
 
 .DS_Store
+/.playwright/
