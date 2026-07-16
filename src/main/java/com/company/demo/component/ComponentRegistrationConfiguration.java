@@ -14,4 +14,11 @@ public class ComponentRegistrationConfiguration {
                 .withComponentLoader("searchField", TypedSearchFieldLoader.class)
                 .build();
     }
+
+    @Bean
+    public ComponentRegistration slider() {
+        return ComponentRegistrationBuilder.create(Slider.class)
+                .withComponentLoader("slider", SliderLoader.class)
+                .build();
+    }
 }

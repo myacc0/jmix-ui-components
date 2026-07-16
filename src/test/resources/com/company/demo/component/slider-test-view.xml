@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="Slider test">
+    <data>
+        <instance id="userDc"
+                  class="com.company.demo.entity.User"/>
+    </data>
+    <layout>
+        <slider id="plainSlider" label="Plain slider" min="10" max="200" step="5" value="50"/>
+        <slider id="boundSlider" label="Bound slider" min="0" max="100" dataContainer="userDc" property="version"/>
+    </layout>
+</view>
