@@ -9,13 +9,6 @@ import org.springframework.context.annotation.Configuration;
 public class ComponentRegistrationConfiguration {
 
     @Bean
-    public ComponentRegistration typedSearchField() {
-        return ComponentRegistrationBuilder.create(TypedSearchField.class)
-                .withComponentLoader("searchField", TypedSearchFieldLoader.class)
-                .build();
-    }
-
-    @Bean
     public ComponentRegistration slider() {
         return ComponentRegistrationBuilder.create(Slider.class)
                 .withComponentLoader("slider", SliderLoader.class)

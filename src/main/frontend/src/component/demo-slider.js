@@ -68,6 +68,9 @@ class DemoSlider extends HTMLElement {
                     margin: 0;
                     min-width: 0;
                 }
+                input[type=range]:focus {
+                    outline-color: var(--lumo-primary-color, #1676f3);
+                }
                 .value-badge {
                     min-width: 3em;
                     text-align: center;
