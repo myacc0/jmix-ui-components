@@ -5,4 +5,34 @@
            xmlns:xs="http://www.w3.org/2001/XMLSchema"
            xmlns:layout="http://jmix.io/schema/flowui/layout">
 
+    <xs:import namespace="http://jmix.io/schema/flowui/layout"/>
+
+    <!--
+        Integer slider field. Backed by com.company.demo.component.Slider and loaded
+        by SliderLoader (registered as the <slider> tag in ComponentRegistrationConfiguration).
+        The attribute groups below mirror exactly what SliderLoader.loadComponent() reads.
+    -->
+    <xs:element name="slider">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="layout:baseComponent">
+                    <!-- slider-specific parameters -->
+                    <xs:attribute name="min" type="xs:integer"/>
+                    <xs:attribute name="max" type="xs:integer"/>
+                    <xs:attribute name="step" type="xs:integer"/>
+                    <xs:attribute name="value" type="xs:integer"/>
+
+                    <!-- standard field capabilities loaded by SliderLoader -->
+                    <xs:attributeGroup ref="layout:hasLabel"/>
+                    <xs:attributeGroup ref="layout:hasEnabled"/>
+                    <xs:attributeGroup ref="layout:hasClassNames"/>
+                    <xs:attributeGroup ref="layout:hasSize"/>
+                    <xs:attributeGroup ref="layout:hasRequired"/>
+                    <xs:attributeGroup ref="layout:hasDataContainer"/>
+                    <xs:attributeGroup ref="layout:hasValueAndElement"/>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+
 </xs:schema>

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <view xmlns="http://jmix.io/schema/flowui/view"
+      xmlns:app="http://com.company.demo/schema/app-ui-components"
       title="msg://dqRuleDetailView.title"
       focusComponent="form">
     <data>
@@ -90,6 +91,10 @@
                 <formItem label="msg://com.company.demo.entity/DqRule.ruleConfig">
                     <textArea id="ruleConfigField" property="ruleConfig" colspan="2"/>
                 </formItem>
+            </formRow>
+
+            <formRow>
+                <app:slider id="plainSlider" label="Plain slider" min="10" max="200" step="5" value="50"/>
             </formRow>
         </formLayout>
         <hbox id="detailActions">
