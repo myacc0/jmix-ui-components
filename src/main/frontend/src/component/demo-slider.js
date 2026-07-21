@@ -64,12 +64,51 @@ class DemoSlider extends HTMLElement {
                 }
                 input[type=range] {
                     flex: 1;
-                    accent-color: var(--lumo-primary-color, #1676f3);
+                    -webkit-appearance: none;
+                    appearance: none;
+                    background: transparent;
+                    height: 16px;
                     margin: 0;
                     min-width: 0;
+                    cursor: pointer;
+                }
+                /* Track — 16px tall, rounded */
+                input[type=range]::-webkit-slider-runnable-track {
+                    height: 16px;
+                    border-radius: var(--lumo-border-radius-s, 4px);
+                    background-color: var(--lumo-contrast-20pct, rgba(0, 0, 0, 0.2));
+                }
+                input[type=range]::-moz-range-track {
+                    height: 16px;
+                    border-radius: var(--lumo-border-radius-s, 4px);
+                    background-color: var(--lumo-contrast-20pct, rgba(0, 0, 0, 0.2));
+                }
+                /* Thumb — 16px round, centered on the 16px track */
+                input[type=range]::-webkit-slider-thumb {
+                    -webkit-appearance: none;
+                    appearance: none;
+                    width: 16px;
+                    height: 24px;
+                    margin-top: -4px;
+                    border-radius: var(--lumo-border-radius-s, 4px);
+                    background-color: var(--lumo-primary-color, #1676f3);
+                }
+                input[type=range]::-moz-range-thumb {
+                    width: 16px;
+                    height: 24px;
+                    margin-top: -4px;
+                    border: none;
+                    border-radius: var(--lumo-border-radius-s, 4px);
+                    background-color: var(--lumo-primary-color, #1676f3);
                 }
                 input[type=range]:focus {
-                    outline-color: var(--lumo-primary-color, #1676f3);
+                    outline: none;
+                }
+                input[type=range]:focus-visible::-webkit-slider-thumb {
+                    box-shadow: 0 0 0 2px var(--lumo-primary-color-50pct, rgba(22, 118, 243, 0.5));
+                }
+                input[type=range]:focus-visible::-moz-range-thumb {
+                    box-shadow: 0 0 0 2px var(--lumo-primary-color-50pct, rgba(22, 118, 243, 0.5));
                 }
                 .value-badge {
                     min-width: 3em;
@@ -89,8 +128,11 @@ class DemoSlider extends HTMLElement {
                 :host([invalid-shown]) .error {
                     display: block;
                 }
-                :host([invalid-shown]) input[type=range] {
-                    accent-color: var(--lumo-error-color, #d32f2f);
+                :host([invalid-shown]) input[type=range]::-webkit-slider-thumb {
+                    background-color: var(--lumo-error-color, #d32f2f);
+                }
+                :host([invalid-shown]) input[type=range]::-moz-range-thumb {
+                    background-color: var(--lumo-error-color, #d32f2f);
                 }
                 :host([disabled-shown]) {
                     opacity: 0.5;
