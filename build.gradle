@@ -23,6 +23,8 @@ repositories {
 }
 
 dependencies {
+    implementation 'io.jmix.translations:jmix-translations-ru'
+
     implementation 'io.jmix.reports:jmix-reports-rest-starter'
     implementation 'io.jmix.reports:jmix-reports-flowui-starter'
     implementation 'io.jmix.reports:jmix-reports-starter'
