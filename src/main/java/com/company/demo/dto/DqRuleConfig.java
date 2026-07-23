@@ -1,27 +1,25 @@
 package com.company.demo.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
-import java.util.List;
-
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class DqRuleConfig {
     // threshold default 100%
     private Double threshold;
     // if null, all selected
-    private Integer thresholdSampleSize;
+    private Integer rowsLimit;
 
-    // ----- RANGE -----
-    private Double min;
-    private Double max;
-    private Double includeMin;
-    private Double includeMax;
+    // ----- RANGE (number or date) -----
+    // For RANGE_NUMBER holds a numeric bound; for RANGE_DATE holds an ISO-8601 date string.
+    private Object min;
+    private Object max;
+    private Boolean minIncluded;
+    private Boolean maxIncluded;
 
     // ----- REGEXP_PATTERN -----
     private String regexp;
-
-    // ----- UNIQUENESS (multiple columns) -----
-    private List<String> columns;
 
     // ----- REFERENCE_TABLE -----
     private String refTable;
@@ -47,44 +45,44 @@ public class DqRuleConfig {
         this.threshold = threshold;
     }
 
-    public Integer getThresholdSampleSize() {
-        return thresholdSampleSize;
+    public Integer getRowsLimit() {
+        return rowsLimit;
     }
 
-    public void setThresholdSampleSize(Integer thresholdSampleSize) {
-        this.thresholdSampleSize = thresholdSampleSize;
+    public void setRowsLimit(Integer rowsLimit) {
+        this.rowsLimit = rowsLimit;
     }
 
-    public Double getMin() {
+    public Object getMin() {
         return min;
     }
 
-    public void setMin(Double min) {
+    public void setMin(Object min) {
         this.min = min;
     }
 
-    public Double getMax() {
+    public Object getMax() {
         return max;
     }
 
-    public void setMax(Double max) {
+    public void setMax(Object max) {
         this.max = max;
     }
 
-    public Double getIncludeMin() {
-        return includeMin;
+    public Boolean getMinIncluded() {
+        return minIncluded;
     }
 
-    public void setIncludeMin(Double includeMin) {
-        this.includeMin = includeMin;
+    public void setMinIncluded(Boolean minIncluded) {
+        this.minIncluded = minIncluded;
     }
 
-    public Double getIncludeMax() {
-        return includeMax;
+    public Boolean getMaxIncluded() {
+        return maxIncluded;
     }
 
-    public void setIncludeMax(Double includeMax) {
-        this.includeMax = includeMax;
+    public void setMaxIncluded(Boolean maxIncluded) {
+        this.maxIncluded = maxIncluded;
     }
 
     public String getRegexp() {
@@ -93,14 +91,6 @@ public class DqRuleConfig {
 
     public void setRegexp(String regexp) {
         this.regexp = regexp;
-    }
-
-    public List<String> getColumns() {
-        return columns;
-    }
-
-    public void setColumns(List<String> columns) {
-        this.columns = columns;
     }
 
     public String getRefTable() {
@@ -135,17 +125,56 @@ public class DqRuleConfig {
         this.sql = sql;
     }
 
+    public String getSecondaryDataSourceId() {
+        return secondaryDataSourceId;
+    }
+
+    public void setSecondaryDataSourceId(String secondaryDataSourceId) {
+        this.secondaryDataSourceId = secondaryDataSourceId;
+    }
+
+    public String getCrossSourceSql() {
+        return crossSourceSql;
+    }
+
+    public void setCrossSourceSql(String crossSourceSql) {
+        this.crossSourceSql = crossSourceSql;
+    }
+
+    public String getCrossSourceTable() {
+        return crossSourceTable;
+    }
+
+    public void setCrossSourceTable(String crossSourceTable) {
+        this.crossSourceTable = crossSourceTable;
+    }
+
+    public String getCrossSourceColumn() {
+        return crossSourceColumn;
+    }
+
+    public void setCrossSourceColumn(String crossSourceColumn) {
+        this.crossSourceColumn = crossSourceColumn;
+    }
+
+    public String getCrossSourceAllowNull() {
+        return crossSourceAllowNull;
+    }
+
+    public void setCrossSourceAllowNull(String crossSourceAllowNull) {
+        this.crossSourceAllowNull = crossSourceAllowNull;
+    }
+
     @Override
     public String toString() {
         return "DqRuleConfig{" +
                 "threshold=" + threshold +
-                ", thresholdSampleSize=" + thresholdSampleSize +
+                ", thresholdSampleSize=" + rowsLimit +
                 ", min=" + min +
                 ", max=" + max +
-                ", includeMin=" + includeMin +
-                ", includeMax=" + includeMax +
-                ", pattern='" + regexp + '\'' +
-                ", columns=" + columns +
+                ", minIncluded=" + minIncluded +
+                ", maxIncluded=" + maxIncluded +
+                ", regexp='" + regexp + '\'' +
                 ", refTable='" + refTable + '\'' +
                 ", refColumn='" + refColumn + '\'' +
                 ", allowNull='" + allowNull + '\'' +

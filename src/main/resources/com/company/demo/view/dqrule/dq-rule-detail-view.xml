@@ -24,80 +24,89 @@
                 id="form"
                 dataContainer="dqRuleDc"
                 autoResponsive="true"
-                width="100%"
-                minColumns="1"
-                maxColumns="2"
+                width="50%"
                 expandColumns="true"
                 expandFields="true">
-            <formRow>
-                <formItem label="msg://com.company.demo.entity/DqRule.name">
-                    <textField id="nameField" property="name"/>
-                </formItem>
-                <formItem label="msg://com.company.demo.entity/DqRule.active">
-                    <checkbox id="activeField" property="active"/>
-                </formItem>
-            </formRow>
 
-            <formRow>
-                <formItem label="msg://com.company.demo.entity/DqRule.description" colspan="2">
-                    <textArea id="descriptionField" property="description" colspan="2"/>
-                </formItem>
-            </formRow>
-
-            <formRow>
-                <formItem label="msg://com.company.demo.entity/DqRule.owner">
-                    <entityPicker id="ownerField" property="owner">
-                        <actions>
-                            <action id="entityLookupAction" type="entity_lookup"/>
-                            <action id="entityClearAction" type="entity_clear"/>
-                        </actions>
-                    </entityPicker>
-                </formItem>
-                <formItem label="msg://com.company.demo.entity/DqRule.category">
-                    <entityPicker id="categoryField" property="category">
-                        <actions>
-                            <action id="entityLookupAction" type="entity_lookup"/>
-                            <action id="entityClearAction" type="entity_clear"/>
-                        </actions>
-                    </entityPicker>
-                </formItem>
-            </formRow>
-
-            <formRow>
-                <formItem label="msg://com.company.demo.entity/DqRule.dimension">
-                    <select id="dimensionField" property="dimension"/>
-                </formItem>
-                <formItem label="msg://com.company.demo.entity/DqRule.severity">
-                    <select id="severityField" property="severity"/>
-                </formItem>
-            </formRow>
-
-            <formRow>
-                <formItem label="msg://com.company.demo.entity/DqRule.dataSource">
-                    <select id="dataSourceField" property="dataSource" />
-                </formItem>
-                <formItem label="msg://com.company.demo.entity/DqRule.tableName">
-                    <select id="tableNameField" property="tableName"/>
-                </formItem>
-                <formItem label="msg://com.company.demo.entity/DqRule.columnName">
-                    <select id="columnNameField" property="columnName"/>
-                </formItem>
-            </formRow>
-
-            <formRow>
-                <formItem label="msg://com.company.demo.entity/DqRule.ruleType">
-                    <select id="ruleTypeField" property="ruleType"/>
-                </formItem>
-                <formItem label="msg://com.company.demo.entity/DqRule.ruleConfig">
-                    <textArea id="ruleConfigField" property="ruleConfig" colspan="2"/>
-                </formItem>
-            </formRow>
-
-            <formRow>
-                <app:slider id="plainSlider" label="Plain slider" min="10" max="200" step="5" value="50"/>
-            </formRow>
+            <formItem label="msg://com.company.demo.entity/DqRule.name">
+                <textField id="nameField" property="name"/>
+            </formItem>
+            <formItem label="msg://com.company.demo.entity/DqRule.description">
+                <textArea id="descriptionField" property="description" minRows="5"/>
+            </formItem>
+            <formItem label="msg://com.company.demo.entity/DqRule.owner">
+                <entityPicker id="ownerField" property="owner">
+                    <actions>
+                        <action id="entityLookupAction" type="entity_lookup"/>
+                        <action id="entityClearAction" type="entity_clear"/>
+                    </actions>
+                </entityPicker>
+            </formItem>
+            <formItem label="msg://com.company.demo.entity/DqRule.category">
+                <entityPicker id="categoryField" property="category">
+                    <actions>
+                        <action id="entityLookupAction" type="entity_lookup"/>
+                        <action id="entityClearAction" type="entity_clear"/>
+                    </actions>
+                </entityPicker>
+            </formItem>
+            <formItem label="msg://com.company.demo.entity/DqRule.dimension">
+                <select id="dimensionField" property="dimension"/>
+            </formItem>
+            <formItem label="msg://com.company.demo.entity/DqRule.severity">
+                <select id="severityField" property="severity"/>
+            </formItem>
+            <formItem label="msg://com.company.demo.entity/DqRule.dataSource">
+                <select id="dataSourceField" property="dataSource" />
+            </formItem>
+            <formItem label="msg://com.company.demo.entity/DqRule.tableName">
+                <select id="tableNameField" property="tableName"/>
+            </formItem>
+            <formItem label="msg://com.company.demo.entity/DqRule.columnName">
+                <select id="columnNameField" property="columnName"/>
+            </formItem>
+            <formItem label="msg://com.company.demo.entity/DqRule.ruleType">
+                <select id="ruleTypeField" property="ruleType"/>
+            </formItem>
         </formLayout>
-        <hbox id="detailActions">
+
+        <vbox id="ruleConfigFields" padding="false" width="50%">
+            <vbox id="rangeBox" visible="false" padding="false" width="100%">
+                <formLayout>
+                    <responsiveSteps>
+                        <responsiveStep minWidth="0" columns="2" />
+                    </responsiveSteps>
+                    <numberField id="minNumberField" label="msg://ruleConfig.min"/>
+                    <datePicker id="minDateField" label="msg://ruleConfig.min"/>
+                    <checkbox id="minIncludedField" label="msg://ruleConfig.minIncluded"/>
+                </formLayout>
+                <formLayout>
+                    <responsiveSteps>
+                        <responsiveStep minWidth="0" columns="2" />
+                    </responsiveSteps>
+                    <numberField id="maxNumberField" label="msg://ruleConfig.max"/>
+                    <datePicker id="maxDateField" label="msg://ruleConfig.max"/>
+                    <checkbox id="maxIncludedField" label="msg://ruleConfig.maxIncluded"/>
+                </formLayout>
+            </vbox>
+
+            <formLayout id="regexpBox" visible="false" width="100%">
+                <textField id="regexpField" label="msg://ruleConfig.regexp"/>
+            </formLayout>
+        </vbox>
+
+        <formLayout dataContainer="dqRuleDc"
+                    autoResponsive="true"
+                    width="50%"
+                    expandColumns="true"
+                    expandFields="true" rowSpacing="10px">
+            <formItem label="msg://com.company.demo.entity/DqRule.ruleConfig">
+                <textArea id="ruleConfigField" property="ruleConfig" minRows="5" readOnly="true"/>
+            </formItem>
+            <checkbox id="activeField" property="active" label="msg://com.company.demo.entity/DqRule.active" />
+        </formLayout>
+
+        <hbox id="detailActions" width="50%" justifyContent="CENTER">
             <button id="saveAndCloseButton" action="saveCloseAction"/>
             <button id="closeButton" action="closeAction"/>
         </hbox>
