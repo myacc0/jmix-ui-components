@@ -1,11 +1,16 @@
 package com.company.demo.view.dqrule;
 
+import com.company.demo.component.Slider;
 import com.company.demo.dto.DqRuleConfig;
 import com.company.demo.dto.SelectDto;
 import com.company.demo.entity.DqRule;
 import com.company.demo.enums.DqRuleType;
 import com.company.demo.repository.DqRuleRepository;
-import com.company.demo.service.DqDataSourceProvider;
+import com.company.demo.service.*;
+import com.company.demo.utils.DateUtils;
+import com.company.demo.utils.JsonUtils;
+import com.company.demo.utils.NumberUtils;
+import com.company.demo.utils.StringUtils;
 import com.company.demo.view.main.MainView;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -80,6 +85,12 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
     @ViewComponent
     private TypedTextField<String> regexpField;
 
+    // ----- always-visible config fields (independent of rule type) -----
+    @ViewComponent
+    private Slider thresholdField;
+    @ViewComponent
+    private JmixNumberField rowsLimitField;
+
     /**
      * Guards against feedback loops while the controller sets field values
      * programmatically (populating fields from the stored JSON, clearing on
@@ -89,7 +100,13 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
 
     @Install(to = "dqRuleDl", target = Target.DATA_LOADER, subject = "loadFromRepositoryDelegate")
     private Optional<DqRule> loadDelegate(UUID id, FetchPlan fetchPlan) {
-        return repository.findById(id, fetchPlan);
+        // Reformat the stored (compact) ruleConfig to pretty JSON for display.
+        // Done before the entity enters the DataContext so it is not flagged as a change.
+        return repository.findById(id, fetchPlan)
+                .map(rule -> {
+                    rule.setRuleConfig(JsonUtils.prettifyJson(rule.getRuleConfig(), objectMapper));
+                    return rule;
+                });
     }
 
     @Subscribe
@@ -151,6 +168,8 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         minIncludedField.addValueChangeListener(e -> onDynamicFieldChange());
         maxIncludedField.addValueChangeListener(e -> onDynamicFieldChange());
         regexpField.addValueChangeListener(e -> onDynamicFieldChange());
+        thresholdField.addValueChangeListener(e -> onDynamicFieldChange());
+        rowsLimitField.addValueChangeListener(e -> onDynamicFieldChange());
     }
 
     @Subscribe
@@ -199,20 +218,27 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
 
     private void populateFieldsFromConfig(DqRuleType type) {
         clearDynamicFields();
-        DqRuleConfig config = parseConfig(getEditedEntity().getRuleConfig());
+        DqRuleConfig config = JsonUtils.parseConfig(getEditedEntity().getRuleConfig(), DqRuleConfig.class, objectMapper);
+
+        // Always-visible config fields, independent of rule type.
+        Double threshold = config != null ? config.getThreshold() : null;
+        thresholdField.setValue(threshold != null ? (int) Math.round(threshold) : 100);
+        Integer rowsLimit = config != null ? config.getRowsLimit() : null;
+        rowsLimitField.setValue(rowsLimit != null ? rowsLimit.doubleValue() : null);
+
         if (config == null || type == null) {
             return;
         }
         switch (type) {
             case RANGE_NUMBER -> {
-                minNumberField.setValue(toDouble(config.getMin()));
-                maxNumberField.setValue(toDouble(config.getMax()));
+                minNumberField.setValue(NumberUtils.toDouble(config.getMin()));
+                maxNumberField.setValue(NumberUtils.toDouble(config.getMax()));
                 minIncludedField.setValue(Boolean.TRUE.equals(config.getMinIncluded()));
                 maxIncludedField.setValue(Boolean.TRUE.equals(config.getMaxIncluded()));
             }
             case RANGE_DATE -> {
-                minDateField.setValue(toDate(config.getMin()));
-                maxDateField.setValue(toDate(config.getMax()));
+                minDateField.setValue(DateUtils.toDate(config.getMin()));
+                maxDateField.setValue(DateUtils.toDate(config.getMax()));
                 minIncludedField.setValue(Boolean.TRUE.equals(config.getMinIncluded()));
                 maxIncludedField.setValue(Boolean.TRUE.equals(config.getMaxIncluded()));
             }
@@ -242,47 +268,21 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
                     config.setMinIncluded(minIncludedField.getValue());
                     config.setMaxIncluded(maxIncludedField.getValue());
                 }
-                case REGEXP -> config.setRegexp(emptyToNull(regexpField.getValue()));
+                case REGEXP -> config.setRegexp(StringUtils.emptyToNull(regexpField.getValue()));
                 default -> {
                     // NOT_NULL and not-yet-implemented types serialize to an empty object.
                 }
             }
         }
+        // Always-visible config fields, independent of rule type.
+        config.setThreshold(thresholdField.getValue() != null ? thresholdField.getValue().doubleValue() : null);
+        Double rowsLimit = rowsLimitField.getValue();
+        config.setRowsLimit(rowsLimit != null ? (int) Math.round(rowsLimit) : null);
         try {
             getEditedEntity().setRuleConfig(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(config));
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to serialize rule config", e);
         }
-    }
-
-    private DqRuleConfig parseConfig(String json) {
-        if (json == null || json.isBlank()) {
-            return null;
-        }
-        try {
-            return objectMapper.readValue(json, DqRuleConfig.class);
-        } catch (JsonProcessingException e) {
-            return null;
-        }
-    }
-
-    private Double toDouble(Object value) {
-        return value instanceof Number number ? number.doubleValue() : null;
-    }
-
-    private LocalDate toDate(Object value) {
-        if (value instanceof String s && !s.isBlank()) {
-            try {
-                return LocalDate.parse(s);
-            } catch (RuntimeException e) {
-                return null;
-            }
-        }
-        return null;
-    }
-
-    private String emptyToNull(String value) {
-        return value == null || value.isEmpty() ? null : value;
     }
 
     @Install(target = Target.DATA_CONTEXT)

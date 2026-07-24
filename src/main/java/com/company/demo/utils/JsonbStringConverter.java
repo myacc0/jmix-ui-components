@@ -1,4 +1,4 @@
-package com.company.demo.persistence;
+package com.company.demo.utils;
 
 import org.eclipse.persistence.mappings.DatabaseMapping;
 import org.eclipse.persistence.mappings.converters.Converter;

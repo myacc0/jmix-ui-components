@@ -71,6 +71,14 @@
         </formLayout>
 
         <vbox id="ruleConfigFields" padding="false" width="50%">
+            <formLayout width="100%">
+                <responsiveSteps>
+                    <responsiveStep minWidth="0" columns="1"/>
+                </responsiveSteps>
+                <app:slider id="thresholdField" label="msg://ruleConfig.threshold" min="0" max="100" value="100"/>
+                <numberField id="rowsLimitField" label="msg://ruleConfig.rowsLimit"/>
+            </formLayout>
+
             <vbox id="rangeBox" visible="false" padding="false" width="100%">
                 <formLayout>
                     <responsiveSteps>

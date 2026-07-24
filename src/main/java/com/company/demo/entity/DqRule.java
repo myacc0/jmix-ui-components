@@ -3,7 +3,7 @@ package com.company.demo.entity;
 import com.company.demo.enums.DqDimension;
 import com.company.demo.enums.DqRuleType;
 import com.company.demo.enums.DqSeverity;
-import com.company.demo.persistence.JsonbStringConverter;
+import com.company.demo.utils.JsonbStringConverter;
 import io.jmix.core.DeletePolicy;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
 import io.jmix.core.entity.annotation.OnDeleteInverse;
