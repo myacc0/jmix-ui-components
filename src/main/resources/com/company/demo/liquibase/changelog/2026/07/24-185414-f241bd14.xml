@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd"
+        objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+        logicalFilePath="com/company/demo/liquibase/changelog/2026/07/24-185414-f241bd14.xml">
+    <changeSet id="1" author="demo">
+        <createTable tableName="DEMO_DQ_AUDIT_LOG">
+            <column name="ID" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_DEMO_DQ_AUDIT_LOG"/>
+            </column>
+            <column name="ENTITY_TYPE" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ENTITY_ID" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ACTION_" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USERNAME" type="VARCHAR(200)"/>
+            <column name="USER_IP" type="VARCHAR(64)"/>
+            <column name="CHANGES" type="jsonb"/>
+            <column name="CREATED_AT" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="2" author="demo">
+        <createTable tableName="DEMO_DQ_CHECK_RUN">
+            <column name="ID" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_DEMO_DQ_CHECK_RUN"/>
+            </column>
+            <column name="DATA_SOURCE" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="TRIGGERED_USERNAME" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="STARTED_AT" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="FINISHED_AT" type="TIMESTAMP"/>
+            <column name="STATUS" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="RULES_TOTAL" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="RULES_PASSED" type="INT"/>
+            <column name="RULES_FAILED" type="INT"/>
+            <column name="RULES_SKIPPED" type="INT"/>
+            <column name="DQ_SCORE" type="DECIMAL(5, 2)"/>
+            <column name="ERROR_MESSAGE" type="text"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="3" author="demo">
+        <createTable tableName="DEMO_DQ_CHECK_RUN_RESULT">
+            <column name="ID" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_DEMO_DQ_CHECK_RUN_RESULT"/>
+            </column>
+            <column name="CHECK_RUN_ID" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="RULE_ID" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="STATUS" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="TOTAL_RECORDS" type="DECIMAL(19)"/>
+            <column name="FAILED_RECORDS" type="DECIMAL(19)"/>
+            <column name="PASS_RATE" type="DECIMAL(5, 2)"/>
+            <column name="EXECUTION_MS" type="BIGINT"/>
+            <column name="SAMPLE_VIOLATIONS" type="jsonb"/>
+            <column name="ERROR_MESSAGE" type="text"/>
+            <column name="EXECUTED_QUERY" type="text"/>
+            <column name="CREATED_AT" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="4" author="demo">
+        <createTable tableName="DEMO_DQ_ISSUE">
+            <column name="ID" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_DEMO_DQ_ISSUE"/>
+            </column>
+            <column name="CHECK_RESULT_ID" type="UUID"/>
+            <column name="RULE_ID" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DATA_SOURCE" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="STATUS" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SEVERITY" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="TITLE" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DESCRIPTION" type="text"/>
+            <column name="ASSIGNE_NAME" type="VARCHAR(200)"/>
+            <column name="ASSIGNEE_EMAIL" type="VARCHAR(200)"/>
+            <column name="ASSIGNEE_PHONE" type="VARCHAR(200)"/>
+            <column name="DUE_DATE" type="DATE"/>
+            <column name="RESOLVED_AT" type="TIMESTAMP"/>
+            <column name="RESOLUTION_NOTES" type="text"/>
+            <column name="AFFECTED_ROWS" type="DECIMAL(19)"/>
+            <column name="CREATED_AT" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="UPDATED_AT" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="5" author="demo">
+        <createTable tableName="DEMO_DQ_METRICS_HISTORY">
+            <column name="ID" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_DEMO_DQ_METRICS_HISTORY"/>
+            </column>
+            <column name="DATA_SOURCE" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DIMENSION" type="VARCHAR(50)"/>
+            <column name="METRIC_DATE" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DQ_SCORE" type="DECIMAL(5, 2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="RULES_CHECKED" type="INT"/>
+            <column name="RULES_PASSED" type="INT"/>
+            <column name="ISSUES_OPEN" type="INT"/>
+            <column name="CREATED_AT" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="6" author="demo">
+        <createIndex indexName="IDX_DEMO_DQ_CHECK_RUN_RESULT_CHECK_RUN" tableName="DEMO_DQ_CHECK_RUN_RESULT">
+            <column name="CHECK_RUN_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="CHECK_RUN_ID" baseTableName="DEMO_DQ_CHECK_RUN_RESULT"
+                                 constraintName="FK_DEMO_DQ_CHECK_RUN_RESULT_ON_CHECK_RUN" onDelete="CASCADE"
+                                 referencedColumnNames="ID" referencedTableName="DEMO_DQ_CHECK_RUN"/>
+    </changeSet>
+    <changeSet id="7" author="demo">
+        <createIndex indexName="IDX_DEMO_DQ_CHECK_RUN_RESULT_RULE" tableName="DEMO_DQ_CHECK_RUN_RESULT">
+            <column name="RULE_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="RULE_ID" baseTableName="DEMO_DQ_CHECK_RUN_RESULT"
+                                 constraintName="FK_DEMO_DQ_CHECK_RUN_RESULT_ON_RULE" onDelete="CASCADE"
+                                 referencedColumnNames="ID" referencedTableName="DEMO_DQ_RULE"/>
+    </changeSet>
+    <changeSet id="8" author="demo">
+        <createIndex indexName="IDX_DEMO_DQ_ISSUE_CHECK_RESULT" tableName="DEMO_DQ_ISSUE">
+            <column name="CHECK_RESULT_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="CHECK_RESULT_ID" baseTableName="DEMO_DQ_ISSUE"
+                                 constraintName="FK_DEMO_DQ_ISSUE_ON_CHECK_RESULT" referencedColumnNames="ID"
+                                 referencedTableName="DEMO_DQ_CHECK_RUN_RESULT"/>
+    </changeSet>
+    <changeSet id="9" author="demo">
+        <createIndex indexName="IDX_DEMO_DQ_ISSUE_RULE" tableName="DEMO_DQ_ISSUE">
+            <column name="RULE_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="RULE_ID" baseTableName="DEMO_DQ_ISSUE"
+                                 constraintName="FK_DEMO_DQ_ISSUE_ON_RULE" referencedColumnNames="ID"
+                                 referencedTableName="DEMO_DQ_RULE"/>
+    </changeSet>
+</databaseChangeLog>
