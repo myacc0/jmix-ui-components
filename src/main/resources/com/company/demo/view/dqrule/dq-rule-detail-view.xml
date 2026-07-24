@@ -60,10 +60,10 @@
                 <select id="dataSourceField" property="dataSource" />
             </formItem>
             <formItem label="msg://com.company.demo.entity/DqRule.tableName">
-                <select id="tableNameField" property="tableName"/>
+                <comboBox id="tableNameField" property="tableName"/>
             </formItem>
             <formItem label="msg://com.company.demo.entity/DqRule.columnName">
-                <select id="columnNameField" property="columnName"/>
+                <comboBox id="columnNameField" property="columnName"/>
             </formItem>
             <formItem label="msg://com.company.demo.entity/DqRule.ruleType">
                 <select id="ruleTypeField" property="ruleType"/>

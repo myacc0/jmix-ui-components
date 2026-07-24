@@ -19,6 +19,7 @@ import com.vaadin.flow.router.Route;
 import io.jmix.core.FetchPlan;
 import io.jmix.core.SaveContext;
 import io.jmix.flowui.component.checkbox.JmixCheckbox;
+import io.jmix.flowui.component.combobox.JmixComboBox;
 import io.jmix.flowui.component.datepicker.TypedDatePicker;
 import io.jmix.flowui.component.formlayout.JmixFormLayout;
 import io.jmix.flowui.component.select.JmixSelect;
@@ -55,10 +56,10 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
     private JmixSelect<String> dataSourceField;
 
     @ViewComponent
-    private JmixSelect<String> tableNameField;
+    private JmixComboBox<String> tableNameField;
 
     @ViewComponent
-    private JmixSelect<String> columnNameField;
+    private JmixComboBox<String> columnNameField;
 
     @ViewComponent
     private JmixSelect<DqRuleType> ruleTypeField;
