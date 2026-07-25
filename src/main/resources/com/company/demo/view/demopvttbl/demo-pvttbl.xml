@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      xmlns:pvttbl="http://jmix.io/schema/pvttbl/ui"
+      title="msg://demoPvttbl.title">
+    <data>
+        <collection id="tipsDc" class="com.company.demo.entity.TipInfo">
+            <fetchPlan extends="_local"/>
+            <loader id="tipsLoader">
+                <query>
+                    <![CDATA[select e from demo_TipInfo e]]>
+                </query>
+            </loader>
+        </collection>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+        <settings auto="true"/>
+    </facets>
+    <layout>
+        <vbox width="100%">
+            <button id="exportButton"
+                    text="Export Excel"
+                    title="msg://io.jmix.pivottableflowui.view/exportExcel"
+                    icon="EXCEL_EXPORT_ACTION"/>
+            <pvttbl:pivotTable id="pivotTable"
+                               dataContainer="tipsDc"
+                               showColumnTotals="true"
+                               showRowTotals="true"
+                               showUI="true" width="100%">
+                <pvttbl:properties>
+                    <pvttbl:property name="totalBill"/>
+                    <pvttbl:property name="tip"/>
+                    <pvttbl:property name="sex"/>
+                    <pvttbl:property name="smoker"/>
+                    <pvttbl:property name="day"/>
+                    <pvttbl:property name="time"/>
+                    <pvttbl:property name="size"/>
+                </pvttbl:properties>
+                <pvttbl:columns>
+                    <pvttbl:column value="day"/>
+                    <pvttbl:column value="time"/>
+                </pvttbl:columns>
+                <pvttbl:rows>
+                    <pvttbl:row value="sex"/>
+                    <pvttbl:row value="smoker"/>
+                </pvttbl:rows>
+            </pvttbl:pivotTable>
+        </vbox>
+    </layout>
+</view>

@@ -23,6 +23,8 @@ repositories {
 }
 
 dependencies {
+    implementation 'io.jmix.pivottable:jmix-pivottable-flowui-starter'
+
     implementation 'io.jmix.translations:jmix-translations-ru'
 
     implementation 'io.jmix.reports:jmix-reports-rest-starter'

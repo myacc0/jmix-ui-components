@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://tipInfoDetailView.title"
+      focusComponent="form">
+    <data>
+        <instance id="tipInfoDc"
+                  class="com.company.demo.entity.TipInfo">
+            <fetchPlan extends="_base"/>
+            <loader id="tipInfoDl"/>
+        </instance>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+    </facets>
+    <actions>
+        <action id="saveCloseAction" type="detail_saveClose"/>
+        <action id="closeAction" type="detail_close"/>
+    </actions>
+    <layout>
+        <formLayout id="form" dataContainer="tipInfoDc">
+            <responsiveSteps>
+                <responsiveStep minWidth="0" columns="1"/>
+                <responsiveStep minWidth="40em" columns="2"/>
+            </responsiveSteps>
+            <textField id="totalBillField" property="totalBill"/>
+            <textField id="tipField" property="tip"/>
+            <checkbox id="smokerField" property="smoker"/>
+            <textField id="sizeField" property="size"/>
+            <select id="sexField" property="sex"/>
+            <select id="dayField" property="day"/>
+            <select id="timeField" property="time"/>
+        </formLayout>
+        <hbox id="detailActions">
+            <button id="saveAndCloseButton" action="saveCloseAction"/>
+            <button id="closeButton" action="closeAction"/>
+        </hbox>
+    </layout>
+</view>

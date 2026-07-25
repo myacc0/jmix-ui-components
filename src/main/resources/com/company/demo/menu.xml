@@ -9,6 +9,8 @@
         <item view="demo_DqRuleCategory.list"
               title="msg://com.company.demo.view.dqrulecategory/dqRuleCategoryListView.title"/>
         <item view="demo_DqRule.list" title="msg://com.company.demo.view.dqrule/dqRuleListView.title"/>
+        <item view="demo_DemoPvttbl" title="msg://com.company.demo.view.demopvttbl/demoPvttbl.title"/>
+        <item view="demo_TipInfo.list" title="msg://com.company.demo.view.tipinfo/tipInfoListView.title"/>
     </menu>
 
 </menu-config>
