@@ -31,7 +31,7 @@ PostgreSQL is required (no HSQLDB fallback configured). The Docker Compose file 
 
 ## Architecture
 
-- Jmix 2.7.6 (Spring Boot + Vaadin FlowUI + EclipseLink) app. Root package: `com.company.demo`.
+- Jmix 2.8.2 (Spring Boot + Vaadin FlowUI + EclipseLink) app. Root package: `com.company.demo`.
 - Java 21
 - PostgreSQL
 - Relational database with Liquibase migrations

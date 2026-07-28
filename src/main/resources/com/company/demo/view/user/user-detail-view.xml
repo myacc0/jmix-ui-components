@@ -32,6 +32,13 @@
             <textField id="emailField" property="email"/>
             <comboBox id="timeZoneField" property="timeZoneId" clearButtonVisible="true"/>
             <checkbox id="activeField" property="active"/>
+            <details summaryText="Picture">
+                <hbox>
+                    <fileStorageUploadField id="pictureField" property="picture" dataContainer="userDc"/>
+                    <image id="image" dataContainer="userDc" property="picture" height="10em" maxHeight="10em"
+                           classNames="user-picture"/>
+                </hbox>
+            </details>
         </formLayout>
         <hbox id="detailActions">
             <button id="saveAndCloseButton" action="saveCloseAction"/>
