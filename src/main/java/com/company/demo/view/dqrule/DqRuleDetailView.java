@@ -2,6 +2,7 @@ package com.company.demo.view.dqrule;
 
 import com.company.demo.component.Slider;
 import com.company.demo.dto.DqRuleConfig;
+import com.company.demo.dto.DqRuleValidationError;
 import com.company.demo.dto.SelectDto;
 import com.company.demo.entity.DqRule;
 import com.company.demo.enums.DqRuleType;
@@ -14,6 +15,7 @@ import com.company.demo.utils.StringUtils;
 import com.company.demo.view.main.MainView;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
 import io.jmix.core.FetchPlan;
@@ -25,10 +27,12 @@ import io.jmix.flowui.component.formlayout.JmixFormLayout;
 import io.jmix.flowui.component.select.JmixSelect;
 import io.jmix.flowui.component.textfield.JmixNumberField;
 import io.jmix.flowui.component.textfield.TypedTextField;
+import io.jmix.flowui.component.validation.ValidationErrors;
 import io.jmix.flowui.view.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.Nullable;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -51,6 +55,9 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
 
     @Autowired
     private DqDataSourceProvider dataSourceProvider;
+
+    @Autowired
+    private DqRuleValidator ruleValidator;
 
     @ViewComponent
     private JmixSelect<String> dataSourceField;
@@ -284,6 +291,42 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to serialize rule config", e);
         }
+    }
+
+    /**
+     * Runs on every save (create and update): the rule config must match the selected rule type.
+     * Reported errors abort the save and are shown next to the offending field.
+     */
+    @Subscribe
+    public void onValidation(final ValidationEvent event) {
+        ValidationErrors errors = new ValidationErrors();
+        for (DqRuleValidationError error : ruleValidator.validate(getEditedEntity())) {
+            errors.add(resolveComponent(error.field()), error.message());
+        }
+        event.addErrors(errors);
+    }
+
+    /**
+     * Maps a logical config field name to the input that edits it, so the error is attached to it.
+     * Returns null when no single input owns the value — the error is then shown unattached.
+     */
+    @Nullable
+    private Component resolveComponent(@Nullable String field) {
+        if (field == null) {
+            return null;
+        }
+        boolean rangeDate = ruleTypeField.getValue() == DqRuleType.RANGE_DATE;
+        return switch (field) {
+            case DqRuleValidationError.FIELD_TABLE_NAME -> tableNameField;
+            case DqRuleValidationError.FIELD_COLUMN_NAME -> columnNameField;
+            case DqRuleValidationError.FIELD_RULE_TYPE -> ruleTypeField;
+            case DqRuleValidationError.FIELD_THRESHOLD -> thresholdField;
+            case DqRuleValidationError.FIELD_ROWS_LIMIT -> rowsLimitField;
+            case DqRuleValidationError.FIELD_REGEXP -> regexpField;
+            case DqRuleValidationError.FIELD_MIN -> rangeDate ? minDateField : minNumberField;
+            case DqRuleValidationError.FIELD_MAX -> rangeDate ? maxDateField : maxNumberField;
+            default -> null;
+        };
     }
 
     @Install(target = Target.DATA_CONTEXT)
