@@ -30,5 +30,6 @@ webpack.generated.js
 
 .DS_Store
 /.playwright/
+/.playwright-cli
 
 /filestorage/

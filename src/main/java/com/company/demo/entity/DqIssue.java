@@ -2,7 +2,9 @@ package com.company.demo.entity;
 
 import com.company.demo.enums.DqIssueStatus;
 import com.company.demo.enums.DqSeverity;
+import io.jmix.core.DeletePolicy;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
+import io.jmix.core.entity.annotation.OnDeleteInverse;
 import io.jmix.core.metamodel.annotation.InstanceName;
 import io.jmix.core.metamodel.annotation.JmixEntity;
 import io.jmix.core.metamodel.annotation.NumberFormat;
@@ -26,10 +28,12 @@ public class DqIssue {
     @Id
     private UUID id;
 
+    @OnDeleteInverse(DeletePolicy.UNLINK)
     @JoinColumn(name = "CHECK_RESULT_ID")
     @ManyToOne(fetch = FetchType.LAZY)
     private DqCheckRunResult checkResult;
 
+    @OnDeleteInverse(DeletePolicy.CASCADE)
     @NotNull
     @JoinColumn(name = "RULE_ID", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
