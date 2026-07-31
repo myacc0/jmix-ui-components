@@ -1,9 +1,14 @@
 package com.company.demo.view.dqcheckrun;
 
 import com.company.demo.entity.DqCheckRun;
+import com.company.demo.view.dqcheckrunnew.DqCheckRunNewView;
 import com.company.demo.view.main.MainView;
+import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.router.Route;
+import io.jmix.flowui.ViewNavigators;
+import io.jmix.flowui.kit.component.button.JmixButton;
 import io.jmix.flowui.view.*;
+import org.springframework.beans.factory.annotation.Autowired;
 
 
 @Route(value = "dq-check-runs", layout = MainView.class)
@@ -12,4 +17,11 @@ import io.jmix.flowui.view.*;
 @LookupComponent("dqCheckRunsDataGrid")
 @DialogMode(width = "64em")
 public class DqCheckRunListView extends StandardListView<DqCheckRun> {
+    @Autowired
+    private ViewNavigators viewNavigators;
+
+    @Subscribe(id = "runCheckButton", subject = "clickListener")
+    public void onRunCheckButtonClick(final ClickEvent<JmixButton> event) {
+        viewNavigators.view(this, DqCheckRunNewView.class).navigate();
+    }
 }

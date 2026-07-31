@@ -33,6 +33,7 @@
         <hbox id="buttonsPanel" classNames="buttons-panel">
             <startSlot>
                 <button id="readButton" action="dqCheckRunsDataGrid.readAction"/>
+                <button id="runCheckButton" themeNames="primary" icon="vaadin:plus" text="msg://dqCheckRunListView.runCheckButton"/>
             </startSlot>
             <endSlot>
                 <simplePagination id="pagination" dataLoader="dqCheckRunsDl"/>
