@@ -174,10 +174,13 @@ public class DqSqlQueryBuilderTests {
     // ----- RANGE_NUMBER -----
 
     @Test
-    void numberRangeBoundsAreInclusiveByDefault() {
+    void inclusiveBoundsFlagOnlyValuesStrictlyOutsideTheRange() {
         DqRuleQueries queries = build(rule(DqRuleType.RANGE_NUMBER, "{\"min\": 10, \"max\": 20}",
                 "employee", "salary"), DqSqlDialect.POSTGRESQL);
 
+        // bounds default to inclusive, so the allowed values are 10 <= salary <= 20; the generated
+        // condition selects the VIOLATING rows, which is the negation: salary < 10 OR salary > 20.
+        // salary == 10 and salary == 20 must not be selected.
         assertEquals("SELECT t.* FROM \"employee\" t" +
                         " WHERE (t.\"salary\" IS NOT NULL AND (t.\"salary\" < ? OR t.\"salary\" > ?))",
                 queries.samples().sql());
@@ -185,12 +188,14 @@ public class DqSqlQueryBuilderTests {
     }
 
     @Test
-    void excludedNumberBoundsShiftTheComparison() {
+    void excludedBoundsAlsoFlagTheBoundaryValuesThemselves() {
         DqRuleQueries queries = build(rule(DqRuleType.RANGE_NUMBER,
                         "{\"min\": 10, \"max\": 20, \"minIncluded\": false, \"maxIncluded\": false}",
                         "employee", "salary"),
                 DqSqlDialect.POSTGRESQL);
 
+        // allowed is now 10 < salary < 20, so salary == 10 and salary == 20 become violations —
+        // this is the only case in which the comparison includes equality
         assertTrue(queries.samples().sql().contains("(t.\"salary\" <= ? OR t.\"salary\" >= ?)"),
                 queries.samples().sql());
     }

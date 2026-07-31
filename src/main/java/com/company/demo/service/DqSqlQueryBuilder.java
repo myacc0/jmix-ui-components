@@ -247,6 +247,15 @@ public class DqSqlQueryBuilder {
         List<String> outOfRange = new ArrayList<>(2);
         List<Object> params = new ArrayList<>(2);
 
+        // What is assembled here is the VIOLATION condition, so each bound is negated: an inclusive
+        // min means the allowed values are "column >= min", which makes a row bad when it is
+        // strictly below the bound. Using <= for an inclusive bound would flag column == min, i.e.
+        // the one value the bound explicitly admits.
+        //
+        //   minIncluded=true   allowed: column >= ?   violating: column <  ?
+        //   minIncluded=false  allowed: column >  ?   violating: column <= ?
+        //   maxIncluded=true   allowed: column <= ?   violating: column >  ?
+        //   maxIncluded=false  allowed: column <  ?   violating: column >= ?
         if (min != null) {
             outOfRange.add(column + (isIncluded(config.getMinIncluded()) ? " < ?" : " <= ?"));
             params.add(min);
