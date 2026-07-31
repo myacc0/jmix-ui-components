@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      xmlns:c="http://jmix.io/schema/flowui/jpql-condition"
+      title="msg://dqCheckRunListView.title"
+      focusComponent="dqCheckRunsDataGrid">
+    <data>
+        <collection id="dqCheckRunsDc"
+                    class="com.company.demo.entity.DqCheckRun">
+            <fetchPlan extends="_base"/>
+            <loader id="dqCheckRunsDl" readOnly="true">
+                <query>
+                    <![CDATA[select e from demo_DqCheckRun e]]>
+                </query>
+            </loader>
+        </collection>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+        <urlQueryParameters>
+            <genericFilter component="genericFilter"/>
+            <pagination component="pagination"/>
+        </urlQueryParameters>
+    </facets>
+    <actions>
+        <action id="selectAction" type="lookup_select"/>
+        <action id="discardAction" type="lookup_discard"/>
+    </actions>
+    <layout>
+        <genericFilter id="genericFilter"
+                       dataLoader="dqCheckRunsDl">
+            <properties include=".*"/>
+        </genericFilter>
+        <hbox id="buttonsPanel" classNames="buttons-panel">
+            <startSlot>
+                <button id="readButton" action="dqCheckRunsDataGrid.readAction"/>
+            </startSlot>
+            <endSlot>
+                <simplePagination id="pagination" dataLoader="dqCheckRunsDl"/>
+            </endSlot>
+        </hbox>
+        <dataGrid id="dqCheckRunsDataGrid"
+                  width="100%"
+                  minHeight="20em"
+                  dataContainer="dqCheckRunsDc"
+                  columnReorderingAllowed="true">
+            <actions>
+                <action id="readAction" type="list_read"/>
+            </actions>
+            <columns resizable="true">
+                <column property="dataSource" autoWidth="true" flexGrow="0"/>
+                <column property="triggeredUsername" autoWidth="true" flexGrow="0"/>
+                <column property="startedAt" autoWidth="true" flexGrow="0"/>
+                <column property="finishedAt" autoWidth="true" flexGrow="0"/>
+                <column property="status" autoWidth="true" flexGrow="0"/>
+                <column property="rulesTotal" autoWidth="true" flexGrow="0"/>
+                <column property="rulesPassed" autoWidth="true" flexGrow="0"/>
+                <column property="rulesFailed" autoWidth="true" flexGrow="0"/>
+                <column property="rulesSkipped" autoWidth="true" flexGrow="0"/>
+                <column property="dqScore" autoWidth="true" flexGrow="0"/>
+                <column property="errorMessage" autoWidth="true" flexGrow="0"/>
+            </columns>
+        </dataGrid>
+        <hbox id="lookupActions" visible="false">
+            <button id="selectButton" action="selectAction"/>
+            <button id="discardButton" action="discardAction"/>
+        </hbox>
+    </layout>
+</view>
