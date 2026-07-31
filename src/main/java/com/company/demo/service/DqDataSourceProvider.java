@@ -1,6 +1,7 @@
 package com.company.demo.service;
 
 import com.company.demo.dto.SelectDto;
+import com.company.demo.enums.DqSqlDialect;
 import io.jmix.core.Messages;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
@@ -14,12 +15,14 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class DqDataSourceProvider {
     private final Environment env;
     private final Messages messages;
     private final Map<String, DataSource> dataSourcesByBeanName;
+    private final Map<String, DqSqlDialect> dialectCache = new ConcurrentHashMap<>();
 
     public DqDataSourceProvider(Environment env, Messages messages, Map<String, DataSource> dataSourcesByBeanName) {
         this.env = env;
@@ -78,6 +81,30 @@ public class DqDataSourceProvider {
             throw new RuntimeException("Failed to get columns for table: " + tableName + " in data source: " + dataSourceName, e);
         }
         return columns;
+    }
+
+    /**
+     * Determines the SQL dialect of a data source from its JDBC metadata. The result is cached:
+     * a data source cannot change its database product while the application is running.
+     *
+     * @throws IllegalStateException when the database product is not one of the supported dialects
+     */
+    public DqSqlDialect resolveDialect(String dataSourceName) {
+        return dialectCache.computeIfAbsent(dataSourceName, name -> {
+            DataSource dataSource = resolveDataSource(name);
+            String productName;
+            try (Connection connection = dataSource.getConnection()) {
+                productName = connection.getMetaData().getDatabaseProductName();
+            } catch (SQLException e) {
+                throw new RuntimeException("Failed to read metadata of data source: " + name, e);
+            }
+            DqSqlDialect dialect = DqSqlDialect.fromProductName(productName);
+            if (dialect == null) {
+                throw new IllegalStateException("Unsupported database '" + productName
+                        + "' of data source: " + name);
+            }
+            return dialect;
+        });
     }
 
     private String normalizeIdentifier(DatabaseMetaData metaData, String identifier) throws SQLException {
