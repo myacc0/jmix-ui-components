@@ -1,6 +1,125 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <view xmlns="http://jmix.io/schema/flowui/view"
-      title="msg://dqCheckRunNewView.title">
+      title="msg://dqCheckRunNewView.title"
+      focusComponent="dataSourceField">
+    <!-- the page only reads: the filter is a DTO and the rules are shown read-only -->
+    <data readOnly="true">
+        <instance id="ruleFilterDc" class="com.company.demo.dto.DqRuleFilter"/>
+        <collection id="dqRulesDc" class="com.company.demo.entity.DqRule">
+            <fetchPlan>
+                <property name="id"/>
+                <property name="name"/>
+                <property name="dataSource"/>
+                <property name="tableName"/>
+                <property name="columnName"/>
+                <property name="dimension"/>
+                <property name="ruleType"/>
+                <property name="severity"/>
+                <property name="active"/>
+                <property name="owner" fetchPlan="_instance_name"/>
+                <property name="domain" fetchPlan="_instance_name"/>
+                <property name="dataProduct" fetchPlan="_instance_name"/>
+            </fetchPlan>
+            <loader id="dqRulesDl" readOnly="true">
+                <query>
+                    <![CDATA[select e from demo_DqRule e]]>
+                </query>
+            </loader>
+        </collection>
+    </data>
+    <actions>
+        <action id="closeAction" type="view_close"/>
+    </actions>
     <layout>
+        <formLayout id="ruleFilterForm" dataContainer="ruleFilterDc" width="100%">
+            <responsiveSteps>
+                <responsiveStep minWidth="0" columns="1"/>
+                <responsiveStep minWidth="40em" columns="2"/>
+                <responsiveStep minWidth="64em" columns="3"/>
+            </responsiveSteps>
+            <select id="dataSourceField"
+                    property="dataSource"
+                    required="true"
+                    requiredMessage="msg://dqCheckRunNewView.dataSourceRequired"
+                    label="msg://com.company.demo.entity/DqRule.dataSource"/>
+            <entityPicker id="domainField"
+                          property="domain"
+                          label="msg://com.company.demo.entity/DqRule.domain">
+                <actions>
+                    <action id="entityLookupAction" type="entity_lookup"/>
+                    <action id="entityClearAction" type="entity_clear"/>
+                </actions>
+            </entityPicker>
+            <entityPicker id="dataProductField"
+                          property="dataProduct"
+                          label="msg://com.company.demo.entity/DqRule.dataProduct">
+                <actions>
+                    <action id="entityLookupAction" type="entity_lookup"/>
+                    <action id="entityClearAction" type="entity_clear"/>
+                </actions>
+            </entityPicker>
+            <select id="dimensionField"
+                    property="dimension"
+                    emptySelectionAllowed="true"
+                    emptySelectionCaption="msg://form.select.not.selected"
+                    label="msg://com.company.demo.entity/DqRule.dimension"/>
+            <select id="severityField"
+                    property="severity"
+                    emptySelectionAllowed="true"
+                    emptySelectionCaption="msg://form.select.not.selected"
+                    label="msg://com.company.demo.entity/DqRule.severity"/>
+            <select id="ruleTypeField"
+                    property="ruleType"
+                    emptySelectionAllowed="true"
+                    emptySelectionCaption="msg://form.select.not.selected"
+                    label="msg://com.company.demo.entity/DqRule.ruleType"/>
+            <comboBox id="tableNameField"
+                      property="tableName"
+                      label="msg://com.company.demo.entity/DqRule.tableName"
+                      clearButtonVisible="true"/>
+            <comboBox id="columnNameField"
+                      property="columnName"
+                      label="msg://com.company.demo.entity/DqRule.columnName"
+                      clearButtonVisible="true"/>
+            <entityPicker id="ownerField"
+                          property="owner"
+                          label="msg://com.company.demo.entity/DqRule.owner">
+                <actions>
+                    <action id="entityLookupAction" type="entity_lookup"/>
+                    <action id="entityClearAction" type="entity_clear"/>
+                </actions>
+            </entityPicker>
+        </formLayout>
+
+        <hbox id="viewActions" width="100%" justifyContent="START">
+            <button id="cancelButton" action="closeAction"/>
+            <button id="runButton" themeNames="primary" text="msg://dqCheckRunNewView.runButton"/>
+        </hbox>
+
+        <hbox id="rulesPanel" width="100%" justifyContent="BETWEEN" padding="false" css="margin-top: 20px">
+            <h5 text="msg://rules.in.check.run"/>
+            <simplePagination id="pagination" dataLoader="dqRulesDl" itemsPerPageDefaultValue="20"/>
+        </hbox>
+
+        <dataGrid id="dqRulesDataGrid"
+                  width="100%"
+                  minHeight="20em"
+                  pageSize="20"
+                  dataContainer="dqRulesDc"
+                  columnReorderingAllowed="true">
+            <columns resizable="true">
+                <column property="name" autoWidth="true" flexGrow="0"/>
+                <column property="dataSource" autoWidth="true" flexGrow="0"/>
+                <column property="tableName" autoWidth="true" flexGrow="0"/>
+                <column property="columnName" autoWidth="true" flexGrow="0"/>
+                <column property="dimension" autoWidth="true" flexGrow="0"/>
+                <column property="ruleType" autoWidth="true" flexGrow="0"/>
+                <column property="severity" autoWidth="true" flexGrow="0"/>
+                <column property="active" autoWidth="true" flexGrow="0"/>
+                <column property="owner" autoWidth="true" flexGrow="0"/>
+                <column property="domain" autoWidth="true" flexGrow="0"/>
+                <column property="dataProduct" autoWidth="true" flexGrow="0"/>
+            </columns>
+        </dataGrid>
     </layout>
 </view>
