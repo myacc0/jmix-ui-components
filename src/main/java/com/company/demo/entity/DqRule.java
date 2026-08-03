@@ -20,7 +20,8 @@ import java.util.UUID;
 @JmixEntity
 @Table(name = "DEMO_DQ_RULE", indexes = {
         @Index(name = "IDX_DEMO_DQ_RULE_OWNER", columnList = "OWNER_ID"),
-        @Index(name = "IDX_DEMO_DQ_RULE_CATEGORY", columnList = "CATEGORY_ID")
+        @Index(name = "IDX_DEMO_DQ_RULE_DOMAIN", columnList = "DOMAIN_ID"),
+        @Index(name = "IDX_DEMO_DQ_RULE_DATA_PRODUCT", columnList = "DATA_PRODUCT_ID")
 })
 @Entity(name = "demo_DqRule")
 public class DqRule {
@@ -65,8 +66,7 @@ public class DqRule {
     @NotNull
     private String severity;
 
-    @Column(name = "ACTIVE", nullable = false, columnDefinition = "boolean default true")
-    @NotNull
+    @Column(name = "ACTIVE", columnDefinition = "boolean default true")
     private Boolean active = false;
 
     @OnDeleteInverse(DeletePolicy.UNLINK)
@@ -75,9 +75,14 @@ public class DqRule {
     private User owner;
 
     @OnDeleteInverse(DeletePolicy.UNLINK)
-    @JoinColumn(name = "CATEGORY_ID")
+    @JoinColumn(name = "DOMAIN_ID")
     @ManyToOne(fetch = FetchType.LAZY)
-    private DqRuleCategory category;
+    private DqDataDomain domain;
+
+    @OnDeleteInverse(DeletePolicy.UNLINK)
+    @JoinColumn(name = "DATA_PRODUCT_ID")
+    @ManyToOne(fetch = FetchType.LAZY)
+    private DqDataProduct dataProduct;
 
     @Column(name = "VERSION", nullable = false)
     @Version
@@ -89,6 +94,22 @@ public class DqRule {
 
     @Column(name = "UPDATED_AT", columnDefinition = "TIMESTAMP")
     private LocalDateTime updatedAt;
+
+    public DqDataProduct getDataProduct() {
+        return dataProduct;
+    }
+
+    public void setDataProduct(DqDataProduct dataProduct) {
+        this.dataProduct = dataProduct;
+    }
+
+    public DqDataDomain getDomain() {
+        return domain;
+    }
+
+    public void setDomain(DqDataDomain domain) {
+        this.domain = domain;
+    }
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
@@ -112,14 +133,6 @@ public class DqRule {
 
     public void setVersion(Integer version) {
         this.version = version;
-    }
-
-    public DqRuleCategory getCategory() {
-        return category;
-    }
-
-    public void setCategory(DqRuleCategory category) {
-        this.category = category;
     }
 
     public User getOwner() {

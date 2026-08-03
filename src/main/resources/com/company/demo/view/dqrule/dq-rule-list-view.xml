@@ -6,17 +6,18 @@
     <data>
         <collection id="dqRulesDc" class="com.company.demo.entity.DqRule">
             <fetchPlan>
-                <property name="id" />
-                <property name="name" />
-                <property name="dataSource" />
-                <property name="dimension" />
-                <property name="ruleType" />
-                <property name="severity" />
-                <property name="active" />
-                <property name="createdAt" />
-                <property name="updatedAt" />
+                <property name="id"/>
+                <property name="name"/>
+                <property name="dataSource"/>
+                <property name="dimension"/>
+                <property name="ruleType"/>
+                <property name="severity"/>
+                <property name="active"/>
+                <property name="createdAt"/>
+                <property name="updatedAt"/>
                 <property name="owner" fetchPlan="_instance_name"/>
-                <property name="category" fetchPlan="_instance_name"/>
+                <property name="domain" fetchPlan="_instance_name"/>
+                <property name="dataProduct" fetchPlan="_instance_name"/>
             </fetchPlan>
             <loader id="dqRulesDl" readOnly="true"/>
         </collection>
@@ -60,16 +61,17 @@
                 <action id="removeAction" type="list_remove"/>
             </actions>
             <columns resizable="true">
-                <column property="name" autoWidth="true"/>
-                <column property="dataSource" autoWidth="true"/>
-                <column property="dimension" autoWidth="true"/>
-                <column property="ruleType" autoWidth="true"/>
-                <column property="severity" autoWidth="true"/>
-                <column property="active" autoWidth="true"/>
-                <column property="owner" autoWidth="true"/>
-                <column property="category" autoWidth="true"/>
-                <column property="createdAt" autoWidth="true"/>
-                <column property="updatedAt" autoWidth="true"/>
+                <column property="name" autoWidth="true" flexGrow="0"/>
+                <column property="dataSource" autoWidth="true" flexGrow="0"/>
+                <column property="dimension" autoWidth="true" flexGrow="0"/>
+                <column property="ruleType" autoWidth="true" flexGrow="0"/>
+                <column property="severity" autoWidth="true" flexGrow="0"/>
+                <column property="active" autoWidth="true" flexGrow="0"/>
+                <column property="owner" autoWidth="true" flexGrow="0"/>
+                <column property="domain" autoWidth="true" flexGrow="0"/>
+                <column property="dataProduct" autoWidth="true" flexGrow="0"/>
+                <column property="createdAt" autoWidth="true" flexGrow="0"/>
+                <column property="updatedAt" autoWidth="true" flexGrow="0"/>
             </columns>
         </dataGrid>
         <hbox id="lookupActions" visible="false">

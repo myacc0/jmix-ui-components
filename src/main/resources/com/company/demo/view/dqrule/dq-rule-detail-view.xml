@@ -7,7 +7,8 @@
         <instance id="dqRuleDc" class="com.company.demo.entity.DqRule">
             <fetchPlan extends="_base">
                 <property name="owner" fetchPlan="_instance_name"/>
-                <property name="category" fetchPlan="_instance_name"/>
+                <property name="domain" fetchPlan="_instance_name"/>
+                <property name="dataProduct" fetchPlan="_instance_name"/>
             </fetchPlan>
             <loader id="dqRuleDl"/>
         </instance>
@@ -27,7 +28,6 @@
                 width="50%"
                 expandColumns="true"
                 expandFields="true">
-
             <formItem label="msg://com.company.demo.entity/DqRule.name">
                 <textField id="nameField" property="name"/>
             </formItem>
@@ -42,8 +42,16 @@
                     </actions>
                 </entityPicker>
             </formItem>
-            <formItem label="msg://com.company.demo.entity/DqRule.category">
-                <entityPicker id="categoryField" property="category">
+            <formItem label="msg://com.company.demo.entity/DqRule.domain">
+                <entityPicker id="domainField" property="domain">
+                    <actions>
+                        <action id="entityLookupAction" type="entity_lookup"/>
+                        <action id="entityClearAction" type="entity_clear"/>
+                    </actions>
+                </entityPicker>
+            </formItem>
+            <formItem label="msg://com.company.demo.entity/DqRule.dataProduct">
+                <entityPicker id="dataProductField" property="dataProduct">
                     <actions>
                         <action id="entityLookupAction" type="entity_lookup"/>
                         <action id="entityClearAction" type="entity_clear"/>
@@ -57,7 +65,7 @@
                 <select id="severityField" property="severity"/>
             </formItem>
             <formItem label="msg://com.company.demo.entity/DqRule.dataSource">
-                <select id="dataSourceField" property="dataSource" />
+                <select id="dataSourceField" property="dataSource"/>
             </formItem>
             <formItem label="msg://com.company.demo.entity/DqRule.tableName">
                 <comboBox id="tableNameField" property="tableName"/>
@@ -82,7 +90,7 @@
             <vbox id="rangeBox" visible="false" padding="false" width="100%">
                 <formLayout>
                     <responsiveSteps>
-                        <responsiveStep minWidth="0" columns="2" />
+                        <responsiveStep minWidth="0" columns="2"/>
                     </responsiveSteps>
                     <numberField id="minNumberField" label="msg://ruleConfig.min"/>
                     <datePicker id="minDateField" label="msg://ruleConfig.min"/>
@@ -90,7 +98,7 @@
                 </formLayout>
                 <formLayout>
                     <responsiveSteps>
-                        <responsiveStep minWidth="0" columns="2" />
+                        <responsiveStep minWidth="0" columns="2"/>
                     </responsiveSteps>
                     <numberField id="maxNumberField" label="msg://ruleConfig.max"/>
                     <datePicker id="maxDateField" label="msg://ruleConfig.max"/>
@@ -111,7 +119,7 @@
             <formItem label="msg://com.company.demo.entity/DqRule.ruleConfig">
                 <textArea id="ruleConfigField" property="ruleConfig" minRows="5" readOnly="true"/>
             </formItem>
-            <checkbox id="activeField" property="active" label="msg://com.company.demo.entity/DqRule.active" />
+            <checkbox id="activeField" property="active" label="msg://com.company.demo.entity/DqRule.active"/>
         </formLayout>
 
         <hbox id="detailActions" width="50%" justifyContent="CENTER">
