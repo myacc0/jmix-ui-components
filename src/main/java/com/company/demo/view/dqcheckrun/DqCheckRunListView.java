@@ -22,6 +22,10 @@ public class DqCheckRunListView extends StandardListView<DqCheckRun> {
 
     @Subscribe(id = "runCheckButton", subject = "clickListener")
     public void onRunCheckButtonClick(final ClickEvent<JmixButton> event) {
-        viewNavigators.view(this, DqCheckRunNewView.class).navigate();
+        // registers this view as the return target, so closing the new-run page comes back here
+        // instead of falling back to the parent layout
+        viewNavigators.view(this, DqCheckRunNewView.class)
+                .withBackwardNavigation(true)
+                .navigate();
     }
 }

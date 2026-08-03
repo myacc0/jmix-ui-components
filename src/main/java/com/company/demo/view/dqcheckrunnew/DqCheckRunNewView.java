@@ -62,6 +62,9 @@ public class DqCheckRunNewView extends StandardView {
     @ViewComponent
     private JmixComboBox<String> columnNameField;
 
+    @ViewComponent
+    private JmixButton runButton;
+
     /**
      * Guards against re-entrancy while the controller resets dependent filter attributes
      * (table on data source change, column on table change): those writes fire their own
@@ -105,21 +108,18 @@ public class DqCheckRunNewView extends StandardView {
         reloadRules();
     }
 
+    /**
+     * There is nothing to run while the filter yields no rules, so the button follows the grid
+     * content instead of validating on click. It starts disabled (see the descriptor) because the
+     * grid is empty until a data source is chosen.
+     */
+    @Subscribe(id = "dqRulesDc", target = Target.DATA_CONTAINER)
+    public void onDqRulesDcCollectionChange(final CollectionContainer.CollectionChangeEvent<DqRule> event) {
+        runButton.setEnabled(!event.getSource().getItems().isEmpty());
+    }
+
     @Subscribe(id = "runButton", subject = "clickListener")
     public void onRunButtonClick(final ClickEvent<JmixButton> event) {
-        DqRuleFilter filter = ruleFilterDc.getItem();
-        if (filter.getDataSource() == null) {
-            notifications.create(messageBundle.getMessage("dqCheckRunNewView.dataSourceRequired"))
-                    .withType(Notifications.Type.WARNING)
-                    .show();
-            return;
-        }
-        if (dqRulesDc.getItems().isEmpty()) {
-            notifications.create(messageBundle.getMessage("dqCheckRunNewView.noRulesToRun"))
-                    .withType(Notifications.Type.WARNING)
-                    .show();
-            return;
-        }
         // TODO: start the check run for the filtered rules once the run semantics are defined
         notifications.create(messageBundle.getMessage("dqCheckRunNewView.runNotImplemented"))
                 .withType(Notifications.Type.DEFAULT)

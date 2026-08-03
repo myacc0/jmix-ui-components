@@ -93,7 +93,7 @@
 
         <hbox id="viewActions" width="100%" justifyContent="START">
             <button id="cancelButton" action="closeAction"/>
-            <button id="runButton" themeNames="primary" text="msg://dqCheckRunNewView.runButton"/>
+            <button id="runButton" themeNames="primary" text="msg://dqCheckRunNewView.runButton" enabled="false"/>
         </hbox>
 
         <hbox id="rulesPanel" width="100%" justifyContent="BETWEEN" padding="false" css="margin-top: 20px">
