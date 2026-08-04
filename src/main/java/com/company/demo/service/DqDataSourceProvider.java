@@ -4,6 +4,7 @@ import com.company.demo.dto.SelectDto;
 import com.company.demo.enums.DqSqlDialect;
 import io.jmix.core.Messages;
 import org.springframework.core.env.Environment;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -23,6 +24,7 @@ public class DqDataSourceProvider {
     private final Messages messages;
     private final Map<String, DataSource> dataSourcesByBeanName;
     private final Map<String, DqSqlDialect> dialectCache = new ConcurrentHashMap<>();
+    private final Map<String, JdbcTemplate> jdbcTemplateCache = new ConcurrentHashMap<>();
 
     public DqDataSourceProvider(Environment env, Messages messages, Map<String, DataSource> dataSourcesByBeanName) {
         this.env = env;
@@ -105,6 +107,16 @@ public class DqDataSourceProvider {
             }
             return dialect;
         });
+    }
+
+    /**
+     * A template over a data source, for running the statements that measure a rule. Cached: a
+     * {@code JdbcTemplate} is thread-safe once configured and holds no connection of its own.
+     *
+     * @throws IllegalArgumentException when the data source is not one of the configured stores
+     */
+    public JdbcTemplate getJdbcTemplate(String dataSourceName) {
+        return jdbcTemplateCache.computeIfAbsent(dataSourceName, name -> new JdbcTemplate(resolveDataSource(name)));
     }
 
     private String normalizeIdentifier(DatabaseMetaData metaData, String identifier) throws SQLException {

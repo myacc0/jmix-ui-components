@@ -3,14 +3,18 @@ package com.company.demo.view.dqcheckrunnew;
 
 import com.company.demo.dto.DqRuleFilter;
 import com.company.demo.dto.SelectDto;
+import com.company.demo.entity.DqCheckRun;
 import com.company.demo.entity.DqRule;
+import com.company.demo.service.DqCheckExecutorService;
 import com.company.demo.service.DqDataSourceProvider;
 import com.company.demo.service.DqRuleFilterService;
+import com.company.demo.view.dqcheckrun.DqCheckRunListView;
 import com.company.demo.view.main.MainView;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.router.Route;
 import io.jmix.core.Metadata;
 import io.jmix.flowui.Notifications;
+import io.jmix.flowui.ViewNavigators;
 import io.jmix.flowui.component.combobox.JmixComboBox;
 import io.jmix.flowui.component.select.JmixSelect;
 import io.jmix.flowui.kit.component.button.JmixButton;
@@ -39,7 +43,13 @@ public class DqCheckRunNewView extends StandardView {
     private DqRuleFilterService ruleFilterService;
 
     @Autowired
+    private DqCheckExecutorService checkExecutorService;
+
+    @Autowired
     private Notifications notifications;
+
+    @Autowired
+    private ViewNavigators viewNavigators;
 
     @ViewComponent
     private MessageBundle messageBundle;
@@ -118,12 +128,27 @@ public class DqCheckRunNewView extends StandardView {
         runButton.setEnabled(!event.getSource().getItems().isEmpty());
     }
 
+    /**
+     * Starts the check run and leaves for the run list: the run is executed in the background, so
+     * there is nothing further to do on this page and its outcome shows up in the list.
+     */
     @Subscribe(id = "runButton", subject = "clickListener")
     public void onRunButtonClick(final ClickEvent<JmixButton> event) {
-        // TODO: start the check run for the filtered rules once the run semantics are defined
-        notifications.create(messageBundle.getMessage("dqCheckRunNewView.runNotImplemented"))
-                .withType(Notifications.Type.DEFAULT)
+        DqCheckRun checkRun;
+        try {
+            checkRun = checkExecutorService.startCheckRun(ruleFilterDc.getItem());
+        } catch (RuntimeException e) {
+            notifications.create(messageBundle.getMessage("dqCheckRunNewView.runFailed"), e.getMessage())
+                    .withType(Notifications.Type.ERROR)
+                    .show();
+            return;
+        }
+
+        notifications.create(messageBundle.formatMessage("dqCheckRunNewView.runStarted", checkRun.getRulesTotal()))
+                .withType(Notifications.Type.SUCCESS)
                 .show();
+
+        viewNavigators.view(this, DqCheckRunListView.class).navigate();
     }
 
     /**

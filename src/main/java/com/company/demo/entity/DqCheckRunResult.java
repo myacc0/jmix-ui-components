@@ -1,6 +1,7 @@
 package com.company.demo.entity;
 
 import com.company.demo.enums.DqCheckResultStatus;
+import com.company.demo.utils.JsonbStringConverter;
 import io.jmix.core.DeletePolicy;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
 import io.jmix.core.entity.annotation.OnDeleteInverse;
@@ -8,6 +9,8 @@ import io.jmix.core.metamodel.annotation.JmixEntity;
 import io.jmix.core.metamodel.annotation.NumberFormat;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import org.eclipse.persistence.annotations.Convert;
+import org.eclipse.persistence.annotations.Converter;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -58,6 +61,8 @@ public class DqCheckRunResult {
     private Long executionMs;
 
     @Column(name = "SAMPLE_VIOLATIONS", columnDefinition = "jsonb")
+    @Converter(name = "sampleViolationsJsonbConverter", converterClass = JsonbStringConverter.class)
+    @Convert("sampleViolationsJsonbConverter")
     private String sampleViolations;
 
     @Column(name = "ERROR_MESSAGE", columnDefinition = "text")
