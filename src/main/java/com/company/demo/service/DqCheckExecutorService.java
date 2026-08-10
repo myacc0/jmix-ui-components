@@ -400,11 +400,11 @@ public class DqCheckExecutorService {
         DqRule rule = result.getRule();
         DqIssue issue = dataManager.load(DqIssue.class)
                 .query("select i from demo_DqIssue i" +
-                        " where i.rule = :rule and i.dataSource = :dataSource and i.status in :statuses" +
+                        " where i.rule = :rule and i.dataSource = :dataSource and i.status = :status" +
                         " order by i.createdAt desc")
                 .parameter("rule", rule)
                 .parameter("dataSource", rule.getDataSource())
-                .parameter("statuses", List.of(DqIssueStatus.OPEN.getId(), DqIssueStatus.IN_PROGRESS.getId()))
+                .parameter("status", DqIssueStatus.OPEN.getId())
                 .maxResults(1)
                 .optional()
                 .orElseGet(() -> newIssue(rule));

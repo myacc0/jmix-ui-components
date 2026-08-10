@@ -35,6 +35,7 @@
         <hbox id="buttonsPanel" classNames="buttons-panel">
             <startSlot>
                 <button id="readButton" action="dqIssuesDataGrid.readAction"/>
+                <button id="setAssigneeButton" action="dqIssuesDataGrid.setAssigneeAction"/>
             </startSlot>
             <endSlot>
                 <simplePagination id="pagination" dataLoader="dqIssuesDl"/>
@@ -47,6 +48,11 @@
                   columnReorderingAllowed="true">
             <actions>
                 <action id="readAction" type="list_read"/>
+                <!-- itemTracking: enabled only while a row is selected -->
+                <action id="setAssigneeAction"
+                        type="list_itemTracking"
+                        text="msg://dqIssueListView.setAssigneeAction"
+                        icon="vaadin:user"/>
             </actions>
             <columns resizable="true">
                 <column property="rule" autoWidth="true" flexGrow="0"/>
@@ -54,13 +60,11 @@
                 <column property="status" autoWidth="true" flexGrow="0"/>
                 <column property="severity" autoWidth="true" flexGrow="0"/>
                 <column property="title" autoWidth="true" flexGrow="0"/>
-                <column property="description" autoWidth="true" flexGrow="0"/>
                 <column property="assigneName" autoWidth="true" flexGrow="0"/>
                 <column property="assigneeEmail" autoWidth="true" flexGrow="0"/>
                 <column property="assigneePhone" autoWidth="true" flexGrow="0"/>
                 <column property="dueDate" autoWidth="true" flexGrow="0"/>
                 <column property="resolvedAt" autoWidth="true" flexGrow="0"/>
-                <column property="resolutionNotes" autoWidth="true" flexGrow="0"/>
                 <column property="affectedRows" autoWidth="true" flexGrow="0"/>
                 <column property="createdAt" autoWidth="true" flexGrow="0"/>
                 <column property="updatedAt" autoWidth="true" flexGrow="0"/>

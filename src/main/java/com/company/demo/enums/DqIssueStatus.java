@@ -7,7 +7,6 @@ import org.springframework.lang.Nullable;
 public enum DqIssueStatus implements EnumClass<String> {
 
     OPEN("open"),
-    IN_PROGRESS("in_progress"),
     RESOLVED("resolved"),
     WONTFIX("wontfix"),
     FALSE_POSITIVE("false_positive");
