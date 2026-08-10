@@ -59,6 +59,9 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
     @Autowired
     private DqRuleValidator ruleValidator;
 
+    @Autowired
+    private DqRuleService ruleService;
+
     @ViewComponent
     private JmixSelect<String> dataSourceField;
 
@@ -311,6 +314,12 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
             errors.add(resolveComponent(error.field()), error.message());
         }
         event.addErrors(errors);
+    }
+
+    /** The owner is not asked for: a new rule belongs to whoever is creating it. */
+    @Subscribe
+    public void onBeforeSave(final BeforeSaveEvent event) {
+        ruleService.assignOwner(getEditedEntity());
     }
 
     /**

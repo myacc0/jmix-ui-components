@@ -3,6 +3,7 @@ package com.company.demo.dq;
 import com.company.demo.DemoApplication;
 import com.company.demo.entity.DqDataDomain;
 import com.company.demo.entity.DqRule;
+import com.company.demo.entity.User;
 import com.company.demo.enums.DqDimension;
 import com.company.demo.enums.DqRuleType;
 import com.company.demo.enums.DqSeverity;
@@ -10,8 +11,10 @@ import com.company.demo.service.DqRuleValidator;
 import com.company.demo.test_support.AuthenticatedAsAdmin;
 import com.company.demo.view.dqrule.DqRuleDetailView;
 import io.jmix.core.DataManager;
+import io.jmix.core.FetchPlan;
 import io.jmix.flowui.ViewNavigators;
 import io.jmix.flowui.component.textfield.JmixNumberField;
+import io.jmix.flowui.kit.component.button.JmixButton;
 import io.jmix.flowui.testassist.FlowuiTestAssistConfiguration;
 import io.jmix.flowui.testassist.UiTest;
 import io.jmix.flowui.testassist.UiTestUtils;
@@ -27,7 +30,11 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * The sample size accepted by the rule editor. The bounds are enforced twice — the input refuses to
@@ -98,6 +105,53 @@ public class DqRuleDetailUiTest {
         assertTrue(UiTestUtils.validateView(detailView).isEmpty(), "1 is the bottom of the range");
     }
 
+    /** The form no longer asks for an owner; saving stamps the session user on an unowned rule. */
+    @Test
+    void savingAnUnownedRuleGivesItToTheCurrentUser() {
+        assertNull(rule.getOwner(), "the rule starts without an owner");
+
+        DqRuleDetailView detailView = openDetailView();
+        assertThrows(IllegalArgumentException.class,
+                () -> UiTestUtils.getComponent(detailView, "ownerField"),
+                "the owner is not part of the form any more");
+
+        JmixButton saveAndCloseButton = UiTestUtils.getComponent(detailView, "saveAndCloseButton");
+        saveAndCloseButton.click();
+
+        DqRule stored = dataManager.load(DqRule.class)
+                .id(rule.getId())
+                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE).add("owner", FetchPlan.BASE))
+                .one();
+        assertNotNull(stored.getOwner(), "saving assigns an owner");
+        assertEquals("admin", stored.getOwner().getUsername());
+    }
+
+    /** An owner already on the rule is left alone: editing does not transfer it. */
+    @Test
+    void savingAnOwnedRuleKeepsItsOwner() {
+        User otherOwner = dataManager.load(User.class)
+                .query("select u from demo_User u where u.username <> :username")
+                .parameter("username", "admin")
+                .fetchPlan(FetchPlan.BASE)
+                .maxResults(1)
+                .optional()
+                .orElse(null);
+        assumeTrue(otherOwner != null, "needs a second user to prove the owner is not overwritten");
+
+        rule.setOwner(otherOwner);
+        rule = dataManager.save(rule);
+
+        DqRuleDetailView detailView = openDetailView();
+        JmixButton saveAndCloseButton = UiTestUtils.getComponent(detailView, "saveAndCloseButton");
+        saveAndCloseButton.click();
+
+        DqRule stored = dataManager.load(DqRule.class)
+                .id(rule.getId())
+                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE).add("owner", FetchPlan.BASE))
+                .one();
+        assertEquals(otherOwner.getUsername(), stored.getOwner().getUsername());
+    }
+
     /** A rule whose config never mentioned a sample size still opens the editor with one. */
     @Test
     void sampleSizeFallsBackToTheDefaultWhenTheConfigHasNone() {
@@ -122,7 +176,8 @@ public class DqRuleDetailUiTest {
 
     @AfterEach
     void tearDown() {
-        dataManager.remove(rule);
+        // the view saves through its own data context, so the instance held here may be a version behind
+        dataManager.load(DqRule.class).id(rule.getId()).optional().ifPresent(dataManager::remove);
         dataManager.remove(domain);
     }
 }

@@ -34,14 +34,6 @@
             <formItem label="msg://com.company.demo.entity/DqRule.description">
                 <textArea id="descriptionField" property="description" minRows="5"/>
             </formItem>
-            <formItem label="msg://com.company.demo.entity/DqRule.owner">
-                <entityPicker id="ownerField" property="owner">
-                    <actions>
-                        <action id="entityLookupAction" type="entity_lookup"/>
-                        <action id="entityClearAction" type="entity_clear"/>
-                    </actions>
-                </entityPicker>
-            </formItem>
             <formItem label="msg://com.company.demo.entity/DqRule.domain">
                 <entityPicker id="domainField" property="domain">
                     <actions>
