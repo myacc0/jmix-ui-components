@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://dqIssueDetailView.title"
+      focusComponent="form">
+    <data>
+        <instance id="dqIssueDc"
+                  class="com.company.demo.entity.DqIssue">
+            <fetchPlan extends="_base">
+                <property name="rule" fetchPlan="_instance_name"/>
+            </fetchPlan>
+            <loader id="dqIssueDl"/>
+        </instance>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+    </facets>
+    <actions>
+        <action id="closeAction" type="detail_close"/>
+    </actions>
+    <layout>
+        <formLayout id="form" dataContainer="dqIssueDc" width="60%">
+            <responsiveSteps>
+                <responsiveStep minWidth="0" columns="1"/>
+            </responsiveSteps>
+            <entityPicker id="ruleField" property="rule">
+                <actions>
+                    <action id="entityLookupAction" type="entity_lookup"/>
+                    <action id="entityClearAction" type="entity_clear"/>
+                </actions>
+            </entityPicker>
+            <textField id="dataSourceField" property="dataSource"/>
+            <select id="statusField" property="status"/>
+            <select id="severityField" property="severity"/>
+            <textField id="titleField" property="title"/>
+            <textArea id="descriptionField" property="description" minRows="5"/>
+            <textField id="assigneNameField" property="assigneName"/>
+            <textField id="assigneeEmailField" property="assigneeEmail"/>
+            <textField id="assigneePhoneField" property="assigneePhone"/>
+            <datePicker id="dueDateField" property="dueDate"/>
+            <dateTimePicker id="resolvedAtField" property="resolvedAt"/>
+            <textArea id="resolutionNotesField" property="resolutionNotes" minRows="5"/>
+            <textField id="affectedRowsField" property="affectedRows"/>
+            <dateTimePicker id="createdAtField" property="createdAt"/>
+            <dateTimePicker id="updatedAtField" property="updatedAt"/>
+        </formLayout>
+        <hbox id="detailActions" width="60%" justifyContent="CENTER">
+            <button id="closeButton" action="closeAction"/>
+        </hbox>
+    </layout>
+</view>

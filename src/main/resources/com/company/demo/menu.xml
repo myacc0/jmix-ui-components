@@ -17,5 +17,6 @@
               title="msg://com.company.demo.view.dqdataproduct/dqDataProductListView.title"/>
         <item view="demo_DqRule.list" title="msg://com.company.demo.view.dqrule/dqRuleListView.title"/>
         <item view="demo_DqCheckRun.list" title="msg://com.company.demo.view.dqcheckrun/dqCheckRunListView.title"/>
+        <item view="demo_DqIssue.list" title="msg://com.company.demo.view.dqissue/dqIssueListView.title"/>
     </menu>
 </menu-config>

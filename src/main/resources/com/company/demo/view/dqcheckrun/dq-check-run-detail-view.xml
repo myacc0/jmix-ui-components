@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://dqCheckRunDetailView.title"
+      focusComponent="form">
+    <data>
+        <instance id="dqCheckRunDc"
+                  class="com.company.demo.entity.DqCheckRun">
+            <fetchPlan extends="_base"/>
+            <loader id="dqCheckRunDl"/>
+        </instance>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+    </facets>
+    <actions>
+        <action id="closeAction" type="detail_close"/>
+    </actions>
+    <layout>
+        <formLayout id="form" dataContainer="dqCheckRunDc" width="60%">
+            <responsiveSteps>
+                <responsiveStep minWidth="0" columns="1"/>
+            </responsiveSteps>
+            <textField id="dataSourceField" property="dataSource"/>
+            <textField id="triggeredUsernameField" property="triggeredUsername"/>
+            <dateTimePicker id="startedAtField" property="startedAt"/>
+            <dateTimePicker id="finishedAtField" property="finishedAt"/>
+            <select id="statusField" property="status"/>
+            <textField id="rulesTotalField" property="rulesTotal"/>
+            <textField id="rulesPassedField" property="rulesPassed"/>
+            <textField id="rulesFailedField" property="rulesFailed"/>
+            <textField id="rulesSkippedField" property="rulesSkipped"/>
+            <textField id="dqScoreField" property="dqScore"/>
+            <textArea id="errorMessageField" property="errorMessage" minRows="5"/>
+        </formLayout>
+        <hbox id="detailActions" width="60%" justifyContent="CENTER">
+            <button id="closeButton" action="closeAction"/>
+        </hbox>
+    </layout>
+</view>

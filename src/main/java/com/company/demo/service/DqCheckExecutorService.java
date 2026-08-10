@@ -8,18 +8,13 @@ import com.company.demo.entity.DqCheckRun;
 import com.company.demo.entity.DqCheckRunResult;
 import com.company.demo.entity.DqIssue;
 import com.company.demo.entity.DqRule;
-import com.company.demo.entity.User;
 import com.company.demo.enums.DqCheckResultStatus;
 import com.company.demo.enums.DqCheckRunStatus;
 import com.company.demo.enums.DqIssueStatus;
 import com.company.demo.enums.DqRuleType;
 import com.company.demo.utils.JsonUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.jmix.core.DataManager;
-import io.jmix.core.EntitySet;
-import io.jmix.core.FetchPlan;
-import io.jmix.core.Messages;
-import io.jmix.core.Sort;
+import io.jmix.core.*;
 import io.jmix.core.security.CurrentAuthentication;
 import io.jmix.core.security.SystemAuthenticator;
 import org.slf4j.Logger;
@@ -38,11 +33,7 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.sql.ResultSetMetaData;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Runs a data quality check: takes the rule filter of the "run check" page, records a
@@ -433,12 +424,6 @@ public class DqCheckExecutorService {
         issue.setDataSource(rule.getDataSource());
         issue.setStatus(DqIssueStatus.OPEN);
         issue.setCreatedAt(LocalDateTime.now());
-
-        User owner = rule.getOwner();
-        if (owner != null) {
-            issue.setAssigneName(owner.getDisplayName());
-            issue.setAssigneeEmail(owner.getEmail());
-        }
         return issue;
     }
 
