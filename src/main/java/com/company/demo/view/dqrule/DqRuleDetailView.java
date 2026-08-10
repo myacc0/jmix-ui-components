@@ -119,6 +119,11 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
 
     @Subscribe
     public void onInit(final InitEvent event) {
+        // the same bounds the validator enforces, so the field cannot offer a value it would reject
+        sampleSizeField.setMin(DqRuleValidator.MIN_SAMPLE_SIZE);
+        sampleSizeField.setMax(DqRuleValidator.MAX_SAMPLE_SIZE);
+        sampleSizeField.setStep(1);
+
         List<SelectDto> dataSources = dataSourceProvider.getDataSourceList();
         dataSourceField.setItems(dataSources.stream().map(SelectDto::getId).collect(Collectors.toList()));
         dataSourceField.setItemLabelGenerator(id -> dataSources.stream()
@@ -232,7 +237,9 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         Double threshold = config != null ? config.getThreshold() : null;
         thresholdField.setValue(threshold != null ? (int) Math.round(threshold) : 100);
         Integer sampleSize = config != null ? config.getSampleSize() : null;
-        sampleSizeField.setValue(sampleSize != null ? sampleSize.doubleValue() : null);
+        sampleSizeField.setValue(sampleSize != null
+                ? sampleSize.doubleValue()
+                : (double) DqRuleValidator.DEFAULT_SAMPLE_SIZE);
 
         if (config == null || type == null) {
             return;

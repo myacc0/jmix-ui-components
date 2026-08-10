@@ -32,6 +32,11 @@ public class DqRuleValidator {
     private static final int MIN_THRESHOLD = 0;
     private static final int MAX_THRESHOLD = 100;
 
+    /** The accepted sample size, also used by the editor to bound its input. */
+    public static final int MIN_SAMPLE_SIZE = 1;
+    public static final int MAX_SAMPLE_SIZE = 100;
+    public static final int DEFAULT_SAMPLE_SIZE = 10;
+
     private final Messages messages;
     private final ObjectMapper objectMapper;
 
@@ -100,8 +105,9 @@ public class DqRuleValidator {
         }
 
         Integer sampleSize = config.getSampleSize();
-        if (sampleSize != null && sampleSize < 1) {
-            errors.add(error(FIELD_SAMPLE_SIZE, "dqRuleValidation.sampleSizeNotPositive"));
+        if (sampleSize != null && (sampleSize < MIN_SAMPLE_SIZE || sampleSize > MAX_SAMPLE_SIZE)) {
+            errors.add(formatError(FIELD_SAMPLE_SIZE, "dqRuleValidation.sampleSizeOutOfRange",
+                    MIN_SAMPLE_SIZE, MAX_SAMPLE_SIZE));
         }
     }
 
