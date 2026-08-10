@@ -36,6 +36,7 @@
             <startSlot>
                 <button id="readButton" action="dqIssuesDataGrid.readAction"/>
                 <button id="setAssigneeButton" action="dqIssuesDataGrid.setAssigneeAction"/>
+                <button id="closeIssueButton" action="dqIssuesDataGrid.closeIssueAction"/>
             </startSlot>
             <endSlot>
                 <simplePagination id="pagination" dataLoader="dqIssuesDl"/>
@@ -53,6 +54,10 @@
                         type="list_itemTracking"
                         text="msg://dqIssueListView.setAssigneeAction"
                         icon="vaadin:user"/>
+                <action id="closeIssueAction"
+                        type="list_itemTracking"
+                        text="msg://dqIssueListView.closeIssueAction"
+                        icon="vaadin:check"/>
             </actions>
             <columns resizable="true">
                 <column property="rule" autoWidth="true" flexGrow="0"/>

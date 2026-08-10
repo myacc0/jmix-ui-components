@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://dqIssueCloseView.title"
+      focusComponent="form">
+    <data>
+        <instance id="dqIssueDc"
+                  class="com.company.demo.entity.DqIssue">
+            <fetchPlan extends="_base">
+                <property name="rule" fetchPlan="_instance_name"/>
+            </fetchPlan>
+            <loader id="dqIssueDl"/>
+        </instance>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+    </facets>
+    <actions>
+        <action id="saveAction" type="detail_saveClose" text="msg://dqIssueCloseView.saveButton"/>
+        <action id="closeAction" type="detail_close" text="msg://dqIssueCloseView.cancelButton"/>
+    </actions>
+    <layout>
+        <formLayout id="form" dataContainer="dqIssueDc" width="100%">
+            <responsiveSteps>
+                <responsiveStep minWidth="0" columns="1"/>
+            </responsiveSteps>
+            <!-- the outcomes are narrowed to the closing ones in the controller -->
+            <select id="statusField"
+                    property="status"
+                    required="true"
+                    requiredMessage="msg://dqIssueCloseView.statusRequired"/>
+            <textArea id="resolutionNotesField" property="resolutionNotes" minRows="5"/>
+        </formLayout>
+        <hbox id="detailActions" width="100%" justifyContent="START">
+            <button id="saveButton" action="saveAction" themeNames="primary"/>
+            <button id="cancelButton" action="closeAction"/>
+        </hbox>
+    </layout>
+</view>

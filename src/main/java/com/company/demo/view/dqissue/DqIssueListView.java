@@ -52,4 +52,29 @@ public class DqIssueListView extends StandardListView<DqIssue> {
                 })
                 .open();
     }
+
+    /** Only an open issue can be closed; a closed one has an outcome already. */
+    @Install(to = "dqIssuesDataGrid.closeIssueAction", subject = "enabledRule")
+    private boolean closeIssueActionEnabledRule() {
+        DqIssue issue = dqIssuesDataGrid.getSingleSelectedItem();
+        return issue != null && issue.getStatus() == DqIssueStatus.OPEN;
+    }
+
+    @Subscribe("dqIssuesDataGrid.closeIssueAction")
+    public void onDqIssuesDataGridCloseIssue(final ActionPerformedEvent event) {
+        DqIssue issue = dqIssuesDataGrid.getSingleSelectedItem();
+        if (issue == null || issue.getStatus() != DqIssueStatus.OPEN) {
+            return;
+        }
+
+        dialogWindows.detail(this, DqIssue.class)
+                .editEntity(issue)
+                .withViewClass(DqIssueCloseView.class)
+                .withAfterCloseListener(closeEvent -> {
+                    if (closeEvent.closedWith(StandardOutcome.SAVE)) {
+                        dqIssuesDl.load();
+                    }
+                })
+                .open();
+    }
 }
