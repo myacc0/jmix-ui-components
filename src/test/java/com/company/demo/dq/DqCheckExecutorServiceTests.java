@@ -80,7 +80,7 @@ public class DqCheckExecutorServiceTests {
         // "name" is a NOT NULL column, so no row can violate the rule
         passingRule = createRule("passing", DqRuleType.NOT_NULL, "name", "{}");
         // the domain created above has no parent, so this rule always finds a violation
-        failingRule = createRule("failing", DqRuleType.NOT_NULL, "parent_id", "{\"rowsLimit\": 5}");
+        failingRule = createRule("failing", DqRuleType.NOT_NULL, "parent_id", "{\"sampleSize\": 5}");
         // the query builder does not translate this type yet
         unsupportedRule = createRule("unsupported", DqRuleType.CUSTOM_SQL, "name",
                 "{\"sql\": \"select 1\"}");
@@ -129,7 +129,7 @@ public class DqCheckExecutorServiceTests {
         JsonNode samples = readSamples(failed);
         assertTrue(samples.isArray());
         assertTrue(samples.size() > 0);
-        assertTrue(samples.size() <= 5, "rowsLimit of the rule configuration caps the samples");
+        assertTrue(samples.size() <= 5, "sampleSize of the rule configuration caps the samples");
 
         DqCheckRunResult skipped = resultOf(results, unsupportedRule);
         assertEquals(DqCheckResultStatus.SKIPPED, skipped.getStatus());

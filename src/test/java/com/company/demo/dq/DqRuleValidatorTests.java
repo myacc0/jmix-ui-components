@@ -71,9 +71,9 @@ public class DqRuleValidatorTests {
     }
 
     @Test
-    void nonPositiveRowsLimitIsRejected() {
-        assertEquals(List.of(FIELD_ROWS_LIMIT), fields(rule(DqRuleType.NOT_NULL, "{\"rowsLimit\": 0}")));
-        assertTrue(fields(rule(DqRuleType.NOT_NULL, "{\"rowsLimit\": 1}")).isEmpty());
+    void nonPositiveSampleSizeIsRejected() {
+        assertEquals(List.of(FIELD_SAMPLE_SIZE), fields(rule(DqRuleType.NOT_NULL, "{\"sampleSize\": 0}")));
+        assertTrue(fields(rule(DqRuleType.NOT_NULL, "{\"sampleSize\": 1}")).isEmpty());
     }
 
     // ----- NOT_NULL / UNIQUENESS -----

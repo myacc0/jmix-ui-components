@@ -18,7 +18,7 @@ public record DqRuleValidationError(@Nullable String field, String message) {
     public static final String FIELD_RULE_CONFIG = "ruleConfig";
     public static final String FIELD_RULE_TYPE = "ruleType";
     public static final String FIELD_THRESHOLD = "threshold";
-    public static final String FIELD_ROWS_LIMIT = "rowsLimit";
+    public static final String FIELD_SAMPLE_SIZE = "sampleSize";
     public static final String FIELD_MIN = "min";
     public static final String FIELD_MAX = "max";
     public static final String FIELD_REGEXP = "regexp";

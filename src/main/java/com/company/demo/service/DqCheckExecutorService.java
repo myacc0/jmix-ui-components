@@ -60,7 +60,7 @@ public class DqCheckExecutorService {
     public static final double DEFAULT_THRESHOLD = 100d;
 
     /**
-     * Hard cap on the sample rows kept for one result, applied on top of {@code ruleConfig.rowsLimit}:
+     * Hard cap on the sample rows kept for one result, applied on top of {@code ruleConfig.sampleSize}:
      * the limit is optional in the configuration, and an unlimited samples query against a large
      * table would otherwise be read into memory in full.
      */

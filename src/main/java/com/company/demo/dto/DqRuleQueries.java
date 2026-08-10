@@ -7,7 +7,7 @@ import org.springframework.lang.Nullable;
  *
  * @param metrics one row with the {@code total_count} and {@code failed_count} columns, feeding
  *                {@code DqCheckRunResult.totalRecords} / {@code failedRecords} / {@code passRate}
- * @param samples the violating rows, capped by {@code ruleConfig.rowsLimit}, feeding
+ * @param samples the violating rows, capped by {@code ruleConfig.sampleSize}, feeding
  *                {@code DqCheckRunResult.sampleViolations}; {@code null} when the rule type cannot
  *                point at individual rows
  */

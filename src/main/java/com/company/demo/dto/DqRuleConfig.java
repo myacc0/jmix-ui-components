@@ -9,7 +9,7 @@ public class DqRuleConfig {
     // threshold default 100%
     private Double threshold;
     // if null, all selected
-    private Integer rowsLimit;
+    private Integer sampleSize;
 
     // ----- RANGE (number or date) -----
     // For RANGE_NUMBER holds a numeric bound; for RANGE_DATE holds an ISO-8601 date string.
@@ -45,12 +45,12 @@ public class DqRuleConfig {
         this.threshold = threshold;
     }
 
-    public Integer getRowsLimit() {
-        return rowsLimit;
+    public Integer getSampleSize() {
+        return sampleSize;
     }
 
-    public void setRowsLimit(Integer rowsLimit) {
-        this.rowsLimit = rowsLimit;
+    public void setSampleSize(Integer sampleSize) {
+        this.sampleSize = sampleSize;
     }
 
     public Object getMin() {
@@ -169,7 +169,7 @@ public class DqRuleConfig {
     public String toString() {
         return "DqRuleConfig{" +
                 "threshold=" + threshold +
-                ", thresholdSampleSize=" + rowsLimit +
+                ", sampleSize=" + sampleSize +
                 ", min=" + min +
                 ", max=" + max +
                 ", minIncluded=" + minIncluded +

@@ -31,7 +31,7 @@ import java.util.regex.Pattern;
  * <ul>
  *     <li>a <b>metrics</b> query returning {@value #COLUMN_TOTAL_COUNT} and
  *     {@value #COLUMN_FAILED_COUNT} in a single row;</li>
- *     <li>a <b>samples</b> query returning the violating rows, capped by {@code ruleConfig.rowsLimit}
+ *     <li>a <b>samples</b> query returning the violating rows, capped by {@code ruleConfig.sampleSize}
  *     (no cap when it is not set).</li>
  * </ul>
  * The {@code threshold} attribute is deliberately not part of the SQL: it compares against the pass
@@ -223,9 +223,9 @@ public class DqSqlQueryBuilder {
         if (orderByColumn != null) {
             samples.append(" ORDER BY ").append(orderByColumn);
         }
-        Integer rowsLimit = config.getRowsLimit();
-        if (rowsLimit != null && rowsLimit > 0) {
-            samples.append(' ').append(dialect.limitClause(rowsLimit));
+        Integer sampleSize = config.getSampleSize();
+        if (sampleSize != null && sampleSize > 0) {
+            samples.append(' ').append(dialect.limitClause(sampleSize));
         }
 
         return new DqRuleQueries(

@@ -97,7 +97,7 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
     @ViewComponent
     private Slider thresholdField;
     @ViewComponent
-    private JmixNumberField rowsLimitField;
+    private JmixNumberField sampleSizeField;
 
     /**
      * Guards against feedback loops while the controller sets field values
@@ -177,7 +177,7 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         maxIncludedField.addValueChangeListener(e -> onDynamicFieldChange());
         regexpField.addValueChangeListener(e -> onDynamicFieldChange());
         thresholdField.addValueChangeListener(e -> onDynamicFieldChange());
-        rowsLimitField.addValueChangeListener(e -> onDynamicFieldChange());
+        sampleSizeField.addValueChangeListener(e -> onDynamicFieldChange());
     }
 
     @Subscribe
@@ -231,8 +231,8 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         // Always-visible config fields, independent of rule type.
         Double threshold = config != null ? config.getThreshold() : null;
         thresholdField.setValue(threshold != null ? (int) Math.round(threshold) : 100);
-        Integer rowsLimit = config != null ? config.getRowsLimit() : null;
-        rowsLimitField.setValue(rowsLimit != null ? rowsLimit.doubleValue() : null);
+        Integer sampleSize = config != null ? config.getSampleSize() : null;
+        sampleSizeField.setValue(sampleSize != null ? sampleSize.doubleValue() : null);
 
         if (config == null || type == null) {
             return;
@@ -284,8 +284,8 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         }
         // Always-visible config fields, independent of rule type.
         config.setThreshold(thresholdField.getValue() != null ? thresholdField.getValue().doubleValue() : null);
-        Double rowsLimit = rowsLimitField.getValue();
-        config.setRowsLimit(rowsLimit != null ? (int) Math.round(rowsLimit) : null);
+        Double sampleSize = sampleSizeField.getValue();
+        config.setSampleSize(sampleSize != null ? (int) Math.round(sampleSize) : null);
         try {
             getEditedEntity().setRuleConfig(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(config));
         } catch (JsonProcessingException e) {
@@ -321,7 +321,7 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
             case DqRuleValidationError.FIELD_COLUMN_NAME -> columnNameField;
             case DqRuleValidationError.FIELD_RULE_TYPE -> ruleTypeField;
             case DqRuleValidationError.FIELD_THRESHOLD -> thresholdField;
-            case DqRuleValidationError.FIELD_ROWS_LIMIT -> rowsLimitField;
+            case DqRuleValidationError.FIELD_SAMPLE_SIZE -> sampleSizeField;
             case DqRuleValidationError.FIELD_REGEXP -> regexpField;
             case DqRuleValidationError.FIELD_MIN -> rangeDate ? minDateField : minNumberField;
             case DqRuleValidationError.FIELD_MAX -> rangeDate ? maxDateField : maxNumberField;

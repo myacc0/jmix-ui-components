@@ -9,6 +9,7 @@ import com.company.demo.test_support.AuthenticatedAsAdmin;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import freemarker.template.ObjectWrapper;
 import io.jmix.core.DataManager;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -89,22 +90,22 @@ public class DqSqlQueryBuilderTests {
     // ----- row limit, per dialect -----
 
     @Test
-    void rowsLimitIsRenderedInPostgresSyntax() {
-        DqRuleQueries queries = build(rule(DqRuleType.NOT_NULL, "{\"rowsLimit\": 25}"), DqSqlDialect.POSTGRESQL);
+    void sampleSizeIsRenderedInPostgresSyntax() {
+        DqRuleQueries queries = build(rule(DqRuleType.NOT_NULL, "{\"sampleSize\": 25}"), DqSqlDialect.POSTGRESQL);
         assertTrue(queries.samples().sql().endsWith(" LIMIT 25"), queries.samples().sql());
     }
 
     @Test
-    void rowsLimitIsRenderedInMysqlSyntaxWithBacktickQuoting() {
-        DqRuleQueries queries = build(rule(DqRuleType.NOT_NULL, "{\"rowsLimit\": 25}"), DqSqlDialect.MYSQL);
+    void sampleSizeIsRenderedInMysqlSyntaxWithBacktickQuoting() {
+        DqRuleQueries queries = build(rule(DqRuleType.NOT_NULL, "{\"sampleSize\": 25}"), DqSqlDialect.MYSQL);
 
         assertEquals("SELECT t.* FROM `employee` t WHERE (t.`first_name` IS NULL) LIMIT 25",
                 queries.samples().sql());
     }
 
     @Test
-    void rowsLimitIsRenderedInOracleSyntax() {
-        DqRuleQueries queries = build(rule(DqRuleType.NOT_NULL, "{\"rowsLimit\": 25}"), DqSqlDialect.ORACLE);
+    void sampleSizeIsRenderedInOracleSyntax() {
+        DqRuleQueries queries = build(rule(DqRuleType.NOT_NULL, "{\"sampleSize\": 25}"), DqSqlDialect.ORACLE);
 
         assertEquals("SELECT t.* FROM \"employee\" t WHERE (t.\"first_name\" IS NULL)" +
                 " FETCH FIRST 25 ROWS ONLY", queries.samples().sql());
@@ -112,7 +113,7 @@ public class DqSqlQueryBuilderTests {
 
     @ParameterizedTest
     @EnumSource(DqSqlDialect.class)
-    void missingRowsLimitLeavesTheSamplesUncapped(DqSqlDialect dialect) {
+    void missingSampleSizeLeavesTheSamplesUncapped(DqSqlDialect dialect) {
         DqRuleQueries queries = build(rule(DqRuleType.NOT_NULL, "{}"), dialect);
 
         String sql = queries.samples().sql();
@@ -311,6 +312,8 @@ public class DqSqlQueryBuilderTests {
         assertNull(DqSqlDialect.fromProductName("HSQL Database Engine"));
     }
 
+    // pass actual rule ID for test work properly
+    @Disabled
     @ParameterizedTest
     @CsvSource({"019fb34d-8d41-7193-bd9d-e6dd7510220b", "019fb361-5dc9-7d85-a2f8-85ef2a4f70af"})
     void print_dqRule(String id) throws IOException {

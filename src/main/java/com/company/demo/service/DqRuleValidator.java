@@ -99,9 +99,9 @@ public class DqRuleValidator {
                     MIN_THRESHOLD, MAX_THRESHOLD));
         }
 
-        Integer rowsLimit = config.getRowsLimit();
-        if (rowsLimit != null && rowsLimit < 1) {
-            errors.add(error(FIELD_ROWS_LIMIT, "dqRuleValidation.rowsLimitNotPositive"));
+        Integer sampleSize = config.getSampleSize();
+        if (sampleSize != null && sampleSize < 1) {
+            errors.add(error(FIELD_SAMPLE_SIZE, "dqRuleValidation.sampleSizeNotPositive"));
         }
     }
 
