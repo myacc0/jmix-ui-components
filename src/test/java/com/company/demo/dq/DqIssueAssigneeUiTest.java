@@ -38,6 +38,8 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -111,6 +113,9 @@ public class DqIssueAssigneeUiTest {
 
     @Test
     void setAssigneeButtonStoresTheAssigneeOnTheSelectedIssue() {
+        LocalDateTime beforeAssigning = LocalDateTime.now();
+        assertNull(issue.getUpdatedAt(), "the issue has not been touched yet");
+
         viewNavigators.view(UiTestUtils.getCurrentView(), DqIssueListView.class).navigate();
         DqIssueListView listView = UiTestUtils.getCurrentView();
 
@@ -148,6 +153,9 @@ public class DqIssueAssigneeUiTest {
         assertEquals("steward@example.com", stored.getAssigneeEmail());
         assertEquals("+7 000 000-00-00", stored.getAssigneePhone());
         assertEquals(LocalDate.now().plusDays(7), stored.getDueDate());
+        assertNotNull(stored.getUpdatedAt(), "assigning stamps the update time");
+        assertFalse(stored.getUpdatedAt().isBefore(beforeAssigning), "the update time is the assignment moment");
+        assertNull(stored.getResolvedAt(), "assigning does not resolve the issue");
     }
 
     @Test
