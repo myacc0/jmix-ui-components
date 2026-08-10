@@ -16,4 +16,14 @@ public class DqIssueService {
     public void markUpdated(DqIssue issue) {
         issue.setUpdatedAt(LocalDateTime.now());
     }
+
+    /**
+     * Records that the issue was just closed: the moment it was resolved, and the change with it.
+     * Called before the change is written, so both stamps travel with the same save.
+     */
+    public void markClosed(DqIssue issue) {
+        LocalDateTime now = LocalDateTime.now();
+        issue.setResolvedAt(now);
+        issue.setUpdatedAt(now);
+    }
 }

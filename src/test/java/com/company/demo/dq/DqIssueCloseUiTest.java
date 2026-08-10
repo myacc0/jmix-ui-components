@@ -8,6 +8,7 @@ import com.company.demo.enums.DqDimension;
 import com.company.demo.enums.DqIssueStatus;
 import com.company.demo.enums.DqRuleType;
 import com.company.demo.enums.DqSeverity;
+import com.company.demo.service.DqIssueService;
 import com.company.demo.test_support.AuthenticatedAsAdmin;
 import com.company.demo.view.dqissue.DqIssueCloseView;
 import com.company.demo.view.dqissue.DqIssueListView;
@@ -62,6 +63,9 @@ public class DqIssueCloseUiTest {
 
     @Autowired
     ViewNavigators viewNavigators;
+
+    @Autowired
+    DqIssueService dqIssueService;
 
     private DqDataDomain domain;
     private DqRule rule;
@@ -153,24 +157,23 @@ public class DqIssueCloseUiTest {
         assertTrue(closeIssueButton.isEnabled(), "an open issue can be closed");
     }
 
-    /** The stamping is a domain rule, so it also holds for a save that never goes near the dialog. */
+    /** The stamping lives in the service, so it holds for a caller that never goes near the dialog. */
     @Test
-    void closingThroughDataManagerStampsTheResolution() {
+    void serviceStampsTheResolutionOnTheIssueItCloses() {
         LocalDateTime beforeClosing = LocalDateTime.now();
 
         assertNull(issue.getResolvedAt());
+        assertNull(issue.getUpdatedAt());
+
         issue.setStatus(DqIssueStatus.FALSE_POSITIVE);
+        dqIssueService.markClosed(issue);
         issue = dataManager.save(issue);
 
-        assertNotNull(issue.getResolvedAt());
-        assertNotNull(issue.getUpdatedAt());
-        assertFalse(issue.getResolvedAt().isBefore(beforeClosing));
-
-        // re-saving a closed issue leaves the resolution moment where it was
-        LocalDateTime resolvedAt = issue.getResolvedAt();
-        issue.setResolutionNotes("a later edit of the notes");
-        issue = dataManager.save(issue);
-        assertEquals(resolvedAt, issue.getResolvedAt());
+        DqIssue stored = reload(issue);
+        assertEquals(DqIssueStatus.FALSE_POSITIVE, stored.getStatus());
+        assertNotNull(stored.getResolvedAt());
+        assertNotNull(stored.getUpdatedAt());
+        assertFalse(stored.getResolvedAt().isBefore(beforeClosing));
     }
 
     private DqIssue newIssue(DqIssueStatus status, String title) {

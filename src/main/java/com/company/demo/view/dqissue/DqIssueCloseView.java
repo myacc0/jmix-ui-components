@@ -2,6 +2,7 @@ package com.company.demo.view.dqissue;
 
 import com.company.demo.entity.DqIssue;
 import com.company.demo.enums.DqIssueStatus;
+import com.company.demo.service.DqIssueService;
 import com.company.demo.view.main.MainView;
 import com.vaadin.flow.router.Route;
 import io.jmix.flowui.component.select.JmixSelect;
@@ -29,6 +30,15 @@ public class DqIssueCloseView extends StandardDetailView<DqIssue> {
 
     @Autowired
     private MessageBundle messageBundle;
+
+    @Autowired
+    private DqIssueService dqIssueService;
+
+    /** The save that carries the outcome is the moment the issue is resolved. */
+    @Subscribe
+    public void onBeforeSave(final BeforeSaveEvent event) {
+        dqIssueService.markClosed(getEditedEntity());
+    }
 
     @Subscribe
     public void onInit(final InitEvent event) {
