@@ -1,8 +1,10 @@
 package com.company.demo.view.dqrule;
 
+import com.company.demo.component.DqBadges;
 import com.company.demo.entity.DqRule;
 import com.company.demo.repository.DqRuleRepository;
 import com.company.demo.view.main.MainView;
+import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.router.Route;
 import io.jmix.core.repository.JmixDataRepositoryContext;
 import io.jmix.flowui.view.*;
@@ -21,6 +23,19 @@ public class DqRuleListView extends StandardListView<DqRule> {
 
     @Autowired
     private DqRuleRepository repository;
+
+    @Autowired
+    private DqBadges dqBadges;
+
+    @Supply(to = "dqRulesDataGrid.dimension", subject = "renderer")
+    private Renderer<DqRule> dqRulesDataGridDimensionRenderer() {
+        return dqBadges.renderer(DqBadges.DIMENSION, DqRule::getDimension);
+    }
+
+    @Supply(to = "dqRulesDataGrid.severity", subject = "renderer")
+    private Renderer<DqRule> dqRulesDataGridSeverityRenderer() {
+        return dqBadges.renderer(DqBadges.SEVERITY, DqRule::getSeverity);
+    }
 
     @Install(to = "dqRulesDl", target = Target.DATA_LOADER, subject = "loadFromRepositoryDelegate")
     private List<DqRule> loadDelegate(Pageable pageable, JmixDataRepositoryContext context) {

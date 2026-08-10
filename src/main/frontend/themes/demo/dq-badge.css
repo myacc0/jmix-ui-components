@@ -1,0 +1,137 @@
+/*
+ * Badges for the DQ enum values.
+ *
+ * Apply two classes: the shape and the value, where the value class is the enum
+ * prefix plus the enum id — so a renderer never needs a colour lookup table:
+ *
+ *     Span badge = new Span(messages.getMessage(issue.getSeverity()));
+ *     badge.addClassNames("dq-badge", "dq-severity-" + issue.getSeverity().getId());
+ *
+ * Prefix per enum:
+ *     DqSeverity           dq-severity-*        low medium high critical
+ *     DqDimension          dq-dimension-*       completeness accuracy uniqueness validity timeliness consistency
+ *     DqIssueStatus        dq-issue-status-*    open resolved wontfix false_positive
+ *     DqCheckRunStatus     dq-run-status-*      running success failed cancelled
+ *     DqCheckResultStatus  dq-result-status-*   passed failed warning skipped
+ *
+ * Status colours come from the Lumo palette, so they follow the light and dark
+ * theme. Dimensions are categories rather than outcomes, so they get their own
+ * hues instead of success/error colours that would imply good or bad.
+ */
+
+.dq-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-width: 2em;
+    padding: 0.25em 0.75em;
+    border-radius: 1em;
+    font-size: var(--lumo-font-size-s, 0.875rem);
+    font-weight: 500;
+    line-height: 1.4;
+    white-space: nowrap;
+    /* the default look, kept by every value that carries no meaning of its own */
+    background-color: var(--lumo-contrast-10pct, rgba(0, 0, 0, 0.1));
+    color: var(--lumo-secondary-text-color, rgba(0, 0, 0, 0.7));
+}
+
+/* a badge inside a grid cell must not stretch the row */
+vaadin-grid-cell-content .dq-badge {
+    vertical-align: middle;
+}
+
+/* ---------------------------------------------------------------------------
+ * Outcomes — the value carries good news, bad news, or a warning
+ * ------------------------------------------------------------------------ */
+
+.dq-badge.dq-issue-status-resolved,
+.dq-badge.dq-run-status-success,
+.dq-badge.dq-result-status-passed {
+    background-color: var(--lumo-success-color-10pct, rgba(62, 229, 130, 0.1));
+    color: var(--lumo-success-text-color, hsl(145, 100%, 32%));
+}
+
+.dq-badge.dq-severity-critical,
+.dq-badge.dq-run-status-failed,
+.dq-badge.dq-result-status-failed {
+    background-color: hsla(0, 98%, 59%, 0.2);
+    color: var(--lumo-error-text-color, hsl(3, 89%, 42%));
+}
+
+.dq-badge.dq-severity-medium,
+.dq-badge.dq-issue-status-open,
+.dq-badge.dq-result-status-warning {
+    /* Lumo has no --lumo-warning-color-10pct, so the tint is mixed here */
+    background-color: rgba(255, 170, 0, 0.15);
+    background-color: color-mix(in srgb, var(--lumo-warning-color, hsl(45, 100%, 60%)) 18%, transparent);
+    color: var(--lumo-warning-text-color, hsl(45, 100%, 31%));
+}
+
+/* one step past the warning amber and one step short of the critical red */
+.dq-badge.dq-severity-high {
+    background-color: hsl(22, 90%, 90%);
+    color: hsl(22, 85%, 36%);
+}
+
+html[theme~="dark"] .dq-badge.dq-severity-high {
+    background-color: hsl(22, 55%, 22%);
+    color: hsl(22, 95%, 70%);
+}
+
+.dq-badge.dq-run-status-running {
+    background-color: var(--lumo-primary-color-10pct, rgba(22, 118, 243, 0.1));
+    color: var(--lumo-primary-text-color, hsl(214, 90%, 48%));
+}
+
+/*
+ * Values that are neither good nor bad keep the neutral base: dq-severity-low,
+ * dq-issue-status-wontfix, dq-issue-status-false_positive,
+ * dq-run-status-cancelled, dq-result-status-skipped. They are listed here so a
+ * reader can see the mapping is deliberate rather than missing.
+ */
+.dq-badge.dq-issue-status-wontfix,
+.dq-badge.dq-issue-status-false_positive,
+.dq-badge.dq-run-status-cancelled,
+.dq-badge.dq-result-status-skipped {
+    /* a closed-without-a-fix outcome reads as retired, not as a result */
+    opacity: 0.85;
+}
+
+/* ---------------------------------------------------------------------------
+ * Dimensions — categories, told apart by hue
+ * ------------------------------------------------------------------------ */
+
+.dq-badge[class*="dq-dimension-"] {
+    background-color: hsl(var(--dq-dimension-hue), 62%, 92%);
+    color: hsl(var(--dq-dimension-hue), 58%, 28%);
+}
+
+html[theme~="dark"] .dq-badge[class*="dq-dimension-"] {
+    background-color: hsl(var(--dq-dimension-hue), 42%, 22%);
+    color: hsl(var(--dq-dimension-hue), 70%, 82%);
+}
+
+.dq-dimension-completeness {
+    --dq-dimension-hue: 222;
+}
+
+.dq-dimension-accuracy {
+    --dq-dimension-hue: 265;
+}
+
+.dq-dimension-uniqueness {
+    --dq-dimension-hue: 192;
+}
+
+.dq-dimension-validity {
+    --dq-dimension-hue: 330;
+}
+
+.dq-dimension-timeliness {
+    --dq-dimension-hue: 32;
+}
+
+.dq-dimension-consistency {
+    --dq-dimension-hue: 142;
+}

@@ -1,9 +1,11 @@
 package com.company.demo.view.dqcheckrun;
 
+import com.company.demo.component.DqBadges;
 import com.company.demo.entity.DqCheckRun;
 import com.company.demo.view.dqcheckrunnew.DqCheckRunNewView;
 import com.company.demo.view.main.MainView;
 import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.router.Route;
 import io.jmix.flowui.ViewNavigators;
 import io.jmix.flowui.kit.component.button.JmixButton;
@@ -19,6 +21,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class DqCheckRunListView extends StandardListView<DqCheckRun> {
     @Autowired
     private ViewNavigators viewNavigators;
+
+    @Autowired
+    private DqBadges dqBadges;
+
+    @Supply(to = "dqCheckRunsDataGrid.status", subject = "renderer")
+    private Renderer<DqCheckRun> dqCheckRunsDataGridStatusRenderer() {
+        return dqBadges.renderer(DqBadges.RUN_STATUS, DqCheckRun::getStatus);
+    }
 
     @Subscribe(id = "runCheckButton", subject = "clickListener")
     public void onRunCheckButtonClick(final ClickEvent<JmixButton> event) {

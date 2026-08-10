@@ -1,8 +1,10 @@
 package com.company.demo.view.dqissue;
 
+import com.company.demo.component.DqBadges;
 import com.company.demo.entity.DqIssue;
 import com.company.demo.enums.DqIssueStatus;
 import com.company.demo.view.main.MainView;
+import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.router.Route;
 import io.jmix.flowui.DialogWindows;
 import io.jmix.flowui.component.grid.DataGrid;
@@ -27,6 +29,19 @@ public class DqIssueListView extends StandardListView<DqIssue> {
 
     @ViewComponent
     private CollectionLoader<DqIssue> dqIssuesDl;
+
+    @Autowired
+    private DqBadges dqBadges;
+
+    @Supply(to = "dqIssuesDataGrid.status", subject = "renderer")
+    private Renderer<DqIssue> dqIssuesDataGridStatusRenderer() {
+        return dqBadges.renderer(DqBadges.ISSUE_STATUS, DqIssue::getStatus);
+    }
+
+    @Supply(to = "dqIssuesDataGrid.severity", subject = "renderer")
+    private Renderer<DqIssue> dqIssuesDataGridSeverityRenderer() {
+        return dqBadges.renderer(DqBadges.SEVERITY, DqIssue::getSeverity);
+    }
 
     /** Only an open issue can be assigned: once it is resolved or closed, the assignee is history. */
     @Install(to = "dqIssuesDataGrid.setAssigneeAction", subject = "enabledRule")
