@@ -5,8 +5,13 @@
     <data>
         <instance id="dqCheckRunDc"
                   class="com.company.demo.entity.DqCheckRun">
-            <fetchPlan extends="_base"/>
+            <fetchPlan extends="_base">
+                <property name="checkResults" fetchPlan="_base">
+                    <property name="rule" fetchPlan="_instance_name"/>
+                </property>
+            </fetchPlan>
             <loader id="dqCheckRunDl"/>
+            <collection id="checkResultsDc" property="checkResults"/>
         </instance>
     </data>
     <facets>
@@ -32,7 +37,40 @@
             <textField id="dqScoreField" property="dqScore"/>
             <textArea id="errorMessageField" property="errorMessage" minRows="5"/>
         </formLayout>
-        <hbox id="detailActions" width="60%" justifyContent="CENTER">
+        <hbox id="checkResultsButtonsPanel" classNames="buttons-panel">
+            <button id="executedQueryButton" themeNames="primary" action="checkResultsDataGrid.executedQueryAction"/>
+            <button id="sampleViolationsButton" themeNames="primary" action="checkResultsDataGrid.sampleViolationsAction"/>
+        </hbox>
+        <dataGrid id="checkResultsDataGrid"
+                  width="100%"
+                  minHeight="20em"
+                  dataContainer="checkResultsDc"
+                  columnReorderingAllowed="true">
+            <actions>
+                <action id="executedQueryAction"
+                        type="list_itemTracking"
+                        text="msg://dqCheckRunDetailView.executedQueryAction"
+                        icon="vaadin:code"/>
+                <action id="sampleViolationsAction"
+                        type="list_itemTracking"
+                        text="msg://dqCheckRunDetailView.sampleViolationsAction"
+                        icon="vaadin:file-search"/>
+            </actions>
+            <columns resizable="true">
+                <column key="ruleName"
+                        property="rule.name"
+                        header="msg://dqCheckRunDetailView.ruleNameColumn"
+                        autoWidth="true"
+                        flexGrow="0"/>
+                <column property="status" autoWidth="true" flexGrow="0"/>
+                <column property="totalRecords" autoWidth="true" flexGrow="0"/>
+                <column property="failedRecords" autoWidth="true" flexGrow="0"/>
+                <column property="passRate" autoWidth="true" flexGrow="0"/>
+                <column property="executionMs" autoWidth="true" flexGrow="0"/>
+                <column property="errorMessage" autoWidth="true" flexGrow="1"/>
+            </columns>
+        </dataGrid>
+        <hbox id="detailActions" width="60%" justifyContent="CENTER" css="margin-bottom: 40px">
             <button id="closeButton" action="closeAction"/>
         </hbox>
     </layout>

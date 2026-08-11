@@ -2,12 +2,14 @@ package com.company.demo.view.dqcheckrun;
 
 import com.company.demo.component.DqBadges;
 import com.company.demo.entity.DqCheckRun;
+import com.company.demo.enums.DqCheckRunStatus;
 import com.company.demo.view.dqcheckrunnew.DqCheckRunNewView;
 import com.company.demo.view.main.MainView;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.router.Route;
 import io.jmix.flowui.ViewNavigators;
+import io.jmix.flowui.component.grid.DataGrid;
 import io.jmix.flowui.kit.component.button.JmixButton;
 import io.jmix.flowui.view.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +26,16 @@ public class DqCheckRunListView extends StandardListView<DqCheckRun> {
 
     @Autowired
     private DqBadges dqBadges;
+
+    @ViewComponent
+    private DataGrid<DqCheckRun> dqCheckRunsDataGrid;
+
+    /** A run still in progress has no settled result to read: its totals arrive when it finishes. */
+    @Install(to = "dqCheckRunsDataGrid.readAction", subject = "enabledRule")
+    private boolean readActionEnabledRule() {
+        DqCheckRun checkRun = dqCheckRunsDataGrid.getSingleSelectedItem();
+        return checkRun != null && checkRun.getStatus() != DqCheckRunStatus.RUNNING;
+    }
 
     @Supply(to = "dqCheckRunsDataGrid.status", subject = "renderer")
     private Renderer<DqCheckRun> dqCheckRunsDataGridStatusRenderer() {
