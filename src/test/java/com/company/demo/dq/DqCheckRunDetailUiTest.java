@@ -12,10 +12,16 @@ import com.company.demo.enums.DqRuleType;
 import com.company.demo.enums.DqSeverity;
 import com.company.demo.test_support.AuthenticatedAsAdmin;
 import com.company.demo.view.dqcheckrun.DqCheckRunDetailView;
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.grid.Grid;
 import io.jmix.core.DataManager;
 import io.jmix.flowui.ViewNavigators;
+import io.jmix.flowui.component.codeeditor.CodeEditor;
 import io.jmix.flowui.component.grid.DataGrid;
 import io.jmix.flowui.kit.component.button.JmixButton;
+import io.jmix.flowui.kit.component.codeeditor.CodeEditorMode;
 import io.jmix.flowui.testassist.FlowuiTestAssistConfiguration;
 import io.jmix.flowui.testassist.UiTest;
 import io.jmix.flowui.testassist.UiTestUtils;
@@ -32,6 +38,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -47,6 +54,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 @SpringBootTest(classes = {DemoApplication.class, FlowuiTestAssistConfiguration.class})
 @ExtendWith(AuthenticatedAsAdmin.class)
 public class DqCheckRunDetailUiTest {
+
+    /** Two rows over two columns: enough to prove the grid follows the samples query, not the entity. */
+    private static final String SAMPLE_VIOLATIONS = "[{\"id\": 1, \"name\": null}, {\"id\": 2, \"name\": \"row\"}]";
 
     @Autowired
     DataManager dataManager;
@@ -138,6 +148,78 @@ public class DqCheckRunDetailUiTest {
         }
     }
 
+    @Test
+    void sampleViolationsOpenAsAGridOfTheSampledColumns() {
+        DataGrid<DqCheckRunResult> grid = openResultsGrid();
+        grid.select(gridItem(grid, failedResult()));
+
+        clickSampleViolations();
+
+        Grid<?> samples = dialogContent(Grid.class);
+        assertEquals(List.of("id", "name"), headers(samples),
+                "the columns are the ones the rule's samples query selected");
+        assertEquals(2, samples.getGenericDataView().getItems().count(), "every sampled row is listed");
+    }
+
+    @Test
+    void aSampleThatIsNotARowSetFallsBackToTheJsonEditor() {
+        DqCheckRunResult failed = failedResult();
+        // valid JSON, but nothing a grid can be built from
+        failed.setSampleViolations("\"5 rows violate the rule\"");
+        results.set(results.indexOf(failed), dataManager.save(failed));
+
+        DataGrid<DqCheckRunResult> grid = openResultsGrid();
+        grid.select(gridItem(grid, failedResult()));
+
+        clickSampleViolations();
+
+        assertEquals(CodeEditorMode.JSON, dialogContent(CodeEditor.class).getMode());
+    }
+
+    private DqCheckRunResult failedResult() {
+        return results.stream()
+                .filter(result -> result.getStatus() == DqCheckResultStatus.FAILED)
+                .findFirst()
+                .orElseGet(() -> fail("the run has no failed result"));
+    }
+
+    private void clickSampleViolations() {
+        JmixButton button = UiTestUtils.getComponent(UiTestUtils.getCurrentView(), "sampleViolationsButton");
+        button.click();
+        // an opened dialog only attaches itself to the UI while the client response is built,
+        // which no round trip produces here
+        UI.getCurrent().getInternals().getStateTree().runExecutionsBeforeClientResponse();
+    }
+
+    /**
+     * The single component the action put into the dialog. The dialog is an overlay attached to the
+     * UI rather than to the view, and looking inside it keeps the view's own grid out of the search.
+     */
+    private <T extends Component> T dialogContent(Class<T> type) {
+        List<T> found = UI.getCurrent().getChildren()
+                .flatMap(DqCheckRunDetailUiTest::selfAndDescendants)
+                .filter(Dialog.class::isInstance)
+                .flatMap(Component::getChildren)
+                .flatMap(DqCheckRunDetailUiTest::selfAndDescendants)
+                .filter(type::isInstance)
+                .map(type::cast)
+                .toList();
+
+        assertEquals(1, found.size(), "the dialog shows exactly one " + type.getSimpleName());
+        return found.get(0);
+    }
+
+    private static Stream<Component> selfAndDescendants(Component component) {
+        return Stream.concat(Stream.of(component),
+                component.getChildren().flatMap(DqCheckRunDetailUiTest::selfAndDescendants));
+    }
+
+    private List<String> headers(Grid<?> grid) {
+        return grid.getColumns().stream()
+                .map(Grid.Column::getHeaderText)
+                .toList();
+    }
+
     private DqCheckRunResult newResult(DqCheckResultStatus status) {
         DqCheckRunResult result = dataManager.create(DqCheckRunResult.class);
         result.setCheckRun(checkRun);
@@ -149,7 +231,7 @@ public class DqCheckRunDetailUiTest {
         result.setExecutionMs(12L);
         result.setExecutedQuery("select count(*) from demo_dq_data_domain");
         if (status == DqCheckResultStatus.FAILED) {
-            result.setSampleViolations("[{\"name\": null}]");
+            result.setSampleViolations(SAMPLE_VIOLATIONS);
             result.setErrorMessage("5 rows violate the rule");
         }
         return result;

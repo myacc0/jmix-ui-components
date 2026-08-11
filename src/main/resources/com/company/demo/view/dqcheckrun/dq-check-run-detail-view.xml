@@ -70,7 +70,7 @@
                 <column property="errorMessage" autoWidth="true" flexGrow="1"/>
             </columns>
         </dataGrid>
-        <hbox id="detailActions" width="60%" justifyContent="CENTER" css="margin-bottom: 40px">
+        <hbox id="detailActions" width="60%">
             <button id="closeButton" action="closeAction"/>
         </hbox>
     </layout>

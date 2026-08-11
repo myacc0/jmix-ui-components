@@ -115,7 +115,7 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         // Done before the entity enters the DataContext so it is not flagged as a change.
         return repository.findById(id, fetchPlan)
                 .map(rule -> {
-                    rule.setRuleConfig(JsonUtils.prettifyJson(rule.getRuleConfig(), objectMapper));
+                    rule.setRuleConfig(JsonUtils.prettify(rule.getRuleConfig(), objectMapper));
                     return rule;
                 });
     }
