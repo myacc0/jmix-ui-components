@@ -114,7 +114,7 @@
             <checkbox id="activeField" property="active" label="msg://com.company.demo.entity/DqRule.active"/>
         </formLayout>
 
-        <hbox id="detailActions" width="50%" justifyContent="CENTER">
+        <hbox id="detailActions" width="50%" justifyContent="CENTER" css="padding-bottom: 40px">
             <button id="saveAndCloseButton" action="saveCloseAction"/>
             <button id="closeButton" action="closeAction"/>
         </hbox>

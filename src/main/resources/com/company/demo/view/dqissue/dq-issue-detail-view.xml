@@ -43,7 +43,7 @@
             <dateTimePicker id="createdAtField" property="createdAt"/>
             <dateTimePicker id="updatedAtField" property="updatedAt"/>
         </formLayout>
-        <hbox id="detailActions" width="60%" justifyContent="CENTER">
+        <hbox id="detailActions" width="60%" justifyContent="CENTER" css="padding-bottom: 40px">
             <button id="closeButton" action="closeAction"/>
         </hbox>
     </layout>
