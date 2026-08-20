@@ -3,6 +3,7 @@ package com.company.demo.entity;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
 import io.jmix.core.metamodel.annotation.InstanceName;
 import io.jmix.core.metamodel.annotation.JmixEntity;
+import io.jmix.core.metamodel.annotation.NumberFormat;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 
@@ -14,7 +15,7 @@ import java.util.UUID;
 public class Department {
 
     @Id
-    @Column(name = "ID")
+    @Column(name = "ID", nullable = false)
     @JmixGeneratedValue
     private UUID id;
 
@@ -30,6 +31,18 @@ public class Department {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "PARENT_DEPARTMENT_ID")
     private Department parentDepartment;
+
+    @NumberFormat(pattern = "#")
+    @Column(name = "ORD_NO")
+    private Integer ordNo;
+
+    public Integer getOrdNo() {
+        return ordNo;
+    }
+
+    public void setOrdNo(Integer ordNo) {
+        this.ordNo = ordNo;
+    }
 
     public UUID getId() {
         return id;
