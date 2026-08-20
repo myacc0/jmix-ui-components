@@ -59,6 +59,9 @@
             <formItem label="msg://com.company.demo.entity/DqRule.dataSource">
                 <select id="dataSourceField" property="dataSource"/>
             </formItem>
+            <formItem label="msg://com.company.demo.entity/DqRule.dbSchema">
+                <comboBox id="dbSchemaField" property="dbSchema"/>
+            </formItem>
             <formItem label="msg://com.company.demo.entity/DqRule.tableName">
                 <comboBox id="tableNameField" property="tableName"/>
             </formItem>

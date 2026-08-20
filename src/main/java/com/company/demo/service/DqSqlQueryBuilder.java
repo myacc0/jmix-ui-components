@@ -274,16 +274,23 @@ public class DqSqlQueryBuilder {
     // ---------------------------------------------------------------------
 
     /**
-     * The rule's table, quoted and optionally schema-qualified when the name contains a dot.
+     * The rule's table, quoted and schema-qualified: from the rule's schema, or from the table name
+     * itself when that already contains a dot (rules created before the schema was selectable).
      */
     private String tableRef(DqRule rule, DqSqlDialect dialect) {
         String tableName = rule.getTableName();
         if (!StringUtils.hasText(tableName)) {
             throw new IllegalArgumentException("Table name is not set for rule: " + rule.getName());
         }
+        tableName = tableName.trim();
+
+        String schema = rule.getDbSchema();
+        if (StringUtils.hasText(schema) && !tableName.contains(".")) {
+            tableName = schema.trim() + "." + tableName;
+        }
 
         StringBuilder ref = new StringBuilder();
-        for (String part : tableName.trim().split("\\.", -1)) {
+        for (String part : tableName.split("\\.", -1)) {
             if (!ref.isEmpty()) {
                 ref.append('.');
             }

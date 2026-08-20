@@ -66,6 +66,9 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
     private JmixSelect<String> dataSourceField;
 
     @ViewComponent
+    private JmixComboBox<String> dbSchemaField;
+
+    @ViewComponent
     private JmixComboBox<String> tableNameField;
 
     @ViewComponent
@@ -135,27 +138,35 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
                 .findFirst()
                 .orElse(id));
 
+        // The three location fields form a chain: a data source offers its schemas, a schema its
+        // tables, a table its columns. Each step reloads the items of the ones below it; a change
+        // made by the user also drops their values, which no longer belong to the new parent.
         dataSourceField.addValueChangeListener(e -> {
             String dataSource = e.getValue();
-            tableNameField.setItems(dataSource != null
-                    ? dataSourceProvider.getDataSourceTables(dataSource)
+            dbSchemaField.setItems(dataSource != null
+                    ? dataSourceProvider.getDataSourceSchemas(dataSource)
                     : List.of());
             if (e.isFromClient()) {
+                dbSchemaField.setValue(null);
                 tableNameField.setValue(null);
-                columnNameField.setItems(List.of());
                 columnNameField.setValue(null);
             }
+            reloadTables();
+        });
+
+        dbSchemaField.addValueChangeListener(e -> {
+            if (e.isFromClient()) {
+                tableNameField.setValue(null);
+                columnNameField.setValue(null);
+            }
+            reloadTables();
         });
 
         tableNameField.addValueChangeListener(e -> {
-            String dataSource = dataSourceField.getValue();
-            String tableName = e.getValue();
-            columnNameField.setItems(dataSource != null && tableName != null
-                    ? dataSourceProvider.getTableColumns(dataSource, tableName)
-                    : List.of());
             if (e.isFromClient()) {
                 columnNameField.setValue(null);
             }
+            reloadColumns();
         });
 
         // Render the config fields matching the selected rule type.
@@ -202,6 +213,28 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         } finally {
             populating = false;
         }
+    }
+
+    /**
+     * The tables offered for the selected data source and schema. A rule without a schema — one
+     * created before the schema became selectable — keeps listing the connection's default schema,
+     * so its stored table name is still among the items.
+     */
+    private void reloadTables() {
+        String dataSource = dataSourceField.getValue();
+        tableNameField.setItems(dataSource != null
+                ? dataSourceProvider.getDataSourceTables(dataSource, dbSchemaField.getValue())
+                : List.of());
+        reloadColumns();
+    }
+
+    /** The columns offered for the selected table. */
+    private void reloadColumns() {
+        String dataSource = dataSourceField.getValue();
+        String tableName = tableNameField.getValue();
+        columnNameField.setItems(dataSource != null && tableName != null
+                ? dataSourceProvider.getTableColumns(dataSource, dbSchemaField.getValue(), tableName)
+                : List.of());
     }
 
     private void onDynamicFieldChange() {

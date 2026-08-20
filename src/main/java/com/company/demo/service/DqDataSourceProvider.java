@@ -5,6 +5,7 @@ import com.company.demo.enums.DqSqlDialect;
 import io.jmix.core.Messages;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -52,12 +53,47 @@ public class DqDataSourceProvider {
         return List.of();
     }
 
+    /**
+     * The schemas of a data source that hold user data, in the order the JDBC driver reports them
+     * (alphabetical). System schemas — the driver's own catalog and {@code information_schema} —
+     * are left out: a rule is never defined over them.
+     */
+    public List<String> getDataSourceSchemas(String dataSourceName) {
+        DataSource dataSource = resolveDataSource(dataSourceName);
+        List<String> schemas = new ArrayList<>();
+        try (Connection connection = dataSource.getConnection()) {
+            DatabaseMetaData metaData = connection.getMetaData();
+            try (ResultSet rs = metaData.getSchemas(connection.getCatalog(), null)) {
+                while (rs.next()) {
+                    String schema = rs.getString("TABLE_SCHEM");
+                    if (!isSystemSchema(schema)) {
+                        schemas.add(schema);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to get schemas for data source: " + dataSourceName, e);
+        }
+        return schemas;
+    }
+
+    /** The tables of the connection's default schema. */
     public List<String> getDataSourceTables(String dataSourceName) {
+        return getDataSourceTables(dataSourceName, null);
+    }
+
+    /**
+     * The tables of one schema of a data source.
+     *
+     * @param schema the schema to list, or null for the connection's default schema
+     */
+    public List<String> getDataSourceTables(String dataSourceName, @Nullable String schema) {
         DataSource dataSource = resolveDataSource(dataSourceName);
         List<String> tables = new ArrayList<>();
         try (Connection connection = dataSource.getConnection()) {
             DatabaseMetaData metaData = connection.getMetaData();
-            try (ResultSet rs = metaData.getTables(connection.getCatalog(), connection.getSchema(), "%", new String[]{"TABLE"})) {
+            String schemaPattern = resolveSchemaPattern(connection, metaData, schema);
+            try (ResultSet rs = metaData.getTables(connection.getCatalog(), schemaPattern, "%", new String[]{"TABLE"})) {
                 while (rs.next()) {
                     tables.add(rs.getString("TABLE_NAME"));
                 }
@@ -68,13 +104,24 @@ public class DqDataSourceProvider {
         return tables;
     }
 
+    /** The columns of a table in the connection's default schema. */
     public List<String> getTableColumns(String dataSourceName, String tableName) {
+        return getTableColumns(dataSourceName, null, tableName);
+    }
+
+    /**
+     * The columns of a table in one schema of a data source.
+     *
+     * @param schema the schema the table belongs to, or null for the connection's default schema
+     */
+    public List<String> getTableColumns(String dataSourceName, @Nullable String schema, String tableName) {
         DataSource dataSource = resolveDataSource(dataSourceName);
         List<String> columns = new ArrayList<>();
         try (Connection connection = dataSource.getConnection()) {
             DatabaseMetaData metaData = connection.getMetaData();
             String normalizedTableName = normalizeIdentifier(metaData, tableName);
-            try (ResultSet rs = metaData.getColumns(connection.getCatalog(), connection.getSchema(), normalizedTableName, "%")) {
+            String schemaPattern = resolveSchemaPattern(connection, metaData, schema);
+            try (ResultSet rs = metaData.getColumns(connection.getCatalog(), schemaPattern, normalizedTableName, "%")) {
                 while (rs.next()) {
                     columns.add(rs.getString("COLUMN_NAME"));
                 }
@@ -117,6 +164,24 @@ public class DqDataSourceProvider {
      */
     public JdbcTemplate getJdbcTemplate(String dataSourceName) {
         return jdbcTemplateCache.computeIfAbsent(dataSourceName, name -> new JdbcTemplate(resolveDataSource(name)));
+    }
+
+    /**
+     * Metadata lookups take a schema PATTERN, so the caller's schema is normalized the same way a
+     * table name is; a caller that named no schema keeps the connection's own schema.
+     */
+    @Nullable
+    private String resolveSchemaPattern(Connection connection, DatabaseMetaData metaData, @Nullable String schema)
+            throws SQLException {
+        return StringUtils.hasText(schema) ? normalizeIdentifier(metaData, schema.trim()) : connection.getSchema();
+    }
+
+    private boolean isSystemSchema(@Nullable String schema) {
+        if (!StringUtils.hasText(schema)) {
+            return true;
+        }
+        String name = schema.toLowerCase();
+        return name.startsWith("pg_") || name.equals("information_schema") || name.equals("sys");
     }
 
     private String normalizeIdentifier(DatabaseMetaData metaData, String identifier) throws SQLException {

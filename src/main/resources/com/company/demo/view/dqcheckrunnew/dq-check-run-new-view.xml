@@ -101,25 +101,27 @@
             <simplePagination id="pagination" dataLoader="dqRulesDl" itemsPerPageDefaultValue="20"/>
         </hbox>
 
-        <dataGrid id="dqRulesDataGrid"
-                  width="100%"
-                  minHeight="20em"
-                  pageSize="20"
-                  dataContainer="dqRulesDc"
-                  columnReorderingAllowed="true">
-            <columns resizable="true">
-                <column property="name" autoWidth="true" flexGrow="0"/>
-                <column property="dataSource" autoWidth="true" flexGrow="0"/>
-                <column property="tableName" autoWidth="true" flexGrow="0"/>
-                <column property="columnName" autoWidth="true" flexGrow="0"/>
-                <column property="dimension" autoWidth="true" flexGrow="0"/>
-                <column property="ruleType" autoWidth="true" flexGrow="0"/>
-                <column property="severity" autoWidth="true" flexGrow="0"/>
-                <column property="active" autoWidth="true" flexGrow="0"/>
-                <column property="owner" autoWidth="true" flexGrow="0"/>
-                <column property="domain" autoWidth="true" flexGrow="0"/>
-                <column property="dataProduct" autoWidth="true" flexGrow="0"/>
-            </columns>
-        </dataGrid>
+        <vbox css="padding: 0 0 20px 0">
+            <dataGrid id="dqRulesDataGrid"
+                      width="100%"
+                      minHeight="20em"
+                      pageSize="20"
+                      dataContainer="dqRulesDc"
+                      columnReorderingAllowed="true">
+                <columns resizable="true">
+                    <column property="name" autoWidth="true" flexGrow="0"/>
+                    <column property="dataSource" autoWidth="true" flexGrow="0"/>
+                    <column property="tableName" autoWidth="true" flexGrow="0"/>
+                    <column property="columnName" autoWidth="true" flexGrow="0"/>
+                    <column property="dimension" autoWidth="true" flexGrow="0"/>
+                    <column property="ruleType" autoWidth="true" flexGrow="0"/>
+                    <column property="severity" autoWidth="true" flexGrow="0"/>
+                    <column property="active" autoWidth="true" flexGrow="0"/>
+                    <column property="owner" autoWidth="true" flexGrow="0"/>
+                    <column property="domain" autoWidth="true" flexGrow="0"/>
+                    <column property="dataProduct" autoWidth="true" flexGrow="0"/>
+                </columns>
+            </dataGrid>
+        </vbox>
     </layout>
 </view>

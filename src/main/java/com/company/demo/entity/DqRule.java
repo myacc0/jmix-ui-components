@@ -42,6 +42,9 @@ public class DqRule {
     @NotNull
     private String dataSource;
 
+    @Column(name = "DB_SCHEMA")
+    private String dbSchema;
+
     @Column(name = "TABLE_NAME")
     private String tableName;
 
@@ -94,6 +97,14 @@ public class DqRule {
 
     @Column(name = "UPDATED_AT", columnDefinition = "TIMESTAMP")
     private LocalDateTime updatedAt;
+
+    public String getDbSchema() {
+        return dbSchema;
+    }
+
+    public void setDbSchema(String schema) {
+        this.dbSchema = schema;
+    }
 
     public DqDataProduct getDataProduct() {
         return dataProduct;
