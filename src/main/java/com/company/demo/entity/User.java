@@ -166,11 +166,20 @@ public class User implements JmixUserDetails, HasTimeZone {
         return Boolean.TRUE.equals(active);
     }
 
-    @InstanceName
     @DependsOnProperties({"firstName", "lastName", "username"})
     public String getDisplayName() {
         return String.format("%s %s [%s]", (firstName != null ? firstName : ""),
                 (lastName != null ? lastName : ""), username).trim();
+    }
+
+    @InstanceName
+    @DependsOnProperties({"firstName", "lastName"})
+    public String getDisplayNameWithoutUsername() {
+        return String.format(
+                "%s %s",
+                (firstName != null ? firstName : ""),
+                (lastName != null ? lastName : "")
+        ).trim();
     }
 
     @Override

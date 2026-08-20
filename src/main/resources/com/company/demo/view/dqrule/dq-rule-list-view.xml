@@ -9,6 +9,8 @@
                 <property name="id"/>
                 <property name="name"/>
                 <property name="dataSource"/>
+                <property name="dbSchema"/>
+                <property name="tableName"/>
                 <property name="dimension"/>
                 <property name="ruleType"/>
                 <property name="severity"/>
@@ -25,7 +27,6 @@
     <facets>
         <dataLoadCoordinator auto="true"/>
         <urlQueryParameters>
-            <genericFilter component="genericFilter"/>
             <pagination component="pagination"/>
         </urlQueryParameters>
     </facets>
@@ -34,10 +35,6 @@
         <action id="discardAction" type="lookup_discard"/>
     </actions>
     <layout>
-        <genericFilter id="genericFilter"
-                       dataLoader="dqRulesDl">
-            <properties include=".*"/>
-        </genericFilter>
         <hbox id="buttonsPanel" classNames="buttons-panel">
             <startSlot>
                 <button id="createButton" action="dqRulesDataGrid.createAction"/>
@@ -61,15 +58,17 @@
                 <action id="removeAction" type="list_remove"/>
             </actions>
             <columns resizable="true">
-                <column property="name" autoWidth="true" flexGrow="0"/>
-                <column property="dataSource" autoWidth="true" flexGrow="0"/>
-                <column property="dimension" autoWidth="true" flexGrow="0"/>
-                <column property="ruleType" autoWidth="true" flexGrow="0"/>
-                <column property="severity" autoWidth="true" flexGrow="0"/>
-                <column property="active" autoWidth="true" flexGrow="0"/>
-                <column property="owner" autoWidth="true" flexGrow="0"/>
-                <column property="domain" autoWidth="true" flexGrow="0"/>
-                <column property="dataProduct" autoWidth="true" flexGrow="0"/>
+                <column property="name" autoWidth="true" flexGrow="0" filterable="true"/>
+                <column property="dataSource" autoWidth="true" flexGrow="0" filterable="true"/>
+                <column property="dbSchema" autoWidth="true" flexGrow="0" filterable="true"/>
+                <column property="tableName" autoWidth="true" flexGrow="0" filterable="true"/>
+                <column property="dimension" autoWidth="true" flexGrow="0" filterable="true"/>
+                <column property="ruleType" autoWidth="true" flexGrow="0" filterable="true"/>
+                <column property="severity" autoWidth="true" flexGrow="0" filterable="true"/>
+                <column property="active" autoWidth="true" flexGrow="0" filterable="true"/>
+                <column property="owner" autoWidth="true" flexGrow="0" filterable="true"/>
+                <column property="domain" autoWidth="true" flexGrow="0" filterable="true"/>
+                <column property="dataProduct" autoWidth="true" flexGrow="0" filterable="true"/>
                 <column property="createdAt" autoWidth="true" flexGrow="0"/>
                 <column property="updatedAt" autoWidth="true" flexGrow="0"/>
             </columns>
