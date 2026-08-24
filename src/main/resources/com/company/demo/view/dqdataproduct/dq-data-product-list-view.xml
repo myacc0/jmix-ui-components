@@ -48,10 +48,10 @@
                 <action id="removeAction" type="list_remove"/>
             </actions>
             <columns resizable="true">
-                <column property="parent"/>
-                <column property="code"/>
-                <column property="shortName"/>
-                <column property="name"/>
+                <column property="parent" filterable="true"/>
+                <column property="code" filterable="true"/>
+                <column property="shortName" filterable="true"/>
+                <column property="name" filterable="true"/>
                 <column property="createdAt"/>
                 <column property="updatedAt"/>
             </columns>
