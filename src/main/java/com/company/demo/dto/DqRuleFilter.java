@@ -2,6 +2,7 @@ package com.company.demo.dto;
 
 import com.company.demo.entity.DqDataDomain;
 import com.company.demo.entity.DqDataProduct;
+import com.company.demo.entity.DqRuleGroup;
 import com.company.demo.entity.User;
 import com.company.demo.enums.DqDimension;
 import com.company.demo.enums.DqRuleType;
@@ -28,6 +29,9 @@ public class DqRuleFilter {
 
     @JmixProperty(mandatory = true)
     private String dataSource;
+
+    @JmixProperty
+    private DqRuleGroup group;
 
     @JmixProperty
     private DqDataDomain domain;
@@ -67,6 +71,14 @@ public class DqRuleFilter {
 
     public void setDataSource(String dataSource) {
         this.dataSource = dataSource;
+    }
+
+    public DqRuleGroup getGroup() {
+        return group;
+    }
+
+    public void setGroup(DqRuleGroup group) {
+        this.group = group;
     }
 
     public DqDataDomain getDomain() {

@@ -16,6 +16,7 @@
                 <property name="ruleType"/>
                 <property name="severity"/>
                 <property name="active"/>
+                <property name="group" fetchPlan="_instance_name"/>
                 <property name="owner" fetchPlan="_instance_name"/>
                 <property name="domain" fetchPlan="_instance_name"/>
                 <property name="dataProduct" fetchPlan="_instance_name"/>
@@ -42,6 +43,14 @@
                     required="true"
                     requiredMessage="msg://dqCheckRunNewView.dataSourceRequired"
                     label="msg://com.company.demo.entity/DqRule.dataSource"/>
+            <entityPicker id="groupField"
+                          property="group"
+                          label="msg://com.company.demo.entity/DqRule.group">
+                <actions>
+                    <action id="entityLookupAction" type="entity_lookup"/>
+                    <action id="entityClearAction" type="entity_clear"/>
+                </actions>
+            </entityPicker>
             <entityPicker id="domainField"
                           property="domain"
                           label="msg://com.company.demo.entity/DqRule.domain">
@@ -110,6 +119,7 @@
                       columnReorderingAllowed="true">
                 <columns resizable="true">
                     <column property="name" autoWidth="true" flexGrow="0"/>
+                    <column property="group" autoWidth="true" flexGrow="0"/>
                     <column property="dataSource" autoWidth="true" flexGrow="0"/>
                     <column property="tableName" autoWidth="true" flexGrow="0"/>
                     <column property="columnName" autoWidth="true" flexGrow="0"/>

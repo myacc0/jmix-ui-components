@@ -17,6 +17,7 @@
                 <property name="active"/>
                 <property name="createdAt"/>
                 <property name="updatedAt"/>
+                <property name="group" fetchPlan="_instance_name"/>
                 <property name="owner" fetchPlan="_instance_name"/>
                 <property name="domain" fetchPlan="_instance_name"/>
                 <property name="dataProduct" fetchPlan="_instance_name"/>
@@ -59,6 +60,7 @@
             </actions>
             <columns resizable="true">
                 <column property="name" autoWidth="true" flexGrow="0" filterable="true"/>
+                <column property="group" autoWidth="true" flexGrow="0" filterable="true"/>
                 <column property="dataSource" autoWidth="true" flexGrow="0" filterable="true"/>
                 <column property="dbSchema" autoWidth="true" flexGrow="0" filterable="true"/>
                 <column property="tableName" autoWidth="true" flexGrow="0" filterable="true"/>

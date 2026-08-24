@@ -6,6 +6,7 @@
     <data>
         <instance id="dqRuleDc" class="com.company.demo.entity.DqRule">
             <fetchPlan extends="_base">
+                <property name="group" fetchPlan="_instance_name"/>
                 <property name="owner" fetchPlan="_instance_name"/>
                 <property name="domain" fetchPlan="_instance_name"/>
                 <property name="dataProduct" fetchPlan="_instance_name"/>
@@ -34,8 +35,16 @@
             <formItem label="msg://com.company.demo.entity/DqRule.description">
                 <textArea id="descriptionField" property="description" minRows="5"/>
             </formItem>
+            <formItem label="msg://com.company.demo.entity/DqRule.group">
+                <entityPicker id="groupField" property="group" required="true">
+                    <actions>
+                        <action id="entityLookupAction" type="entity_lookup"/>
+                        <action id="entityClearAction" type="entity_clear"/>
+                    </actions>
+                </entityPicker>
+            </formItem>
             <formItem label="msg://com.company.demo.entity/DqRule.domain">
-                <entityPicker id="domainField" property="domain">
+                <entityPicker id="domainField" property="domain" required="true">
                     <actions>
                         <action id="entityLookupAction" type="entity_lookup"/>
                         <action id="entityClearAction" type="entity_clear"/>

@@ -21,7 +21,8 @@ import java.util.UUID;
 @Table(name = "DEMO_DQ_RULE", indexes = {
         @Index(name = "IDX_DEMO_DQ_RULE_OWNER", columnList = "OWNER_ID"),
         @Index(name = "IDX_DEMO_DQ_RULE_DOMAIN", columnList = "DOMAIN_ID"),
-        @Index(name = "IDX_DEMO_DQ_RULE_DATA_PRODUCT", columnList = "DATA_PRODUCT_ID")
+        @Index(name = "IDX_DEMO_DQ_RULE_DATA_PRODUCT", columnList = "DATA_PRODUCT_ID"),
+        @Index(name = "IDX_DEMO_DQ_RULE_GROUP", columnList = "GROUP_ID")
 })
 @Entity(name = "demo_DqRule")
 public class DqRule {
@@ -37,6 +38,11 @@ public class DqRule {
 
     @Column(name = "DESCRIPTION", columnDefinition = "text")
     private String description;
+
+    @OnDeleteInverse(DeletePolicy.UNLINK)
+    @JoinColumn(name = "GROUP_ID")
+    @ManyToOne(fetch = FetchType.LAZY)
+    private DqRuleGroup group;
 
     @Column(name = "DATA_SOURCE", nullable = false, length = 100)
     @NotNull
@@ -97,6 +103,14 @@ public class DqRule {
 
     @Column(name = "UPDATED_AT", columnDefinition = "TIMESTAMP")
     private LocalDateTime updatedAt;
+
+    public DqRuleGroup getGroup() {
+        return group;
+    }
+
+    public void setGroup(DqRuleGroup group) {
+        this.group = group;
+    }
 
     public String getDbSchema() {
         return dbSchema;

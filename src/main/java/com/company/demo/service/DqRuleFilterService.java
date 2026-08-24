@@ -21,6 +21,7 @@ import java.util.Map;
 public class DqRuleFilterService {
 
     public static final String PARAM_DATA_SOURCE = "dataSource";
+    public static final String PARAM_GROUP = "group";
     public static final String PARAM_DOMAIN = "domain";
     public static final String PARAM_DATA_PRODUCT = "dataProduct";
     public static final String PARAM_DIMENSION = "dimension";
@@ -37,6 +38,7 @@ public class DqRuleFilterService {
     public LogicalCondition createRuleCondition() {
         return LogicalCondition.and(
                 condition("{E}.dataSource = :" + PARAM_DATA_SOURCE),
+                condition("{E}.group = :" + PARAM_GROUP),
                 condition("{E}.domain = :" + PARAM_DOMAIN),
                 condition("{E}.dataProduct = :" + PARAM_DATA_PRODUCT),
                 condition("{E}.dimension = :" + PARAM_DIMENSION),
@@ -55,6 +57,7 @@ public class DqRuleFilterService {
     public Map<String, Object> createRuleParameters(DqRuleFilter filter) {
         Map<String, Object> parameters = new HashMap<>();
         parameters.put(PARAM_DATA_SOURCE, filter.getDataSource());
+        parameters.put(PARAM_GROUP, filter.getGroup());
         parameters.put(PARAM_DOMAIN, filter.getDomain());
         parameters.put(PARAM_DATA_PRODUCT, filter.getDataProduct());
         parameters.put(PARAM_DIMENSION, filter.getDimension());

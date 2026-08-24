@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd"
+        objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+        logicalFilePath="com/company/demo/liquibase/changelog/2026/08/24-180053-f241bd14.xml">
+    <changeSet id="1" author="demo">
+        <addColumn tableName="DEMO_DQ_RULE">
+            <column name="GROUP_ID" type="UUID"/>
+        </addColumn>
+    </changeSet>
+    <changeSet id="2" author="demo">
+        <createIndex indexName="IDX_DEMO_DQ_RULE_GROUP" tableName="DEMO_DQ_RULE">
+            <column name="GROUP_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="GROUP_ID" baseTableName="DEMO_DQ_RULE"
+                                 constraintName="FK_DEMO_DQ_RULE_ON_GROUP" onDelete="SET NULL"
+                                 referencedColumnNames="ID" referencedTableName="DEMO_DQ_RULE_GROUP"/>
+    </changeSet>
+    <changeSet id="3" author="demo">
+        <dropColumn columnName="data_product_id" tableName="demo_dq_rule_group"/>
+
+        <dropColumn columnName="domain_id" tableName="demo_dq_rule_group"/>
+    </changeSet>
+</databaseChangeLog>
