@@ -8,6 +8,7 @@
         <item view="demo_Employee.list" title="msg://com.company.demo.view.employee/employeeListView.title"/>
         <item view="demo_DemoPvttbl" title="msg://com.company.demo.view.demopvttbl/demoPvttbl.title"/>
         <item view="demo_TipInfo.list" title="msg://com.company.demo.view.tipinfo/tipInfoListView.title"/>
+        <item view="demo_Operation.list" title="msg://com.company.demo.view.operation/operationListView.title"/>
     </menu>
     <menu opened="true" id="dq" description="msg://com.company.demo/menu_config.dq.description"
           title="msg://com.company.demo/menu_config.dq.title">
