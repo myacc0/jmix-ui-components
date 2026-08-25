@@ -22,7 +22,9 @@ import java.util.UUID;
         @Index(name = "IDX_DEMO_DQ_RULE_OWNER", columnList = "OWNER_ID"),
         @Index(name = "IDX_DEMO_DQ_RULE_DOMAIN", columnList = "DOMAIN_ID"),
         @Index(name = "IDX_DEMO_DQ_RULE_DATA_PRODUCT", columnList = "DATA_PRODUCT_ID"),
-        @Index(name = "IDX_DEMO_DQ_RULE_GROUP", columnList = "GROUP_ID")
+        @Index(name = "IDX_DEMO_DQ_RULE_GROUP", columnList = "GROUP_ID"),
+        @Index(name = "IDX_DEMO_DQ_RULE_ASSIGNEE_SUBDIVISION", columnList = "ASSIGNEE_SUBDIVISION_ID"),
+        @Index(name = "IDX_DEMO_DQ_RULE_ASSIGNEE_EMPLOYEE", columnList = "ASSIGNEE_EMPLOYEE_ID")
 })
 @Entity(name = "demo_DqRule")
 public class DqRule {
@@ -93,6 +95,16 @@ public class DqRule {
     @ManyToOne(fetch = FetchType.LAZY)
     private DqDataProduct dataProduct;
 
+    @OnDeleteInverse(DeletePolicy.UNLINK)
+    @JoinColumn(name = "ASSIGNEE_SUBDIVISION_ID")
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Department assigneeSubdivision;
+
+    @OnDeleteInverse(DeletePolicy.UNLINK)
+    @JoinColumn(name = "ASSIGNEE_EMPLOYEE_ID")
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Employee assigneeEmployee;
+
     @Column(name = "VERSION", nullable = false)
     @Version
     private Integer version;
@@ -103,6 +115,22 @@ public class DqRule {
 
     @Column(name = "UPDATED_AT", columnDefinition = "TIMESTAMP")
     private LocalDateTime updatedAt;
+
+    public Employee getAssigneeEmployee() {
+        return assigneeEmployee;
+    }
+
+    public void setAssigneeEmployee(Employee assigneeEmployee) {
+        this.assigneeEmployee = assigneeEmployee;
+    }
+
+    public Department getAssigneeSubdivision() {
+        return assigneeSubdivision;
+    }
+
+    public void setAssigneeSubdivision(Department subdivision) {
+        this.assigneeSubdivision = subdivision;
+    }
 
     public DqRuleGroup getGroup() {
         return group;

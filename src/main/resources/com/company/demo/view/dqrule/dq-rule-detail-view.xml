@@ -10,6 +10,8 @@
                 <property name="owner" fetchPlan="_instance_name"/>
                 <property name="domain" fetchPlan="_instance_name"/>
                 <property name="dataProduct" fetchPlan="_instance_name"/>
+                <property name="assigneeSubdivision" fetchPlan="_instance_name"/>
+                <property name="assigneeEmployee" fetchPlan="_instance_name"/>
             </fetchPlan>
             <loader id="dqRuleDl"/>
         </instance>
@@ -85,6 +87,27 @@
                 </formItem>
                 <formItem label="msg://com.company.demo.entity/DqRule.columnName">
                     <comboBox id="columnNameField" property="columnName"/>
+                </formItem>
+            </hbox>
+
+            <hbox classNames="form-block">
+                <span classNames="form-block-title" text="Ответственное подразделение (за исправление ошибок, при обнаружении данным правилом)"/>
+
+                <formItem label="msg://com.company.demo.entity/DqRule.assigneeSubdivision">
+                    <entityPicker id="assigneeSubdivisionField" property="assigneeSubdivision" required="true">
+                        <actions>
+                            <action id="entityLookupAction" type="entity_lookup"/>
+                            <action id="entityClearAction" type="entity_clear"/>
+                        </actions>
+                    </entityPicker>
+                </formItem>
+                <formItem label="msg://com.company.demo.entity/DqRule.assigneeEmployee">
+                    <entityPicker id="assigneeEmployeeField" property="assigneeEmployee">
+                        <actions>
+                            <action id="entityLookupAction" type="entity_lookup"/>
+                            <action id="entityClearAction" type="entity_clear"/>
+                        </actions>
+                    </entityPicker>
                 </formItem>
             </hbox>
 
