@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Translates a {@link DqRule} into the SQL that measures it, in the dialect of the rule's data source.
@@ -32,7 +33,8 @@ import java.util.regex.Pattern;
  *     <li>a <b>metrics</b> query returning {@value #COLUMN_TOTAL_COUNT} and
  *     {@value #COLUMN_FAILED_COUNT} in a single row;</li>
  *     <li>a <b>samples</b> query returning the violating rows, capped by {@code ruleConfig.sampleSize}
- *     (no cap when it is not set).</li>
+ *     (no cap when it is not set) and projected onto {@code ruleConfig.samplesQueryColumns}
+ *     ({@value #ALL_COLUMNS}, or an absent list, keeps the whole row).</li>
  * </ul>
  * The {@code threshold} attribute is deliberately not part of the SQL: it compares against the pass
  * rate derived from the two counts and belongs to the executor.
@@ -50,6 +52,13 @@ public class DqSqlQueryBuilder {
     public static final String COLUMN_TOTAL_COUNT = "total_count";
     /** Alias of the violating row count in the metrics query. */
     public static final String COLUMN_FAILED_COUNT = "failed_count";
+
+    /**
+     * The {@code samplesQueryColumns} entry standing for "every column". A wide table would otherwise
+     * pin a column list into the rule config that the next table change would invalidate, so both an
+     * empty selection and a complete one are stored as this single value.
+     */
+    public static final String ALL_COLUMNS = "*";
 
     /**
      * Accepted shape of a table or column name. Everything else is rejected rather than escaped:
@@ -217,7 +226,7 @@ public class DqSqlQueryBuilder {
                 + ", COUNT(CASE WHEN (" + violation.sql() + ") THEN 1 END) AS " + COLUMN_FAILED_COUNT
                 + from;
 
-        StringBuilder samples = new StringBuilder("SELECT ").append(ROW_ALIAS).append(".*")
+        StringBuilder samples = new StringBuilder("SELECT ").append(samplesProjection(rule, config, dialect))
                 .append(from)
                 .append(" WHERE (").append(violation.sql()).append(')');
         if (orderByColumn != null) {
@@ -267,6 +276,26 @@ public class DqSqlQueryBuilder {
 
         String predicate = column + " IS NOT NULL AND (" + String.join(" OR ", outOfRange) + ")";
         return rowLevelQueries(rule, config, dialect, new Predicate(predicate, params), null);
+    }
+
+    /**
+     * The select list of the samples query. Storing only the columns worth looking at keeps the
+     * serialized samples small and readable on tables that carry hundreds of them; the whole row is
+     * kept when the configuration names {@value #ALL_COLUMNS} or names nothing usable.
+     */
+    private String samplesProjection(DqRule rule, DqRuleConfig config, DqSqlDialect dialect) {
+        List<String> columns = config.getSamplesQueryColumns();
+        if (columns == null || columns.contains(ALL_COLUMNS)) {
+            return ROW_ALIAS + ".*";
+        }
+
+        String projection = columns.stream()
+                .filter(StringUtils::hasText)
+                .map(String::trim)
+                .distinct()
+                .map(column -> ROW_ALIAS + "." + dialect.quote(requireIdentifier(column, "Sample column", rule)))
+                .collect(Collectors.joining(", "));
+        return projection.isEmpty() ? ROW_ALIAS + ".*" : projection;
     }
 
     // ---------------------------------------------------------------------

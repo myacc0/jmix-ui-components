@@ -291,6 +291,85 @@ public class DqSqlQueryBuilderTests {
                 () -> build(rule(DqRuleType.NOT_NULL, "{not json"), DqSqlDialect.POSTGRESQL));
     }
 
+    // ----- samples projection -----
+
+    @Test
+    void samplesSelectTheWholeRowWhenNoColumnsAreConfigured() {
+        DqRuleQueries queries = build(rule(DqRuleType.NOT_NULL, "{}"), DqSqlDialect.POSTGRESQL);
+
+        assertEquals("SELECT t.* FROM \"employee\" t WHERE (t.\"first_name\" IS NULL)",
+                queries.samples().sql());
+    }
+
+    @Test
+    void samplesSelectTheWholeRowForTheAllColumnsMarker() {
+        DqRuleQueries queries = build(
+                rule(DqRuleType.NOT_NULL, "{\"samplesQueryColumns\": [\"*\"]}"), DqSqlDialect.POSTGRESQL);
+
+        assertEquals("SELECT t.* FROM \"employee\" t WHERE (t.\"first_name\" IS NULL)",
+                queries.samples().sql());
+    }
+
+    @Test
+    void samplesAreProjectedOntoTheConfiguredColumns() {
+        DqRuleQueries queries = build(
+                rule(DqRuleType.NOT_NULL, "{\"samplesQueryColumns\": [\"id\", \"first_name\"]}"),
+                DqSqlDialect.POSTGRESQL);
+
+        assertEquals("SELECT t.\"id\", t.\"first_name\" FROM \"employee\" t" +
+                        " WHERE (t.\"first_name\" IS NULL)",
+                queries.samples().sql());
+        // the projection never reaches the metrics query: it counts rows, not values
+        assertTrue(queries.metrics().sql().startsWith("SELECT COUNT(*) AS total_count"),
+                queries.metrics().sql());
+    }
+
+    @Test
+    void theProjectionIsQuotedInTheDialectOfTheDataSource() {
+        DqRuleQueries queries = build(
+                rule(DqRuleType.NOT_NULL, "{\"samplesQueryColumns\": [\"id\", \"first_name\"]}"),
+                DqSqlDialect.MYSQL);
+
+        assertEquals("SELECT t.`id`, t.`first_name` FROM `employee` t WHERE (t.`first_name` IS NULL)",
+                queries.samples().sql());
+    }
+
+    @Test
+    void theProjectionIsCombinedWithTheSampleSizeLimit() {
+        DqRuleQueries queries = build(
+                rule(DqRuleType.NOT_NULL, "{\"sampleSize\": 25, \"samplesQueryColumns\": [\"id\"]}"),
+                DqSqlDialect.POSTGRESQL);
+
+        assertEquals("SELECT t.\"id\" FROM \"employee\" t WHERE (t.\"first_name\" IS NULL) LIMIT 25",
+                queries.samples().sql());
+    }
+
+    @Test
+    void blankAndDuplicateProjectionEntriesAreDropped() {
+        DqRuleQueries queries = build(
+                rule(DqRuleType.NOT_NULL, "{\"samplesQueryColumns\": [\" id \", \"id\", \"\"]}"),
+                DqSqlDialect.POSTGRESQL);
+
+        assertEquals("SELECT t.\"id\" FROM \"employee\" t WHERE (t.\"first_name\" IS NULL)",
+                queries.samples().sql());
+    }
+
+    @Test
+    void anEmptyProjectionFallsBackToTheWholeRow() {
+        DqRuleQueries queries = build(
+                rule(DqRuleType.NOT_NULL, "{\"samplesQueryColumns\": []}"), DqSqlDialect.POSTGRESQL);
+
+        assertEquals("SELECT t.* FROM \"employee\" t WHERE (t.\"first_name\" IS NULL)",
+                queries.samples().sql());
+    }
+
+    @Test
+    void aProjectionColumnThatIsNotAnIdentifierIsRejected() {
+        assertThrows(IllegalArgumentException.class,
+                () -> build(rule(DqRuleType.NOT_NULL, "{\"samplesQueryColumns\": [\"id; DROP TABLE employee\"]}"),
+                        DqSqlDialect.POSTGRESQL));
+    }
+
     // ----- not implemented yet -----
 
     @ParameterizedTest

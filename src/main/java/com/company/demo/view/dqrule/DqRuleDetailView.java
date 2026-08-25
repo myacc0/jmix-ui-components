@@ -110,6 +110,9 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
     @ViewComponent
     private JmixMultiSelectComboBox<String> samplesQueryColumnsField;
 
+    /** Columns of the currently selected table — the item set of {@link #samplesQueryColumnsField}. */
+    private List<String> availableColumns = List.of();
+
     /**
      * Guards against feedback loops while the controller sets field values
      * programmatically (populating fields from the stored JSON, clearing on
@@ -247,6 +250,7 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         List<String> columns = dataSource != null && tableName != null
                 ? dataSourceProvider.getTableColumns(dataSource, dbSchemaField.getValue(), tableName)
                 : List.of();
+        availableColumns = columns;
         columnNameField.setItems(columns);
         samplesQueryColumnsField.setItems(columns);
     }
@@ -291,10 +295,12 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
                 ? sampleSize.doubleValue()
                 : (double) DqRuleValidator.DEFAULT_SAMPLE_SIZE);
         List<String> samplesQueryColumns = config != null ? config.getSamplesQueryColumns() : null;
-        // an empty selection means "no projection" — the samples query keeps the whole row
-        samplesQueryColumnsField.setValue(samplesQueryColumns != null
-                ? new LinkedHashSet<>(samplesQueryColumns)
-                : Set.<String>of());
+        // "*" is the stored form of "every column"; the picker shows it as an empty selection, which
+        // reads as the placeholder rather than as a chip per column on a table that has hundreds
+        samplesQueryColumnsField.setValue(samplesQueryColumns == null
+                        || samplesQueryColumns.contains(DqSqlQueryBuilder.ALL_COLUMNS)
+                ? Set.<String>of()
+                : new LinkedHashSet<>(samplesQueryColumns));
 
         if (config == null || type == null) {
             return;
@@ -348,15 +354,26 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         config.setThreshold(thresholdField.getValue() != null ? thresholdField.getValue().doubleValue() : null);
         Double sampleSize = sampleSizeField.getValue();
         config.setSampleSize(sampleSize != null ? (int) Math.round(sampleSize) : null);
-        Set<String> samplesQueryColumns = samplesQueryColumnsField.getValue();
-        config.setSamplesQueryColumns(samplesQueryColumns == null || samplesQueryColumns.isEmpty()
-                ? null
-                : List.copyOf(samplesQueryColumns));
+        config.setSamplesQueryColumns(samplesProjection());
         try {
             getEditedEntity().setRuleConfig(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(config));
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to serialize rule config", e);
         }
+    }
+
+    /**
+     * The sample projection to store. Selecting nothing and selecting every column both mean "the
+     * whole row", so both collapse to {@link DqSqlQueryBuilder#ALL_COLUMNS} rather than to a literal
+     * column list that the next table change would leave pointing at columns that no longer exist.
+     */
+    private List<String> samplesProjection() {
+        Set<String> selected = samplesQueryColumnsField.getValue();
+        if (selected == null || selected.isEmpty()
+                || (!availableColumns.isEmpty() && selected.containsAll(availableColumns))) {
+            return List.of(DqSqlQueryBuilder.ALL_COLUMNS);
+        }
+        return List.copyOf(selected);
     }
 
     /**
