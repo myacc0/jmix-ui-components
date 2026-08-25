@@ -24,6 +24,7 @@ import io.jmix.core.SaveContext;
 import io.jmix.flowui.component.checkbox.JmixCheckbox;
 import io.jmix.flowui.component.combobox.JmixComboBox;
 import io.jmix.flowui.component.datepicker.TypedDatePicker;
+import io.jmix.flowui.component.multiselectcombobox.JmixMultiSelectComboBox;
 import io.jmix.flowui.component.select.JmixSelect;
 import io.jmix.flowui.component.textfield.JmixNumberField;
 import io.jmix.flowui.component.textfield.TypedTextField;
@@ -35,6 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -105,6 +107,8 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
     private Slider thresholdField;
     @ViewComponent
     private JmixNumberField sampleSizeField;
+    @ViewComponent
+    private JmixMultiSelectComboBox<String> samplesQueryColumnsField;
 
     /**
      * Guards against feedback loops while the controller sets field values
@@ -151,6 +155,7 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
                 dbSchemaField.setValue(null);
                 tableNameField.setValue(null);
                 columnNameField.setValue(null);
+                samplesQueryColumnsField.clear();
             }
             reloadTables();
         });
@@ -159,6 +164,7 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
             if (e.isFromClient()) {
                 tableNameField.setValue(null);
                 columnNameField.setValue(null);
+                samplesQueryColumnsField.clear();
             }
             reloadTables();
         });
@@ -166,6 +172,7 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         tableNameField.addValueChangeListener(e -> {
             if (e.isFromClient()) {
                 columnNameField.setValue(null);
+                samplesQueryColumnsField.clear();
             }
             reloadColumns();
         });
@@ -198,6 +205,7 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         regexpField.addValueChangeListener(e -> onDynamicFieldChange());
         thresholdField.addValueChangeListener(e -> onDynamicFieldChange());
         sampleSizeField.addValueChangeListener(e -> onDynamicFieldChange());
+        samplesQueryColumnsField.addValueChangeListener(e -> onDynamicFieldChange());
     }
 
     @Subscribe
@@ -229,13 +237,18 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         reloadColumns();
     }
 
-    /** The columns offered for the selected table. */
+    /**
+     * The columns offered for the selected table, shared by the checked-column picker and the
+     * sample-projection picker.
+     */
     private void reloadColumns() {
         String dataSource = dataSourceField.getValue();
         String tableName = tableNameField.getValue();
-        columnNameField.setItems(dataSource != null && tableName != null
+        List<String> columns = dataSource != null && tableName != null
                 ? dataSourceProvider.getTableColumns(dataSource, dbSchemaField.getValue(), tableName)
-                : List.of());
+                : List.of();
+        columnNameField.setItems(columns);
+        samplesQueryColumnsField.setItems(columns);
     }
 
     private void onDynamicFieldChange() {
@@ -277,6 +290,11 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         sampleSizeField.setValue(sampleSize != null
                 ? sampleSize.doubleValue()
                 : (double) DqRuleValidator.DEFAULT_SAMPLE_SIZE);
+        List<String> samplesQueryColumns = config != null ? config.getSamplesQueryColumns() : null;
+        // an empty selection means "no projection" — the samples query keeps the whole row
+        samplesQueryColumnsField.setValue(samplesQueryColumns != null
+                ? new LinkedHashSet<>(samplesQueryColumns)
+                : Set.<String>of());
 
         if (config == null || type == null) {
             return;
@@ -330,6 +348,10 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         config.setThreshold(thresholdField.getValue() != null ? thresholdField.getValue().doubleValue() : null);
         Double sampleSize = sampleSizeField.getValue();
         config.setSampleSize(sampleSize != null ? (int) Math.round(sampleSize) : null);
+        Set<String> samplesQueryColumns = samplesQueryColumnsField.getValue();
+        config.setSamplesQueryColumns(samplesQueryColumns == null || samplesQueryColumns.isEmpty()
+                ? null
+                : List.copyOf(samplesQueryColumns));
         try {
             getEditedEntity().setRuleConfig(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(config));
         } catch (JsonProcessingException e) {

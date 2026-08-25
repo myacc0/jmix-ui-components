@@ -154,6 +154,14 @@
                     <numberField id="sampleSizeField" stepButtonsVisible="true"/>
                 </formItem>
 
+                <formItem label="msg://ruleConfig.samplesQueryColumns">
+                    <multiSelectComboBox id="samplesQueryColumnsField"
+                                         placeholder="msg://ruleConfig.samplesQueryColumns.placeholder"
+                                         clearButtonVisible="true"
+                                         selectedItemsOnTop="true"
+                                         width="100%"/>
+                </formItem>
+
                 <formItem label="msg://com.company.demo.entity/DqRule.ruleConfig" css="margin-bottom: 10px">
                     <textArea id="ruleConfigField" property="ruleConfig" minRows="5" readOnly="true"/>
                 </formItem>

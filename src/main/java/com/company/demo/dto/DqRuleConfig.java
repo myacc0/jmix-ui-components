@@ -3,6 +3,8 @@ package com.company.demo.dto;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import java.util.List;
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class DqRuleConfig {
@@ -10,6 +12,9 @@ public class DqRuleConfig {
     private Double threshold;
     // if null, all selected
     private Integer sampleSize;
+    // columns projected by the samples query; if null or empty, the whole row is stored.
+    // Wide tables would otherwise blow up the sample storage and make the samples hard to read.
+    private List<String> samplesQueryColumns;
 
     // ----- RANGE (number or date) -----
     // For RANGE_NUMBER holds a numeric bound; for RANGE_DATE holds an ISO-8601 date string.
@@ -51,6 +56,14 @@ public class DqRuleConfig {
 
     public void setSampleSize(Integer sampleSize) {
         this.sampleSize = sampleSize;
+    }
+
+    public List<String> getSamplesQueryColumns() {
+        return samplesQueryColumns;
+    }
+
+    public void setSamplesQueryColumns(List<String> samplesQueryColumns) {
+        this.samplesQueryColumns = samplesQueryColumns;
     }
 
     public Object getMin() {
@@ -170,6 +183,7 @@ public class DqRuleConfig {
         return "DqRuleConfig{" +
                 "threshold=" + threshold +
                 ", sampleSize=" + sampleSize +
+                ", samplesQueryColumns=" + samplesQueryColumns +
                 ", min=" + min +
                 ", max=" + max +
                 ", minIncluded=" + minIncluded +
