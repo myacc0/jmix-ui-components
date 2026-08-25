@@ -1,0 +1,29 @@
+.form-block {
+    display: block;
+    width: 100%;
+    position: relative;
+    padding: 10px 20px 20px 20px;
+    border: 1px solid var(--lumo-contrast-20pct);
+    border-radius: 4px;
+}
+.form-block + .form-block {
+    margin-top: 30px;
+}
+.form-block .form-block-title {
+    display: inline-block;
+    position: absolute;
+    top: -10px;
+    left: 15px;
+    background-color: var(--lumo-base-color);
+    padding: 0 5px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.form-block vaadin-form-item {
+    display: block;
+    width: 100%;
+}
+.form-block vaadin-form-item::part(label) {
+    display: block;
+    width: 100%;
+}

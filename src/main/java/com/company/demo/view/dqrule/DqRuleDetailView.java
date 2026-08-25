@@ -16,6 +16,7 @@ import com.company.demo.view.main.MainView;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
 import io.jmix.core.FetchPlan;
@@ -23,7 +24,6 @@ import io.jmix.core.SaveContext;
 import io.jmix.flowui.component.checkbox.JmixCheckbox;
 import io.jmix.flowui.component.combobox.JmixComboBox;
 import io.jmix.flowui.component.datepicker.TypedDatePicker;
-import io.jmix.flowui.component.formlayout.JmixFormLayout;
 import io.jmix.flowui.component.select.JmixSelect;
 import io.jmix.flowui.component.textfield.JmixNumberField;
 import io.jmix.flowui.component.textfield.TypedTextField;
@@ -81,7 +81,8 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
     @ViewComponent
     private VerticalLayout rangeBox;
     @ViewComponent
-    private JmixFormLayout regexpBox;
+    private HorizontalLayout regexpBox;
+
 
     // ----- dynamic ruleConfig fields -----
     @ViewComponent
