@@ -74,23 +74,6 @@
             </hbox>
 
             <hbox classNames="form-block">
-                <span classNames="form-block-title" text="Источник данных"/>
-
-                <formItem label="msg://com.company.demo.entity/DqRule.dataSource">
-                    <select id="dataSourceField" property="dataSource"/>
-                </formItem>
-                <formItem label="msg://com.company.demo.entity/DqRule.dbSchema">
-                    <comboBox id="dbSchemaField" property="dbSchema"/>
-                </formItem>
-                <formItem label="msg://com.company.demo.entity/DqRule.tableName">
-                    <comboBox id="tableNameField" property="tableName"/>
-                </formItem>
-                <formItem label="msg://com.company.demo.entity/DqRule.columnName">
-                    <comboBox id="columnNameField" property="columnName"/>
-                </formItem>
-            </hbox>
-
-            <hbox classNames="form-block">
                 <span classNames="form-block-title" text="Ответственное подразделение (за исправление ошибок, при обнаружении данным правилом)"/>
 
                 <formItem label="msg://com.company.demo.entity/DqRule.assigneeSubdivision">
@@ -112,16 +95,27 @@
             </hbox>
 
             <hbox classNames="form-block">
+                <span classNames="form-block-title" text="Источник данных"/>
+
+                <formItem label="msg://com.company.demo.entity/DqRule.dataSource">
+                    <select id="dataSourceField" property="dataSource" required="true"/>
+                </formItem>
+                <formItem label="msg://com.company.demo.entity/DqRule.dbSchema">
+                    <comboBox id="dbSchemaField" property="dbSchema" required="true"/>
+                </formItem>
+                <formItem label="msg://com.company.demo.entity/DqRule.tableName">
+                    <comboBox id="tableNameField" property="tableName" required="true"/>
+                </formItem>
+                <formItem label="msg://com.company.demo.entity/DqRule.columnName">
+                    <comboBox id="columnNameField" property="columnName" required="true"/>
+                </formItem>
+            </hbox>
+
+            <hbox classNames="form-block">
                 <span classNames="form-block-title" text="Настройки"/>
 
                 <formItem label="msg://com.company.demo.entity/DqRule.ruleType">
                     <select id="ruleTypeField" property="ruleType"/>
-                </formItem>
-
-                <app:slider id="thresholdField" label="msg://ruleConfig.threshold" min="0" max="100" value="100"/>
-
-                <formItem label="msg://ruleConfig.sampleSize">
-                    <numberField id="sampleSizeField" stepButtonsVisible="true"/>
                 </formItem>
 
                 <vbox id="rangeBox" visible="false" padding="false" width="100%">
@@ -148,6 +142,17 @@
                         <textField id="regexpField"/>
                     </formItem>
                 </hbox>
+
+                <app:slider id="thresholdField"
+                            label="msg://ruleConfig.threshold"
+                            min="0"
+                            max="100"
+                            value="100"
+                            css="margin-top: 10px"/>
+
+                <formItem label="msg://ruleConfig.sampleSize">
+                    <numberField id="sampleSizeField" stepButtonsVisible="true"/>
+                </formItem>
 
                 <formItem label="msg://com.company.demo.entity/DqRule.ruleConfig" css="margin-bottom: 10px">
                     <textArea id="ruleConfigField" property="ruleConfig" minRows="5" readOnly="true"/>
