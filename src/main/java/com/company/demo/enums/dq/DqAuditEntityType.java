@@ -1,19 +1,17 @@
-package com.company.demo.enums;
+package com.company.demo.enums.dq;
 
 import io.jmix.core.metamodel.datatype.EnumClass;
 
 import org.springframework.lang.Nullable;
 
-public enum DqIssueStatus implements EnumClass<String> {
+public enum DqAuditEntityType implements EnumClass<String> {
 
-    OPEN("open"),
-    RESOLVED("resolved"),
-    WONTFIX("wontfix"),
-    FALSE_POSITIVE("false_positive");
+    RULE("rule"),
+    ISSUE("issue");
 
     private final String id;
 
-    DqIssueStatus(String id) {
+    DqAuditEntityType(String id) {
         this.id = id;
     }
 
@@ -22,8 +20,8 @@ public enum DqIssueStatus implements EnumClass<String> {
     }
 
     @Nullable
-    public static DqIssueStatus fromId(String id) {
-        for (DqIssueStatus at : DqIssueStatus.values()) {
+    public static DqAuditEntityType fromId(String id) {
+        for (DqAuditEntityType at : DqAuditEntityType.values()) {
             if (at.getId().equals(id)) {
                 return at;
             }

@@ -1,6 +1,6 @@
 package com.company.demo.entity.dq;
 
-import com.company.demo.enums.DqCheckRunStatus;
+import com.company.demo.enums.dq.DqCheckRunStatus;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
 import io.jmix.core.metamodel.annotation.Composition;
 import io.jmix.core.metamodel.annotation.JmixEntity;

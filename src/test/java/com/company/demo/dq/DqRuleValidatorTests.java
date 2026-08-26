@@ -2,7 +2,7 @@ package com.company.demo.dq;
 
 import com.company.demo.dto.DqRuleValidationError;
 import com.company.demo.entity.dq.DqRule;
-import com.company.demo.enums.DqRuleType;
+import com.company.demo.enums.dq.DqRuleType;
 import com.company.demo.service.DqRuleValidator;
 import com.company.demo.test_support.AuthenticatedAsAdmin;
 import io.jmix.core.DataManager;

@@ -1,4 +1,4 @@
-package com.company.demo.enums;
+package com.company.demo.enums.dq;
 
 import org.springframework.lang.Nullable;
 

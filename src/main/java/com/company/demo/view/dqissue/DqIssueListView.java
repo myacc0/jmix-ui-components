@@ -2,7 +2,7 @@ package com.company.demo.view.dqissue;
 
 import com.company.demo.component.DqBadges;
 import com.company.demo.entity.dq.DqIssue;
-import com.company.demo.enums.DqIssueStatus;
+import com.company.demo.enums.dq.DqIssueStatus;
 import com.company.demo.view.main.MainView;
 import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.router.Route;

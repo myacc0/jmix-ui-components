@@ -1,20 +1,19 @@
-package com.company.demo.enums;
+package com.company.demo.enums.dq;
 
 import io.jmix.core.metamodel.datatype.EnumClass;
 
 import org.springframework.lang.Nullable;
 
+public enum DqIssueStatus implements EnumClass<String> {
 
-public enum DqSeverity implements EnumClass<String> {
-
-    LOW("low"),
-    MEDIUM("medium"),
-    HIGH("high"),
-    CRITICAL("critical");
+    OPEN("open"),
+    RESOLVED("resolved"),
+    WONTFIX("wontfix"),
+    FALSE_POSITIVE("false_positive");
 
     private final String id;
 
-    DqSeverity(String id) {
+    DqIssueStatus(String id) {
         this.id = id;
     }
 
@@ -23,8 +22,8 @@ public enum DqSeverity implements EnumClass<String> {
     }
 
     @Nullable
-    public static DqSeverity fromId(String id) {
-        for (DqSeverity at : DqSeverity.values()) {
+    public static DqIssueStatus fromId(String id) {
+        for (DqIssueStatus at : DqIssueStatus.values()) {
             if (at.getId().equals(id)) {
                 return at;
             }

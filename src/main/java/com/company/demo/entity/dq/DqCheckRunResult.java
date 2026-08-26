@@ -1,6 +1,6 @@
 package com.company.demo.entity.dq;
 
-import com.company.demo.enums.DqCheckResultStatus;
+import com.company.demo.enums.dq.DqCheckResultStatus;
 import com.company.demo.utils.JsonbStringConverter;
 import io.jmix.core.DeletePolicy;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;

@@ -1,4 +1,4 @@
-package com.company.demo.enums;
+package com.company.demo.enums.dq;
 
 import io.jmix.core.metamodel.datatype.EnumClass;
 

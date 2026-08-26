@@ -1,6 +1,6 @@
 package com.company.demo.entity.dq;
 
-import com.company.demo.enums.DqAuditEntityType;
+import com.company.demo.enums.dq.DqAuditEntityType;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
 import io.jmix.core.metamodel.annotation.InstanceName;
 import io.jmix.core.metamodel.annotation.JmixEntity;

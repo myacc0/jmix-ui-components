@@ -1,19 +1,19 @@
-package com.company.demo.enums;
+package com.company.demo.enums.dq;
 
 import io.jmix.core.metamodel.datatype.EnumClass;
 
 import org.springframework.lang.Nullable;
 
-public enum DqCheckResultStatus implements EnumClass<String> {
+public enum DqCheckRunStatus implements EnumClass<String> {
 
-    PASSED("passed"),
+    RUNNING("running"),
+    SUCCESS("success"),
     FAILED("failed"),
-    WARNING("warning"),
-    SKIPPED("skipped");
+    CANCELLED("cancelled");
 
     private final String id;
 
-    DqCheckResultStatus(String id) {
+    DqCheckRunStatus(String id) {
         this.id = id;
     }
 
@@ -22,8 +22,8 @@ public enum DqCheckResultStatus implements EnumClass<String> {
     }
 
     @Nullable
-    public static DqCheckResultStatus fromId(String id) {
-        for (DqCheckResultStatus at : DqCheckResultStatus.values()) {
+    public static DqCheckRunStatus fromId(String id) {
+        for (DqCheckRunStatus at : DqCheckRunStatus.values()) {
             if (at.getId().equals(id)) {
                 return at;
             }

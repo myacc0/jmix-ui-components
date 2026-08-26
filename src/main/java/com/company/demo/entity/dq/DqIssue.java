@@ -1,7 +1,7 @@
 package com.company.demo.entity.dq;
 
-import com.company.demo.enums.DqIssueStatus;
-import com.company.demo.enums.DqSeverity;
+import com.company.demo.enums.dq.DqIssueStatus;
+import com.company.demo.enums.dq.DqSeverity;
 import io.jmix.core.DeletePolicy;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
 import io.jmix.core.entity.annotation.OnDeleteInverse;

@@ -1,7 +1,7 @@
 package com.company.demo.service;
 
 import com.company.demo.dto.SelectDto;
-import com.company.demo.enums.DqSqlDialect;
+import com.company.demo.enums.dq.DqSqlDialect;
 import io.jmix.core.Messages;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
