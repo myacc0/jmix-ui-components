@@ -1,16 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <view xmlns="http://jmix.io/schema/flowui/view"
       xmlns:c="http://jmix.io/schema/flowui/jpql-condition"
-      title="msg://employeeListView.title"
-      focusComponent="employeesDataGrid">
+      title="msg://jobTitleListView.title"
+      focusComponent="jobTitlesDataGrid">
     <data>
-        <collection id="employeesDc"
-                    class="com.company.demo.entity.orgstructure.Employee">
-            <fetchPlan extends="_base">
-            </fetchPlan>
-            <loader id="employeesDl" readOnly="true">
+        <collection id="jobTitlesDc"
+                    class="com.company.demo.entity.orgstructure.JobTitle">
+            <fetchPlan extends="_base"/>
+            <loader id="jobTitlesDl" readOnly="true">
                 <query>
-                    <![CDATA[select e from demo_Employee e]]>
+                    <![CDATA[select e from demo_JobTitle e]]>
                 </query>
             </loader>
         </collection>
@@ -28,23 +27,23 @@
     </actions>
     <layout>
         <genericFilter id="genericFilter"
-                       dataLoader="employeesDl">
+                       dataLoader="jobTitlesDl">
             <properties include=".*"/>
         </genericFilter>
         <hbox id="buttonsPanel" classNames="buttons-panel">
             <startSlot>
-                <button id="createButton" action="employeesDataGrid.createAction"/>
-                <button id="editButton" action="employeesDataGrid.editAction"/>
-                <button id="removeButton" action="employeesDataGrid.removeAction"/>
+                <button id="createButton" action="jobTitlesDataGrid.createAction"/>
+                <button id="editButton" action="jobTitlesDataGrid.editAction"/>
+                <button id="removeButton" action="jobTitlesDataGrid.removeAction"/>
             </startSlot>
             <endSlot>
-                <simplePagination id="pagination" dataLoader="employeesDl"/>
+                <simplePagination id="pagination" dataLoader="jobTitlesDl"/>
             </endSlot>
         </hbox>
-        <dataGrid id="employeesDataGrid"
+        <dataGrid id="jobTitlesDataGrid"
                   width="100%"
                   minHeight="20em"
-                  dataContainer="employeesDc"
+                  dataContainer="jobTitlesDc"
                   columnReorderingAllowed="true">
             <actions>
                 <action id="createAction" type="list_create"/>
@@ -52,7 +51,7 @@
                 <action id="removeAction" type="list_remove"/>
             </actions>
             <columns resizable="true">
-                <column property="fullName"/>
+                <column property="name"/>
             </columns>
         </dataGrid>
         <hbox id="lookupActions" visible="false">

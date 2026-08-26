@@ -1,6 +1,6 @@
 package com.company.demo.view.employee;
 
-import com.company.demo.entity.Employee;
+import com.company.demo.entity.orgstructure.Employee;
 import com.company.demo.view.main.MainView;
 import com.vaadin.flow.router.Route;
 import io.jmix.flowui.view.*;

@@ -1,6 +1,6 @@
 package com.company.demo.view.department;
 
-import com.company.demo.entity.Department;
+import com.company.demo.entity.orgstructure.Department;
 import com.company.demo.view.main.MainView;
 import com.vaadin.flow.router.Route;
 import io.jmix.flowui.view.EditedEntityContainer;

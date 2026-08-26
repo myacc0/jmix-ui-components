@@ -4,7 +4,7 @@
       focusComponent="form">
     <data>
         <instance id="departmentDc"
-                  class="com.company.demo.entity.Department">
+                  class="com.company.demo.entity.orgstructure.Department">
             <fetchPlan extends="_base">
                 <property name="parentDepartment" fetchPlan="_base"/>
             </fetchPlan>

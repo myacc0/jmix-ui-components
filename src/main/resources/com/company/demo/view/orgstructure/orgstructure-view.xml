@@ -2,7 +2,7 @@
 <view xmlns="http://jmix.io/schema/flowui/view"
       title="msg://OrgStructureView.title">
     <data>
-        <collection id="departmentsDc" class="com.company.demo.entity.Department">
+        <collection id="departmentsDc" class="com.company.demo.entity.orgstructure.Department">
             <fetchPlan extends="_base">
                 <property name="parentDepartment" fetchPlan="_instance_name"/>
             </fetchPlan>
@@ -12,9 +12,8 @@
                 </query>
             </loader>
         </collection>
-        <collection id="employeesDc" class="com.company.demo.entity.Employee">
+        <collection id="employeesDc" class="com.company.demo.entity.orgstructure.Employee">
             <fetchPlan extends="_base">
-                <property name="department" fetchPlan="_instance_name"/>
             </fetchPlan>
             <loader id="employeesDl" readOnly="true">
                 <query>
@@ -64,10 +63,7 @@
                           width="100%"
                           height="100%">
                     <columns>
-                        <column property="firstName"/>
-                        <column property="lastName"/>
-                        <column property="position"/>
-                        <column property="department"/>
+                        <column property="fullName"/>
                     </columns>
                 </dataGrid>
             </vbox>

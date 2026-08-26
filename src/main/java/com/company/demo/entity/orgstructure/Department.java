@@ -1,4 +1,4 @@
-package com.company.demo.entity;
+package com.company.demo.entity.orgstructure;
 
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
 import io.jmix.core.metamodel.annotation.InstanceName;

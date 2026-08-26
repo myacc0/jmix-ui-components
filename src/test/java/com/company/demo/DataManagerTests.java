@@ -1,12 +1,11 @@
 package com.company.demo;
 
-import com.company.demo.entity.Department;
+import com.company.demo.entity.orgstructure.Department;
 import io.jmix.core.UnconstrainedDataManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @SpringBootTest

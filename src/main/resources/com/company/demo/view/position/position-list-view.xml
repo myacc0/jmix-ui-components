@@ -1,16 +1,22 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <view xmlns="http://jmix.io/schema/flowui/view"
       xmlns:c="http://jmix.io/schema/flowui/jpql-condition"
-      title="msg://employeeListView.title"
-      focusComponent="employeesDataGrid">
+      title="msg://positionListView.title"
+      focusComponent="positionsDataGrid">
     <data>
-        <collection id="employeesDc"
-                    class="com.company.demo.entity.orgstructure.Employee">
-            <fetchPlan extends="_base">
+        <collection id="positionsDc"
+                    class="com.company.demo.entity.orgstructure.Position">
+            <fetchPlan>
+                <property name="lvl"/>
+                <property name="ishead"/>
+                <property name="status"/>
+                <property name="department" fetchPlan="_instance_name"/>
+                <property name="jobTitle" fetchPlan="_instance_name"/>
+                <property name="employee" fetchPlan="_instance_name"/>
             </fetchPlan>
-            <loader id="employeesDl" readOnly="true">
+            <loader id="positionsDl" readOnly="true">
                 <query>
-                    <![CDATA[select e from demo_Employee e]]>
+                    <![CDATA[select e from demo_Position e]]>
                 </query>
             </loader>
         </collection>
@@ -28,23 +34,23 @@
     </actions>
     <layout>
         <genericFilter id="genericFilter"
-                       dataLoader="employeesDl">
+                       dataLoader="positionsDl">
             <properties include=".*"/>
         </genericFilter>
         <hbox id="buttonsPanel" classNames="buttons-panel">
             <startSlot>
-                <button id="createButton" action="employeesDataGrid.createAction"/>
-                <button id="editButton" action="employeesDataGrid.editAction"/>
-                <button id="removeButton" action="employeesDataGrid.removeAction"/>
+                <button id="createButton" action="positionsDataGrid.createAction"/>
+                <button id="editButton" action="positionsDataGrid.editAction"/>
+                <button id="removeButton" action="positionsDataGrid.removeAction"/>
             </startSlot>
             <endSlot>
-                <simplePagination id="pagination" dataLoader="employeesDl"/>
+                <simplePagination id="pagination" dataLoader="positionsDl"/>
             </endSlot>
         </hbox>
-        <dataGrid id="employeesDataGrid"
+        <dataGrid id="positionsDataGrid"
                   width="100%"
                   minHeight="20em"
-                  dataContainer="employeesDc"
+                  dataContainer="positionsDc"
                   columnReorderingAllowed="true">
             <actions>
                 <action id="createAction" type="list_create"/>
@@ -52,7 +58,12 @@
                 <action id="removeAction" type="list_remove"/>
             </actions>
             <columns resizable="true">
-                <column property="fullName"/>
+                <column property="department"/>
+                <column property="jobTitle"/>
+                <column property="employee"/>
+                <column property="lvl"/>
+                <column property="ishead"/>
+                <column property="status"/>
             </columns>
         </dataGrid>
         <hbox id="lookupActions" visible="false">

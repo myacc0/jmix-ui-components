@@ -1,12 +1,10 @@
 package com.company.demo.view.orgstructure;
 
 import com.company.demo.component.LoaderComponent;
-import com.company.demo.entity.Department;
-import com.company.demo.entity.Employee;
+import com.company.demo.entity.orgstructure.Department;
+import com.company.demo.entity.orgstructure.Employee;
 import com.company.demo.view.main.MainView;
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.Unit;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.popover.Popover;
@@ -23,7 +21,6 @@ import io.jmix.flowui.component.SupportsTypedValue;
 import io.jmix.flowui.component.grid.TreeDataGrid;
 import io.jmix.flowui.component.textfield.TypedTextField;
 import io.jmix.flowui.component.virtuallist.JmixVirtualList;
-import io.jmix.flowui.kit.component.button.JmixButton;
 import io.jmix.flowui.model.CollectionContainer;
 import io.jmix.flowui.model.CollectionLoader;
 import io.jmix.flowui.view.*;
@@ -164,13 +161,13 @@ public class OrgStructureView extends StandardView {
     private ComponentRenderer<Component, Employee> createClientsListRenderer(Popover popover) {
         return new ComponentRenderer<>(employee -> {
             Div div = uiComponents.create(Div.class);
-            div.setText(employee.getFirstName());
+            div.setText(employee.getFullName());
             div.addClassNames(LumoUtility.TextOverflow.ELLIPSIS, LumoUtility.Whitespace.NOWRAP, "btn-list-item");
 
             div.addClickListener(click -> {
                 popover.close();
                 employeeSearchField.clear();
-                departmentsTreeDataGrid.select(employee.getDepartment());
+//                departmentsTreeDataGrid.select(employee.getDepartment());
             });
             return div;
         });
@@ -178,7 +175,7 @@ public class OrgStructureView extends StandardView {
 
     private List<Employee> searchEmployeeByName(String name, int size) {
         return dataManager.load(Employee.class)
-                .query("select e from demo_Employee e where e.firstName like :name")
+                .query("select e from demo_Employee e where e.fullName like :name")
                 .parameter("name", "(?i)%" + name + "%")
                 .sort(Sort.by(Sort.Order.asc("firstName"), Sort.Order.asc("lastName")))
                 .firstResult(0)

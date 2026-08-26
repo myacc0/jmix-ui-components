@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <view xmlns="http://jmix.io/schema/flowui/view"
-      title="msg://employeeDetailView.title"
+      title="msg://jobTitleDetailView.title"
       focusComponent="form">
     <data>
-        <instance id="employeeDc"
-                  class="com.company.demo.entity.orgstructure.Employee">
-            <fetchPlan extends="_base">
-            </fetchPlan>
-            <loader id="employeeDl"/>
+        <instance id="jobTitleDc"
+                  class="com.company.demo.entity.orgstructure.JobTitle">
+            <fetchPlan extends="_base"/>
+            <loader id="jobTitleDl"/>
         </instance>
     </data>
     <facets>
@@ -18,12 +17,12 @@
         <action id="closeAction" type="detail_close"/>
     </actions>
     <layout>
-        <formLayout id="form" dataContainer="employeeDc">
+        <formLayout id="form" dataContainer="jobTitleDc">
             <responsiveSteps>
                 <responsiveStep minWidth="0" columns="1"/>
                 <responsiveStep minWidth="40em" columns="2"/>
             </responsiveSteps>
-            <textField id="firstNameField" property="fullName"/>
+            <textField id="nameField" property="name"/>
         </formLayout>
         <hbox id="detailActions">
             <button id="saveAndCloseButton" action="saveCloseAction"/>
