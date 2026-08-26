@@ -1,6 +1,6 @@
 package com.company.demo.view.dqdataproduct;
 
-import com.company.demo.entity.DqDataProduct;
+import com.company.demo.entity.dq.DqDataProduct;
 import com.company.demo.view.main.MainView;
 import com.vaadin.flow.router.Route;
 import io.jmix.flowui.view.*;

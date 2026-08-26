@@ -2,7 +2,7 @@ package com.company.demo.view.dqrule;
 
 import com.company.demo.component.DqBadges;
 import com.company.demo.dto.SelectDto;
-import com.company.demo.entity.DqRule;
+import com.company.demo.entity.dq.DqRule;
 import com.company.demo.repository.DqRuleRepository;
 import com.company.demo.service.DqDataSourceProvider;
 import com.company.demo.view.main.MainView;

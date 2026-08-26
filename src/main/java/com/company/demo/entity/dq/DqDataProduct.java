@@ -1,4 +1,4 @@
-package com.company.demo.entity;
+package com.company.demo.entity.dq;
 
 import io.jmix.core.DeletePolicy;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
@@ -12,11 +12,11 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @JmixEntity
-@Table(name = "DEMO_DQ_RULE_GROUP", indexes = {
-        @Index(name = "IDX_DEMO_DQ_RULE_GROUP_PARENT", columnList = "PARENT_ID")
+@Table(name = "DEMO_DQ_DATA_PRODUCT", indexes = {
+        @Index(name = "IDX_DEMO_DQ_DATA_PRODUCT_PARENT", columnList = "PARENT_ID")
 })
-@Entity(name = "demo_DqRuleGroup")
-public class DqRuleGroup {
+@Entity(name = "demo_DqDataProduct")
+public class DqDataProduct {
     @JmixGeneratedValue
     @Column(name = "ID", nullable = false)
     @Id
@@ -25,15 +25,20 @@ public class DqRuleGroup {
     @OnDeleteInverse(DeletePolicy.UNLINK)
     @JoinColumn(name = "PARENT_ID")
     @ManyToOne(fetch = FetchType.LAZY)
-    private DqRuleGroup parent;
+    private DqDataProduct parent;
+
+    @Column(name = "CODE", nullable = false, length = 50)
+    @NotNull
+    private String code;
+
+    @Column(name = "SHORT_NAME", nullable = false)
+    @NotNull
+    private String shortName;
 
     @InstanceName
     @Column(name = "NAME", nullable = false, length = 500)
     @NotNull
     private String name;
-
-    @Column(name = "DESCRIPTION", columnDefinition = "text")
-    private String description;
 
     @Column(name = "CREATED_AT", nullable = false, columnDefinition = "TIMESTAMP")
     @NotNull
@@ -41,6 +46,10 @@ public class DqRuleGroup {
 
     @Column(name = "UPDATED_AT", columnDefinition = "TIMESTAMP")
     private LocalDateTime updatedAt;
+
+    @Column(name = "VERSION", nullable = false)
+    @Version
+    private Integer version;
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
@@ -58,14 +67,6 @@ public class DqRuleGroup {
         this.createdAt = createdAt;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
     public String getName() {
         return name;
     }
@@ -74,12 +75,36 @@ public class DqRuleGroup {
         this.name = name;
     }
 
-    public DqRuleGroup getParent() {
+    public String getShortName() {
+        return shortName;
+    }
+
+    public void setShortName(String shortName) {
+        this.shortName = shortName;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public DqDataProduct getParent() {
         return parent;
     }
 
-    public void setParent(DqRuleGroup parent) {
+    public void setParent(DqDataProduct parent) {
         this.parent = parent;
+    }
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
     }
 
     public UUID getId() {

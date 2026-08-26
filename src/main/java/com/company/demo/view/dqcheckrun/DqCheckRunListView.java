@@ -1,7 +1,7 @@
 package com.company.demo.view.dqcheckrun;
 
 import com.company.demo.component.DqBadges;
-import com.company.demo.entity.DqCheckRun;
+import com.company.demo.entity.dq.DqCheckRun;
 import com.company.demo.enums.DqCheckRunStatus;
 import com.company.demo.view.dqcheckrunnew.DqCheckRunNewView;
 import com.company.demo.view.main.MainView;

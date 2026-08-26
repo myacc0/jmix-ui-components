@@ -1,5 +1,8 @@
-package com.company.demo.entity;
+package com.company.demo.entity.dq;
 
+import com.company.demo.entity.Department;
+import com.company.demo.entity.Employee;
+import com.company.demo.entity.User;
 import com.company.demo.enums.DqDimension;
 import com.company.demo.enums.DqRuleType;
 import com.company.demo.enums.DqSeverity;

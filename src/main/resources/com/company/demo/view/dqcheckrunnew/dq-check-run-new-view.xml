@@ -5,7 +5,7 @@
     <!-- the page only reads: the filter is a DTO and the rules are shown read-only -->
     <data readOnly="true">
         <instance id="ruleFilterDc" class="com.company.demo.dto.DqRuleFilter"/>
-        <collection id="dqRulesDc" class="com.company.demo.entity.DqRule">
+        <collection id="dqRulesDc" class="com.company.demo.entity.dq.DqRule">
             <fetchPlan>
                 <property name="id"/>
                 <property name="name"/>

@@ -4,7 +4,7 @@ import com.company.demo.component.Slider;
 import com.company.demo.dto.DqRuleConfig;
 import com.company.demo.dto.DqRuleValidationError;
 import com.company.demo.dto.SelectDto;
-import com.company.demo.entity.DqRule;
+import com.company.demo.entity.dq.DqRule;
 import com.company.demo.enums.DqRuleType;
 import com.company.demo.repository.DqRuleRepository;
 import com.company.demo.service.*;

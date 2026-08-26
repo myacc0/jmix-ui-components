@@ -1,4 +1,4 @@
-package com.company.demo.entity;
+package com.company.demo.entity.dq;
 
 import io.jmix.core.DeletePolicy;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
@@ -12,11 +12,11 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @JmixEntity
-@Table(name = "DEMO_DQ_DATA_PRODUCT", indexes = {
-        @Index(name = "IDX_DEMO_DQ_DATA_PRODUCT_PARENT", columnList = "PARENT_ID")
+@Table(name = "DEMO_DQ_DATA_DOMAIN", indexes = {
+        @Index(name = "IDX_DEMO_DQ_DATA_DOMAIN_PARENT", columnList = "PARENT_ID")
 })
-@Entity(name = "demo_DqDataProduct")
-public class DqDataProduct {
+@Entity(name = "demo_DqDataDomain")
+public class DqDataDomain {
     @JmixGeneratedValue
     @Column(name = "ID", nullable = false)
     @Id
@@ -25,7 +25,7 @@ public class DqDataProduct {
     @OnDeleteInverse(DeletePolicy.UNLINK)
     @JoinColumn(name = "PARENT_ID")
     @ManyToOne(fetch = FetchType.LAZY)
-    private DqDataProduct parent;
+    private DqDataDomain parent;
 
     @Column(name = "CODE", nullable = false, length = 50)
     @NotNull
@@ -50,6 +50,14 @@ public class DqDataProduct {
     @Column(name = "VERSION", nullable = false)
     @Version
     private Integer version;
+
+    public DqDataDomain getParent() {
+        return parent;
+    }
+
+    public void setParent(DqDataDomain parent) {
+        this.parent = parent;
+    }
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
@@ -89,14 +97,6 @@ public class DqDataProduct {
 
     public void setCode(String code) {
         this.code = code;
-    }
-
-    public DqDataProduct getParent() {
-        return parent;
-    }
-
-    public void setParent(DqDataProduct parent) {
-        this.parent = parent;
     }
 
     public Integer getVersion() {

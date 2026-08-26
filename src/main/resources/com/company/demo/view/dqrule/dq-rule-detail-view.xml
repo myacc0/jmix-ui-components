@@ -4,7 +4,7 @@
       title="msg://dqRuleDetailView.title"
       focusComponent="form">
     <data>
-        <instance id="dqRuleDc" class="com.company.demo.entity.DqRule">
+        <instance id="dqRuleDc" class="com.company.demo.entity.dq.DqRule">
             <fetchPlan extends="_base">
                 <property name="group" fetchPlan="_instance_name"/>
                 <property name="owner" fetchPlan="_instance_name"/>

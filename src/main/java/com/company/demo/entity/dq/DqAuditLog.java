@@ -1,4 +1,4 @@
-package com.company.demo.entity;
+package com.company.demo.entity.dq;
 
 import com.company.demo.enums.DqAuditEntityType;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;

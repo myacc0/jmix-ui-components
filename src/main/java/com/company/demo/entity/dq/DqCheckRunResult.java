@@ -1,4 +1,4 @@
-package com.company.demo.entity;
+package com.company.demo.entity.dq;
 
 import com.company.demo.enums.DqCheckResultStatus;
 import com.company.demo.utils.JsonbStringConverter;

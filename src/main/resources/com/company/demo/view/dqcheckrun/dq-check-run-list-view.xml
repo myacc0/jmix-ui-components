@@ -5,7 +5,7 @@
       focusComponent="dqCheckRunsDataGrid">
     <data>
         <collection id="dqCheckRunsDc"
-                    class="com.company.demo.entity.DqCheckRun">
+                    class="com.company.demo.entity.dq.DqCheckRun">
             <fetchPlan extends="_base"/>
             <loader id="dqCheckRunsDl" readOnly="true">
                 <query>

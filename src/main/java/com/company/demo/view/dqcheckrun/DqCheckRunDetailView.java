@@ -1,8 +1,8 @@
 package com.company.demo.view.dqcheckrun;
 
 import com.company.demo.component.DqBadges;
-import com.company.demo.entity.DqCheckRun;
-import com.company.demo.entity.DqCheckRunResult;
+import com.company.demo.entity.dq.DqCheckRun;
+import com.company.demo.entity.dq.DqCheckRunResult;
 import com.company.demo.enums.DqCheckResultStatus;
 import com.company.demo.service.DqSampleViolationsService;
 import com.company.demo.utils.StringUtils;

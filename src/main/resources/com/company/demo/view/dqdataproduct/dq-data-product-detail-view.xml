@@ -4,7 +4,7 @@
       focusComponent="form">
     <data>
         <instance id="dqDataProductDc"
-                  class="com.company.demo.entity.DqDataProduct">
+                  class="com.company.demo.entity.dq.DqDataProduct">
             <fetchPlan extends="_base">
                 <property name="parent" fetchPlan="_instance_name"/>
             </fetchPlan>

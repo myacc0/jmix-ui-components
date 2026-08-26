@@ -1,6 +1,6 @@
 package com.company.demo.view.dqdatadomain;
 
-import com.company.demo.entity.DqDataDomain;
+import com.company.demo.entity.dq.DqDataDomain;
 import com.company.demo.view.main.MainView;
 import com.vaadin.flow.router.Route;
 import io.jmix.flowui.view.*;

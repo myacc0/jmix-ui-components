@@ -1,9 +1,9 @@
 package com.company.demo.dq;
 
 import com.company.demo.DemoApplication;
-import com.company.demo.entity.DqDataDomain;
-import com.company.demo.entity.DqIssue;
-import com.company.demo.entity.DqRule;
+import com.company.demo.entity.dq.DqDataDomain;
+import com.company.demo.entity.dq.DqIssue;
+import com.company.demo.entity.dq.DqRule;
 import com.company.demo.enums.DqDimension;
 import com.company.demo.enums.DqIssueStatus;
 import com.company.demo.enums.DqRuleType;

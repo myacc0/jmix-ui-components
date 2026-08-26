@@ -1,4 +1,4 @@
-package com.company.demo.entity;
+package com.company.demo.entity.dq;
 
 import com.company.demo.enums.DqCheckRunStatus;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;

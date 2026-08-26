@@ -4,7 +4,7 @@
       focusComponent="form">
     <data>
         <instance id="dqCheckRunDc"
-                  class="com.company.demo.entity.DqCheckRun">
+                  class="com.company.demo.entity.dq.DqCheckRun">
             <fetchPlan extends="_base">
                 <property name="checkResults" fetchPlan="_base">
                     <property name="rule" fetchPlan="_instance_name"/>

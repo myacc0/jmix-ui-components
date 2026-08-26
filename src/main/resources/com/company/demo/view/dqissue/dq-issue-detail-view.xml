@@ -4,7 +4,7 @@
       focusComponent="form">
     <data>
         <instance id="dqIssueDc"
-                  class="com.company.demo.entity.DqIssue">
+                  class="com.company.demo.entity.dq.DqIssue">
             <fetchPlan extends="_base">
                 <property name="rule" fetchPlan="_instance_name"/>
             </fetchPlan>

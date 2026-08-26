@@ -4,7 +4,7 @@
       title="msg://dqRuleListView.title"
       focusComponent="dqRulesDataGrid">
     <data>
-        <collection id="dqRulesDc" class="com.company.demo.entity.DqRule">
+        <collection id="dqRulesDc" class="com.company.demo.entity.dq.DqRule">
             <fetchPlan>
                 <property name="id"/>
                 <property name="name"/>

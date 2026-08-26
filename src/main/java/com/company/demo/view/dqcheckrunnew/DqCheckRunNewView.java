@@ -3,8 +3,8 @@ package com.company.demo.view.dqcheckrunnew;
 
 import com.company.demo.dto.DqRuleFilter;
 import com.company.demo.dto.SelectDto;
-import com.company.demo.entity.DqCheckRun;
-import com.company.demo.entity.DqRule;
+import com.company.demo.entity.dq.DqCheckRun;
+import com.company.demo.entity.dq.DqRule;
 import com.company.demo.service.DqCheckExecutorService;
 import com.company.demo.service.DqDataSourceProvider;
 import com.company.demo.service.DqRuleFilterService;

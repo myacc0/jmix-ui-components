@@ -3,7 +3,7 @@ package com.company.demo.service;
 import com.company.demo.dto.DqRuleConfig;
 import com.company.demo.dto.DqRuleQueries;
 import com.company.demo.dto.DqSqlQuery;
-import com.company.demo.entity.DqRule;
+import com.company.demo.entity.dq.DqRule;
 import com.company.demo.enums.DqRuleType;
 import com.company.demo.enums.DqSqlDialect;
 import com.company.demo.utils.DateUtils;

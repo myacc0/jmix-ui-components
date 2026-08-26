@@ -1,6 +1,6 @@
 package com.company.demo.service;
 
-import com.company.demo.entity.DqRule;
+import com.company.demo.entity.dq.DqRule;
 import com.company.demo.entity.User;
 import io.jmix.core.security.CurrentAuthentication;
 import org.springframework.security.core.userdetails.UserDetails;

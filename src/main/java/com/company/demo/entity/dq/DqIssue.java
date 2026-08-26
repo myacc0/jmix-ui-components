@@ -1,4 +1,4 @@
-package com.company.demo.entity;
+package com.company.demo.entity.dq;
 
 import com.company.demo.enums.DqIssueStatus;
 import com.company.demo.enums.DqSeverity;

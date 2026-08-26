@@ -1,6 +1,6 @@
 package com.company.demo.service;
 
-import com.company.demo.entity.DqIssue;
+import com.company.demo.entity.dq.DqIssue;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;

@@ -1,10 +1,10 @@
 package com.company.demo.dq;
 
 import com.company.demo.DemoApplication;
-import com.company.demo.entity.DqCheckRun;
-import com.company.demo.entity.DqCheckRunResult;
-import com.company.demo.entity.DqDataDomain;
-import com.company.demo.entity.DqRule;
+import com.company.demo.entity.dq.DqCheckRun;
+import com.company.demo.entity.dq.DqCheckRunResult;
+import com.company.demo.entity.dq.DqDataDomain;
+import com.company.demo.entity.dq.DqRule;
 import com.company.demo.enums.DqCheckResultStatus;
 import com.company.demo.enums.DqCheckRunStatus;
 import com.company.demo.enums.DqDimension;

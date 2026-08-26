@@ -1,8 +1,8 @@
 package com.company.demo.dq;
 
 import com.company.demo.DemoApplication;
-import com.company.demo.entity.DqDataDomain;
-import com.company.demo.entity.DqRule;
+import com.company.demo.entity.dq.DqDataDomain;
+import com.company.demo.entity.dq.DqRule;
 import com.company.demo.entity.User;
 import com.company.demo.enums.DqDimension;
 import com.company.demo.enums.DqRuleType;

@@ -1,13 +1,11 @@
 package com.company.demo.dq;
 
 import com.company.demo.dto.DqRuleQueries;
-import com.company.demo.entity.DqRule;
+import com.company.demo.entity.dq.DqRule;
 import com.company.demo.enums.DqRuleType;
 import com.company.demo.enums.DqSqlDialect;
 import com.company.demo.service.DqSqlQueryBuilder;
 import com.company.demo.test_support.AuthenticatedAsAdmin;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import freemarker.template.ObjectWrapper;
 import io.jmix.core.DataManager;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;

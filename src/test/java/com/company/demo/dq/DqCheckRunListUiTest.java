@@ -1,7 +1,7 @@
 package com.company.demo.dq;
 
 import com.company.demo.DemoApplication;
-import com.company.demo.entity.DqCheckRun;
+import com.company.demo.entity.dq.DqCheckRun;
 import com.company.demo.enums.DqCheckRunStatus;
 import com.company.demo.test_support.AuthenticatedAsAdmin;
 import com.company.demo.view.dqcheckrun.DqCheckRunListView;
