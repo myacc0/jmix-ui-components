@@ -2,6 +2,7 @@ package com.company.demo.view.orgstructure;
 
 import com.company.demo.component.LoaderComponent;
 import com.company.demo.component.d3orgchart.D3OrgChart;
+import com.company.demo.dto.orgstructure.OrgChartNode;
 import com.company.demo.entity.orgstructure.Department;
 import com.company.demo.entity.orgstructure.Position;
 import com.company.demo.service.orgstructure.OrgStructureService;
@@ -15,6 +16,7 @@ import com.vaadin.flow.data.selection.SelectionEvent;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import io.jmix.core.Messages;
+import io.jmix.flowui.DialogWindows;
 import io.jmix.flowui.UiComponents;
 import io.jmix.flowui.asynctask.UiAsyncTasks;
 import io.jmix.flowui.component.SupportsTypedValue;
@@ -55,13 +57,18 @@ public class OrgStructureView extends StandardView {
     private Messages messages;
     @Autowired
     private OrgStructureService orgStructureService;
+    @Autowired
+    private DialogWindows dialogWindows;
 
     final Popover[] searchPopover = {null};
 
     private List<Department> allDepartments;
+    /** Nodes currently rendered in the chart, by node id — used to fill the card dialog. */
+    private Map<String, OrgChartNode> chartNodesById = new HashMap<>();
 
     @Subscribe
     public void onInit(InitEvent event) {
+        d3OrgChart.addNodeClickListener(this::onChartNodeClick);
     }
 
     @Subscribe
@@ -99,10 +106,30 @@ public class OrgStructureView extends StandardView {
 
     @Subscribe("departmentsTreeDataGrid")
     public void onDepartmentsTreeDataGridSelection(final SelectionEvent<TreeDataGrid<Department>, Department> e) {
-        Department d = e.getFirstSelectedItem().orElse(null);
-        if (d != null) {
-            d3OrgChart.setData(orgStructureService.getNodesJsonFromCsv());
+        Department department = e.getFirstSelectedItem().orElse(null);
+        if (department == null) {
+            chartNodesById = new HashMap<>();
+            d3OrgChart.setData(null);
+            return;
         }
+
+        List<OrgChartNode> nodes = orgStructureService.getOrgChartNodes(department.getId());
+        chartNodesById = nodes.stream()
+                .collect(Collectors.toMap(OrgChartNode::getId, node -> node, (first, second) -> first));
+
+        d3OrgChart.setData(orgStructureService.toJson(nodes));
+    }
+
+    private void onChartNodeClick(final D3OrgChart.NodeClickEvent event) {
+        OrgChartNode node = chartNodesById.get(event.getNodeId());
+        // a synthetic department node carries no employee, so there is no card to show
+        if (node == null || node.isDepartmentNode()) {
+            return;
+        }
+
+        dialogWindows.view(this, EmployeeCardView.class)
+                .withViewConfigurer(view -> view.setNode(node))
+                .open();
     }
 
     @Subscribe("employeeSearchField")

@@ -101,3 +101,39 @@
     font-size: 10px;
     color: #716E7B;
 }
+
+/* Avatar placeholder used when a position has no photo */
+.d3-chart-node-initials {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f0f0f0;
+    color: #716E7B;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* Synthetic node for a department that has no head position */
+.d3-chart-node .d3-chart-node-inner.d3-chart-node-department {
+    background-color: #fafafa;
+    border-style: dashed;
+}
+
+.d3-chart-node-department .d3-chart-node-title {
+    font-size: 14px;
+    color: #08011E;
+}
+
+/* a department placeholder carries only the name — no avatar slot */
+.d3-chart-node-department .d3-chart-node-img-container {
+    display: none;
+}
+
+/* --- employee card dialog --- */
+.employee-card-header {
+    padding-bottom: 0.5em;
+}
+
+.employee-card-subtitle {
+    color: var(--lumo-secondary-text-color);
+}

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://employeeCardView.title">
+    <layout>
+        <vbox id="employeeCardHeader" classNames="employee-card-header" width="100%" padding="false">
+            <h3 id="employeeNameLabel"/>
+            <span id="jobTitleLabel" classNames="employee-card-subtitle"/>
+            <span id="departmentLabel" classNames="employee-card-subtitle"/>
+        </vbox>
+
+        <tabSheet id="employeeCardTabSheet" width="100%" height="100%">
+            <tab id="profileTab" label="msg://employeeCardView.profileTab">
+                <vbox id="profileTabContent" width="100%" height="100%" padding="false"/>
+            </tab>
+            <tab id="careerTab" label="msg://employeeCardView.careerTab">
+                <vbox id="careerTabContent" width="100%" height="100%" padding="false"/>
+            </tab>
+            <tab id="workingDaysTab" label="msg://employeeCardView.workingDaysTab">
+                <vbox id="workingDaysTabContent" width="100%" height="100%" padding="false"/>
+            </tab>
+        </tabSheet>
+    </layout>
+</view>

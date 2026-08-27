@@ -1,6 +1,34 @@
 import { OrgChart } from 'd3-org-chart';
 import { selection } from 'd3-selection';
 
+function escapeHtml(value) {
+    if (value === null || value === undefined) {
+        return '';
+    }
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function initials(name) {
+    return String(name || '')
+        .split(/\s+/)
+        .filter((part) => part.length > 0)
+        .slice(0, 2)
+        .map((part) => part.charAt(0).toUpperCase())
+        .join('');
+}
+
+function avatar(data) {
+    if (data.image) {
+        return `<img class="d3-chart-node-img" src="${escapeHtml(data.image)}" alt="">`;
+    }
+    return `<div class="d3-chart-node-img d3-chart-node-initials">${escapeHtml(initials(data.name))}</div>`;
+}
+
 class D3OrgChart extends HTMLElement {
 
     connectedCallback() {
@@ -34,7 +62,19 @@ class D3OrgChart extends HTMLElement {
             </div>
         `;
 
-        this.chart = new OrgChart()
+        this.chart = this.createChart([]);
+
+        this.bindUI();
+    }
+
+    /**
+     * Builds a fresh chart over the container. A new instance is created for every
+     * dataset: reusing one and swapping its data makes d3-org-chart animate the
+     * removed nodes towards parents that no longer exist, which throws
+     * "translate(NaN,NaN)" for every exiting node.
+     */
+    createChart(nodes) {
+        return new OrgChart()
             .nodeHeight((d) => 105)
             .nodeWidth((d) => 240)
             .childrenMargin((d) => 50)
@@ -42,25 +82,27 @@ class D3OrgChart extends HTMLElement {
             .compactMarginPair((d) => 30)
             .neighbourMargin((a, b) => 20)
             .nodeContent(function (d, i, arr, state) {
+                const data = d.data || {};
+                const departmentOnly = data.departmentNode ? ' d3-chart-node-department' : '';
                 return `
                     <div class="d3-chart-node" style="width:${d.with}px; height:${d.height}px;">
-                        <div class="d3-chart-node-inner"
-                            data-id="${d.data.id}"
+                        <div class="d3-chart-node-inner${departmentOnly}"
+                            data-id="${escapeHtml(data.id)}"
                             style="width:${d.with}px; height:${d.height}px;">
-                            
+
                             <div class="d3-chart-node-title">
-                                ${d.data.orgLevelName}
+                                ${escapeHtml(data.orgLevelName)}
                             </div>
                             <div class="d3-chart-node-content">
                                 <div class="d3-chart-node-img-container">
-                                    <img class="d3-chart-node-img" src="${d.data.image}" alt="img">
+                                    ${avatar(data)}
                                 </div>
                                 <div class="d3-chart-node-content-text">
                                     <div class="d3-chart-node-name">
-                                        ${d.data.name}
+                                        ${escapeHtml(data.name)}
                                     </div>
                                     <div class="d3-chart-node-position">
-                                        ${d.data.position}
+                                        ${escapeHtml(data.position)}
                                     </div>
                                 </div>
                             </div>
@@ -69,10 +111,8 @@ class D3OrgChart extends HTMLElement {
                 `;
             })
             .container('.d3-orgchart-container')
-            .data([])
+            .data(nodes)
             .render();
-
-        this.bindUI();
     }
 
     bindUI() {
@@ -107,16 +147,40 @@ class D3OrgChart extends HTMLElement {
             .addEventListener('click', () => {
                 root.chart.zoomOut();
             });
+
+        // delegated on the container, which outlives every chart re-render
+        this.querySelector('.d3-orgchart-container')
+            .addEventListener('click', (event) => {
+                const nodeElement = event.target.closest('.d3-chart-node-inner');
+                if (!nodeElement) {
+                    return;
+                }
+                const nodeId = nodeElement.getAttribute('data-id');
+                if (!nodeId) {
+                    return;
+                }
+                root.dispatchEvent(new CustomEvent('node-click', {
+                    detail: { nodeId: nodeId }
+                }));
+            });
     }
 
     setData(json) {
-        if (!this.chart) {
+        const container = this.querySelector('.d3-orgchart-container');
+        if (!container) {
             return;
         }
         const nodes = json ? JSON.parse(json) : [];
+        this.chartData.clear();
         nodes.forEach((item) => this.chartData.set(String(item.id), item));
 
-        this.chart.data(nodes).render().fit();
+        // wipe the rendered svg but keep the container element itself, so the
+        // delegated node-click listener bound in bindUI() stays attached
+        container.innerHTML = '';
+        this.chart = this.createChart(nodes);
+        if (nodes.length > 0) {
+            this.chart.fit();
+        }
     }
 
 }
