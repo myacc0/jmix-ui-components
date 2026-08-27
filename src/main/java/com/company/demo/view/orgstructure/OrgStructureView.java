@@ -4,7 +4,6 @@ import com.company.demo.component.LoaderComponent;
 import com.company.demo.component.d3orgchart.D3OrgChart;
 import com.company.demo.entity.orgstructure.Department;
 import com.company.demo.entity.orgstructure.Position;
-import com.company.demo.service.orgstructure.OrgChartDataProvider;
 import com.company.demo.service.orgstructure.OrgStructureService;
 import com.company.demo.view.main.MainView;
 import com.vaadin.flow.component.Component;
@@ -56,8 +55,6 @@ public class OrgStructureView extends StandardView {
     private Messages messages;
     @Autowired
     private OrgStructureService orgStructureService;
-    @Autowired
-    private OrgChartDataProvider orgChartDataProvider;
 
     final Popover[] searchPopover = {null};
 
@@ -104,8 +101,7 @@ public class OrgStructureView extends StandardView {
     public void onDepartmentsTreeDataGridSelection(final SelectionEvent<TreeDataGrid<Department>, Department> e) {
         Department d = e.getFirstSelectedItem().orElse(null);
         if (d != null) {
-            d3OrgChart.setData(
-                    orgChartDataProvider.getNodesJson(orgChartDataProvider.produceFromCsv()));
+            d3OrgChart.setData(orgStructureService.getNodesJsonFromCsv());
         }
     }
 
