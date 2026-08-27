@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd"
+        objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+        logicalFilePath="com/company/demo/liquibase/changelog/2026/08/27-181927-f241bd14.xml">
+    <changeSet id="1" author="demo">
+        <dropColumn columnName="END_DATE" tableName="DEMO_WORK_DISCIPLINE_EXCEPTIONS"/>
+
+        <dropColumn columnName="START_DATE" tableName="DEMO_WORK_DISCIPLINE_EXCEPTIONS"/>
+    </changeSet>
+    <changeSet id="2" author="demo">
+        <addColumn tableName="DEMO_WORK_DISCIPLINE_EXCEPTIONS">
+            <column name="END_DATE" type="DATE"/>
+            <column name="START_DATE" type="DATE"/>
+        </addColumn>
+    </changeSet>
+</databaseChangeLog>

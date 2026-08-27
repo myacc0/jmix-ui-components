@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      xmlns:c="http://jmix.io/schema/flowui/jpql-condition"
+      title="msg://workDisciplineExceptionListView.title"
+      focusComponent="workDisciplineExceptionsDataGrid">
+    <data>
+        <collection id="workDisciplineExceptionsDc"
+                    class="com.company.demo.entity.WorkDisciplineException">
+            <fetchPlan extends="_base">
+                <property name="subdivision" fetchPlan="_instance_name"/>
+                <property name="employee" fetchPlan="_instance_name"/>
+                <property name="jobTitle" fetchPlan="_instance_name"/>
+            </fetchPlan>
+            <loader id="workDisciplineExceptionsDl" readOnly="true">
+                <query>
+                    <![CDATA[select e from demo_WorkDisciplineException e]]>
+                </query>
+            </loader>
+        </collection>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+        <urlQueryParameters>
+            <pagination component="pagination"/>
+        </urlQueryParameters>
+    </facets>
+    <actions>
+        <action id="selectAction" type="lookup_select"/>
+        <action id="discardAction" type="lookup_discard"/>
+    </actions>
+    <layout>
+        <hbox id="buttonsPanel" classNames="buttons-panel">
+            <startSlot>
+                <button id="createButton" action="workDisciplineExceptionsDataGrid.createAction"/>
+                <button id="editButton" action="workDisciplineExceptionsDataGrid.editAction"/>
+                <button id="removeButton" action="workDisciplineExceptionsDataGrid.removeAction"/>
+            </startSlot>
+            <endSlot>
+                <simplePagination id="pagination" dataLoader="workDisciplineExceptionsDl"/>
+            </endSlot>
+        </hbox>
+        <dataGrid id="workDisciplineExceptionsDataGrid"
+                  width="100%"
+                  minHeight="20em"
+                  dataContainer="workDisciplineExceptionsDc"
+                  columnReorderingAllowed="true">
+            <actions>
+                <action id="createAction" type="list_create"/>
+                <action id="editAction" type="list_edit"/>
+                <action id="removeAction" type="list_remove"/>
+            </actions>
+            <columns resizable="true" filterable="true">
+                <column property="subdivision"/>
+                <column property="employee"/>
+                <column property="jobTitle"/>
+                <column property="startDate"/>
+                <column property="endDate"/>
+                <column property="description"/>
+            </columns>
+        </dataGrid>
+        <hbox id="lookupActions" visible="false">
+            <button id="selectButton" action="selectAction"/>
+            <button id="discardButton" action="discardAction"/>
+        </hbox>
+    </layout>
+</view>

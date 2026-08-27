@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://workDisciplineExceptionDetailView.title"
+      focusComponent="targetTypeField">
+    <data>
+        <instance id="workDisciplineExceptionDc"
+                  class="com.company.demo.entity.WorkDisciplineException">
+            <fetchPlan extends="_base">
+                <property name="subdivision" fetchPlan="_instance_name"/>
+                <property name="employee" fetchPlan="_instance_name"/>
+                <property name="jobTitle" fetchPlan="_instance_name"/>
+            </fetchPlan>
+            <loader id="workDisciplineExceptionDl"/>
+        </instance>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+    </facets>
+    <actions>
+        <action id="saveCloseAction" type="detail_saveClose"/>
+        <action id="closeAction" type="detail_close"/>
+    </actions>
+    <layout>
+        <vbox maxWidth="50%">
+            <radioButtonGroup id="targetTypeField"
+                              itemsEnum="com.company.demo.enums.WorkDisciplineTargetType"
+                              label="msg://targetTypeField.label"/>
+
+            <formLayout id="form" dataContainer="workDisciplineExceptionDc">
+                <responsiveSteps>
+                    <responsiveStep minWidth="0" columns="1"/>
+                </responsiveSteps>
+                <entityPicker id="subdivisionField"
+                              property="subdivision"
+                              visible="false"
+                              colspan="2">
+                    <actions>
+                        <action id="entityLookupAction" type="entity_lookup"/>
+                        <action id="entityClearAction" type="entity_clear"/>
+                    </actions>
+                </entityPicker>
+                <entityPicker id="jobTitleField"
+                              property="jobTitle"
+                              visible="false"
+                              colspan="2">
+                    <actions>
+                        <action id="entityLookupAction" type="entity_lookup"/>
+                        <action id="entityClearAction" type="entity_clear"/>
+                    </actions>
+                </entityPicker>
+                <entityPicker id="employeeField"
+                              property="employee"
+                              visible="false"
+                              colspan="2">
+                    <actions>
+                        <action id="entityLookupAction" type="entity_lookup"/>
+                        <action id="entityClearAction" type="entity_clear"/>
+                    </actions>
+                </entityPicker>
+                <datePicker id="startDateField" property="startDate"/>
+                <datePicker id="endDateField" property="endDate"/>
+                <textArea id="descriptionField" property="description" minRows="5" colspan="2"/>
+            </formLayout>
+            <hbox id="detailActions">
+                <button id="saveAndCloseButton" action="saveCloseAction"/>
+                <button id="closeButton" action="closeAction"/>
+            </hbox>
+        </vbox>
+    </layout>
+</view>

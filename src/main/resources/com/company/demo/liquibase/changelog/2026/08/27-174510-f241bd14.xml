@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd"
+        objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+        logicalFilePath="com/company/demo/liquibase/changelog/2026/08/27-174510-f241bd14.xml">
+    <changeSet id="1" author="demo">
+        <dropIndex indexName="idx_demo_work_discipline_exceptions_employee"
+                   tableName="demo_work_discipline_exceptions"/>
+    </changeSet>
+    <changeSet id="2" author="demo">
+        <createIndex indexName="IDX_DEMO_WORK_DISCIPLINE_EXCEPTION_EMPLOYEE"
+                     tableName="DEMO_WORK_DISCIPLINE_EXCEPTIONS">
+            <column name="EMPLOYEE_ID"/>
+        </createIndex>
+    </changeSet>
+    <changeSet id="3" author="demo">
+        <dropIndex indexName="idx_demo_work_discipline_exceptions_job_title"
+                   tableName="demo_work_discipline_exceptions"/>
+    </changeSet>
+    <changeSet id="4" author="demo">
+        <createIndex indexName="IDX_DEMO_WORK_DISCIPLINE_EXCEPTION_JOB_TITLE"
+                     tableName="DEMO_WORK_DISCIPLINE_EXCEPTIONS">
+            <column name="JOB_TITLE_ID"/>
+        </createIndex>
+    </changeSet>
+    <changeSet id="5" author="demo">
+        <dropIndex indexName="idx_demo_work_discipline_exceptions_subdivision"
+                   tableName="demo_work_discipline_exceptions"/>
+    </changeSet>
+    <changeSet id="6" author="demo">
+        <createIndex indexName="IDX_DEMO_WORK_DISCIPLINE_EXCEPTION_SUBDIVISION"
+                     tableName="DEMO_WORK_DISCIPLINE_EXCEPTIONS">
+            <column name="SUBDIVISION_ID"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>
