@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <view xmlns="http://jmix.io/schema/flowui/view"
+      xmlns:app="http://com.company.demo/schema/app-ui-components"
       title="msg://OrgStructureView.title">
     <data>
         <collection id="departmentsDc" class="com.company.demo.entity.orgstructure.Department">
@@ -9,15 +10,6 @@
             <loader id="departmentsDl" readOnly="true">
                 <query>
                     <![CDATA[select e from demo_Department e order by e.ordNo]]>
-                </query>
-            </loader>
-        </collection>
-        <collection id="employeesDc" class="com.company.demo.entity.orgstructure.Employee">
-            <fetchPlan extends="_base">
-            </fetchPlan>
-            <loader id="employeesDl" readOnly="true">
-                <query>
-                    <![CDATA[select e from demo_Employee e where e.department = :department]]>
                 </query>
             </loader>
         </collection>
@@ -58,14 +50,7 @@
                         <icon icon="SEARCH"/>
                     </suffix>
                 </textField>
-                <dataGrid id="employeesDataGrid"
-                          dataContainer="employeesDc"
-                          width="100%"
-                          height="100%">
-                    <columns>
-                        <column property="fullName"/>
-                    </columns>
-                </dataGrid>
+                <app:d3-org-chart id="d3OrgChart" classNames="d3-org-chart"/>
             </vbox>
         </split>
     </layout>

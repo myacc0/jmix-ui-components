@@ -1,5 +1,6 @@
 package com.company.demo.component;
 
+import com.company.demo.component.slider.Slider;
 import com.company.demo.entity.User;
 import com.company.demo.view.main.MainView;
 import com.vaadin.flow.router.Route;

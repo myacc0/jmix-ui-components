@@ -1,0 +1,103 @@
+.d3-org-chart {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+.d3-orgchart-main-container * {
+    box-sizing: border-box;
+}
+
+.d3-orgchart-main-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    min-height: 100%;
+    overflow: hidden;
+}
+
+.d3-orgchart-container {
+    width: 100%;
+    height: 100%;
+    padding: 10px;
+    overflow: hidden;
+}
+
+.d3-orgchart-main-container .chart-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    width: 100px;
+    padding: 15px;
+}
+
+.chart-controls .chart-control-btn {
+    cursor: pointer;
+    display: inline-block;
+    width: 54px;
+    height: 40px;
+    margin-bottom: 10px;
+    padding: 0 5px;
+    background-color: #FFD50F;
+    color: #757575;
+    border-radius: 4px;
+    border: none;
+    user-select: none;
+}
+
+.chart-controls .chart-control-btn .material-icons {
+    font-size: 28px;
+    line-height: 40px;
+}
+
+.d3-orgchart-main-container:not(:root):fullscreen::backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: #757575;
+}
+.d3-orgchart-main-container path.link {
+    stroke: #d5d5d5;
+}
+.node-button-div .node-button-div > div {
+    border: 1px solid #d5d5d5 !important;
+}
+
+
+/* --- chart node --- */
+.d3-chart-node .d3-chart-node-inner {
+    font-family: 'Inter', sans-serif;
+    background-color: #fff;
+    border-radius: 10px;
+    border: 1px solid #d5d5d5;
+    padding: 6px 8px;
+}
+.d3-chart-node-title {
+    color: #716E7B;
+    margin-bottom: 5px;
+}
+.d3-chart-node-content {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+.d3-chart-node-content-text {
+    padding-left: 8px;
+}
+.d3-chart-node-img-container {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+}
+.d3-chart-node-img {
+    border-radius: 100px;
+    width: 40px;
+    height: 40px;
+}
+.d3-chart-node-name {
+    font-size: 14px;
+    color: #08011E;
+}
+.d3-chart-node-position {
+    margin-top: 3px;
+    font-size: 10px;
+    color: #716E7B;
+}

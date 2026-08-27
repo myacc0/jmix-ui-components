@@ -1,4 +1,4 @@
-package com.company.demo.component;
+package com.company.demo.component.slider;
 
 import io.jmix.flowui.xml.layout.loader.AbstractComponentLoader;
 import io.jmix.flowui.xml.layout.support.DataLoaderSupport;

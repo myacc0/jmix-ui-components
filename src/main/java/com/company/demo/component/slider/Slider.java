@@ -1,4 +1,4 @@
-package com.company.demo.component;
+package com.company.demo.component.slider;
 
 import com.vaadin.flow.component.AbstractSinglePropertyField;
 import com.vaadin.flow.component.HasLabel;
@@ -28,7 +28,7 @@ import org.springframework.context.ApplicationContextAware;
  * not with {@code new}.
  */
 @Tag("demo-slider")
-@JsModule("./src/component/demo-slider.js")
+@JsModule("./src/component/slider/demo-slider.js")
 public class Slider extends AbstractSinglePropertyField<Slider, Integer>
         implements SupportsValueSource<Integer>, SupportsValidation<Integer>, HasRequired,
         HasLabel, HasSize, ApplicationContextAware, InitializingBean {

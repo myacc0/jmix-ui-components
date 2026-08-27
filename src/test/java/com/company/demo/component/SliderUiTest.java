@@ -1,6 +1,7 @@
 package com.company.demo.component;
 
 import com.company.demo.DemoApplication;
+import com.company.demo.component.slider.Slider;
 import com.company.demo.entity.User;
 import io.jmix.core.Metadata;
 import io.jmix.flowui.UiComponents;

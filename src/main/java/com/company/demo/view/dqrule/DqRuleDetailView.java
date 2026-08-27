@@ -1,6 +1,6 @@
 package com.company.demo.view.dqrule;
 
-import com.company.demo.component.Slider;
+import com.company.demo.component.slider.Slider;
 import com.company.demo.dto.DqRuleConfig;
 import com.company.demo.dto.DqRuleValidationError;
 import com.company.demo.dto.SelectDto;

@@ -8,7 +8,7 @@
     <xs:import namespace="http://jmix.io/schema/flowui/layout"/>
 
     <!--
-        Integer slider field. Backed by com.company.demo.component.Slider and loaded
+        Integer slider field. Backed by com.company.demo.component.slider.Slider and loaded
         by SliderLoader (registered as the <slider> tag in ComponentRegistrationConfiguration).
         The attribute groups below mirror exactly what SliderLoader.loadComponent() reads.
     -->
@@ -30,6 +30,17 @@
                     <xs:attributeGroup ref="layout:hasRequired"/>
                     <xs:attributeGroup ref="layout:hasDataContainer"/>
                     <xs:attributeGroup ref="layout:hasValueAndElement"/>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="d3-org-chart">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="layout:baseComponent">
+                    <xs:attributeGroup ref="layout:hasSize"/>
+                    <xs:attribute name="classNames" type="xs:string"/>
                 </xs:extension>
             </xs:complexContent>
         </xs:complexType>

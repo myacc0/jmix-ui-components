@@ -1,8 +1,11 @@
 package com.company.demo.view.orgstructure;
 
 import com.company.demo.component.LoaderComponent;
+import com.company.demo.component.d3orgchart.D3OrgChart;
 import com.company.demo.entity.orgstructure.Department;
-import com.company.demo.entity.orgstructure.Employee;
+import com.company.demo.entity.orgstructure.Position;
+import com.company.demo.service.orgstructure.OrgChartDataProvider;
+import com.company.demo.service.orgstructure.OrgStructureService;
 import com.company.demo.view.main.MainView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.html.Div;
@@ -12,9 +15,7 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.selection.SelectionEvent;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import io.jmix.core.DataManager;
 import io.jmix.core.Messages;
-import io.jmix.core.Sort;
 import io.jmix.flowui.UiComponents;
 import io.jmix.flowui.asynctask.UiAsyncTasks;
 import io.jmix.flowui.component.SupportsTypedValue;
@@ -37,13 +38,13 @@ public class OrgStructureView extends StandardView {
 
     @ViewComponent
     private TypedTextField<String> employeeSearchField;
+    @ViewComponent
+    private D3OrgChart d3OrgChart;
 
     @ViewComponent
     private CollectionLoader<Department> departmentsDl;
     @ViewComponent
     private CollectionContainer<Department> departmentsDc;
-    @ViewComponent
-    private CollectionLoader<Employee> employeesDl;
     @ViewComponent
     private TreeDataGrid<Department> departmentsTreeDataGrid;
 
@@ -54,7 +55,9 @@ public class OrgStructureView extends StandardView {
     @Autowired
     private Messages messages;
     @Autowired
-    private DataManager dataManager;
+    private OrgStructureService orgStructureService;
+    @Autowired
+    private OrgChartDataProvider orgChartDataProvider;
 
     final Popover[] searchPopover = {null};
 
@@ -101,9 +104,8 @@ public class OrgStructureView extends StandardView {
     public void onDepartmentsTreeDataGridSelection(final SelectionEvent<TreeDataGrid<Department>, Department> e) {
         Department d = e.getFirstSelectedItem().orElse(null);
         if (d != null) {
-            employeesDl.setQuery("select e from demo_Employee e where e.department = :department");
-            employeesDl.setParameter("department", d);
-            employeesDl.load();
+            d3OrgChart.setData(
+                    orgChartDataProvider.getNodesJson(orgChartDataProvider.produceFromCsv()));
         }
     }
 
@@ -137,7 +139,7 @@ public class OrgStructureView extends StandardView {
                 });
 
         var searchResultSize = 20;
-        uiAsyncTasks.supplierConfigurer(() -> searchEmployeeByName(searchText, searchResultSize))
+        uiAsyncTasks.supplierConfigurer(() -> orgStructureService.getPositions(searchText, searchResultSize))
                 .withResultHandler(employees -> updateSearchPopover(employees, popover))
                 .withExceptionHandler(e -> {
                     popover.removeAll();
@@ -148,8 +150,8 @@ public class OrgStructureView extends StandardView {
         return popover;
     }
 
-    private void updateSearchPopover(List<Employee> employees, Popover popover) {
-        JmixVirtualList<Employee> virtualList = uiComponents.create(JmixVirtualList.class);
+    private void updateSearchPopover(List<Position> employees, Popover popover) {
+        JmixVirtualList<Position> virtualList = uiComponents.create(JmixVirtualList.class);
         virtualList.setItems(employees);
         virtualList.setRenderer(createClientsListRenderer(popover));
         virtualList.addClassNames(LumoUtility.Padding.MEDIUM, "popover-inner-list");
@@ -158,29 +160,19 @@ public class OrgStructureView extends StandardView {
         popover.add(virtualList);
     }
 
-    private ComponentRenderer<Component, Employee> createClientsListRenderer(Popover popover) {
+    private ComponentRenderer<Component, Position> createClientsListRenderer(Popover popover) {
         return new ComponentRenderer<>(employee -> {
             Div div = uiComponents.create(Div.class);
-            div.setText(employee.getFullName());
+            div.setText(employee.getEmployee().getFullName());
             div.addClassNames(LumoUtility.TextOverflow.ELLIPSIS, LumoUtility.Whitespace.NOWRAP, "btn-list-item");
 
             div.addClickListener(click -> {
                 popover.close();
                 employeeSearchField.clear();
-//                departmentsTreeDataGrid.select(employee.getDepartment());
+                departmentsTreeDataGrid.select(employee.getDepartment());
             });
             return div;
         });
-    }
-
-    private List<Employee> searchEmployeeByName(String name, int size) {
-        return dataManager.load(Employee.class)
-                .query("select e from demo_Employee e where e.fullName like :name")
-                .parameter("name", "(?i)%" + name + "%")
-                .sort(Sort.by(Sort.Order.asc("firstName"), Sort.Order.asc("lastName")))
-                .firstResult(0)
-                .maxResults(size)
-                .list();
     }
 
     private Set<Department> collectWithParents(Department d) {
