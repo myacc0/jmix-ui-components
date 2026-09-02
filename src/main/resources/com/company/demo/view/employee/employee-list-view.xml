@@ -18,7 +18,6 @@
     <facets>
         <dataLoadCoordinator auto="true"/>
         <urlQueryParameters>
-            <genericFilter component="genericFilter"/>
             <pagination component="pagination"/>
         </urlQueryParameters>
     </facets>
@@ -27,10 +26,6 @@
         <action id="discardAction" type="lookup_discard"/>
     </actions>
     <layout>
-        <genericFilter id="genericFilter"
-                       dataLoader="employeesDl">
-            <properties include=".*"/>
-        </genericFilter>
         <hbox id="buttonsPanel" classNames="buttons-panel">
             <startSlot>
                 <button id="createButton" action="employeesDataGrid.createAction"/>
@@ -51,7 +46,7 @@
                 <action id="editAction" type="list_edit"/>
                 <action id="removeAction" type="list_remove"/>
             </actions>
-            <columns resizable="true">
+            <columns resizable="true" filterable="true">
                 <column property="fullName"/>
             </columns>
         </dataGrid>

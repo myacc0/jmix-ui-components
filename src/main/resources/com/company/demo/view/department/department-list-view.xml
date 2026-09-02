@@ -37,22 +37,24 @@
                 <simplePagination id="pagination" dataLoader="departmentsDl"/>
             </endSlot>
         </hbox>
-        <dataGrid id="departmentsDataGrid"
+        <treeDataGrid id="departmentsDataGrid"
                   width="100%"
                   minHeight="20em"
                   dataContainer="departmentsDc"
-                  columnReorderingAllowed="true">
+                  columnReorderingAllowed="true"
+                  hierarchyProperty="parentDepartment"
+                  showOrphans="true">
             <actions>
                 <action id="createAction" type="list_create"/>
                 <action id="editAction" type="list_edit"/>
                 <action id="removeAction" type="list_remove"/>
             </actions>
             <columns resizable="true">
-                <column property="name"/>
-                <column property="parentDepartment"/>
+                <column property="name" filterable="true"/>
+                <column property="parentDepartment" filterable="true"/>
                 <column property="ordNo"/>
             </columns>
-        </dataGrid>
+        </treeDataGrid>
         <hbox id="lookupActions" visible="false">
             <button id="selectButton" action="selectAction"/>
             <button id="discardButton" action="discardAction"/>
