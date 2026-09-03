@@ -38,11 +38,15 @@ public class OrgStructureService {
 
     private final DataManager dataManager;
     private final Messages messages;
+    private final EmployeePhotoService employeePhotoService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public OrgStructureService(DataManager dataManager, Messages messages) {
+    public OrgStructureService(DataManager dataManager,
+                               Messages messages,
+                               EmployeePhotoService employeePhotoService) {
         this.dataManager = dataManager;
         this.messages = messages;
+        this.employeePhotoService = employeePhotoService;
     }
 
     public List<Position> getPositions(String searchText, int size) {
@@ -226,6 +230,9 @@ public class OrgStructureService {
                 ? employee.getFullName()
                 : messages.getMessage(OrgStructureService.class, "orgChart.vacantPosition"));
         node.setEmployeeId(employee != null ? String.valueOf(employee.getId()) : null);
+        // null when the employee has no photo in the file storage — the chart then renders
+        // the initials placeholder instead of an <img>
+        node.setImage(employee != null ? employeePhotoService.getPhotoUrl(employee.getId()) : null);
 
         JobTitle jobTitle = position.getJobTitle();
         node.setPosition(jobTitle != null && jobTitle.getName() != null ? jobTitle.getName() : "");

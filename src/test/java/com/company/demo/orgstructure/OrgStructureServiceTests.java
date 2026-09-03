@@ -10,13 +10,20 @@ import com.company.demo.service.orgstructure.OrgStructureService;
 import com.company.demo.test_support.AuthenticatedAsAdmin;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.company.demo.service.orgstructure.EmployeePhotoService;
 import io.jmix.core.DataManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.io.IOException;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -46,8 +53,14 @@ class OrgStructureServiceTests {
     private DataManager dataManager;
     @Autowired
     private OrgStructureService orgStructureService;
+    @Autowired
+    private EmployeePhotoService employeePhotoService;
+
+    @Value("${jmix.localfs.storage-dir}")
+    private String storageDir;
 
     private final List<Object> cleanup = new ArrayList<>();
+    private final List<Path> photoFiles = new ArrayList<>();
 
     @Test
     void buildsPositionHierarchyAcrossDepartments() {
@@ -193,6 +206,27 @@ class OrgStructureServiceTests {
     }
 
     @Test
+    void putsThePhotoUrlOfTheEmployeeOnTheNode() throws IOException {
+        String suffix = UUID.randomUUID().toString();
+
+        Department root = createDepartment("Root " + suffix, null, 1);
+        JobTitle title = createJobTitle("Director " + suffix);
+
+        Employee withPhoto = createEmployee("With Photo " + suffix);
+        Employee withoutPhoto = createEmployee("Without Photo " + suffix);
+        Position head = createPosition(root, title, withPhoto, 10, 1);
+        Position staff = createPosition(root, title, withoutPhoto, 6, 0);
+
+        writePhoto(withPhoto.getId() + ".jpg");
+
+        Map<String, OrgChartNode> nodes = nodesById(root.getId());
+
+        assertEquals("/employee-photos/" + withPhoto.getId(), nodes.get("pos-" + head.getId()).getImage());
+        // no photo file: orgchart.js falls back to the initials placeholder on a null image
+        assertNull(nodes.get("pos-" + staff.getId()).getImage());
+    }
+
+    @Test
     void returnsEmptyListForUnknownOrNullDepartment() {
         assertTrue(orgStructureService.getOrgChartNodes(null).isEmpty());
         assertTrue(orgStructureService.getOrgChartNodes(UUID.randomUUID()).isEmpty());
@@ -247,13 +281,49 @@ class OrgStructureServiceTests {
         return saved;
     }
 
+    /**
+     * Writes a photo file into a {@code yyyy/MM/dd} directory of the storage root — the only
+     * layout {@code LocalFileStorage} can address — and makes the photo index see it at once.
+     * The date is one no upload can produce, so the fixture never shares a directory with a
+     * real photo.
+     */
+    private void writePhoto(String fileName) throws IOException {
+        Path directory = Paths.get(storageDir.split(",")[0].trim(), "1970", "01", "01");
+        Files.createDirectories(directory);
+
+        Path file = directory.resolve(fileName);
+        Files.write(file, "not-a-real-jpeg".getBytes());
+        photoFiles.add(file);
+
+        employeePhotoService.invalidateIndex();
+    }
+
+    /** A directory the fixture shares with another test only goes away once that test is done. */
+    private void deleteIfEmpty(Path directory) throws IOException {
+        try {
+            Files.deleteIfExists(directory);
+        } catch (DirectoryNotEmptyException e) {
+            // another fixture file is still there
+        }
+    }
+
     @AfterEach
-    void tearDown() {
+    void tearDown() throws IOException {
         // reverse creation order: positions before the departments/employees they reference,
         // and child departments before their parents
         List<Object> reversed = new ArrayList<>(cleanup);
         Collections.reverse(reversed);
         reversed.forEach(dataManager::remove);
         cleanup.clear();
+
+        for (Path file : photoFiles) {
+            Files.deleteIfExists(file);
+            deleteIfEmpty(file.getParent());
+            deleteIfEmpty(file.getParent().getParent());
+            deleteIfEmpty(file.getParent().getParent().getParent());
+        }
+        photoFiles.clear();
+        // the index must not keep pointing at the files the test has just removed
+        employeePhotoService.invalidateIndex();
     }
 }
