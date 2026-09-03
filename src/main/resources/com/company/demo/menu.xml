@@ -11,6 +11,8 @@
         <item view="demo_Operation.list" title="msg://com.company.demo.view.operation/operationListView.title"/>
         <item view="demo_JobTitle.list" title="msg://com.company.demo.view.jobtitle/jobTitleListView.title"/>
         <item view="demo_Position.list" title="msg://com.company.demo.view.position/positionListView.title"/>
+        <item view="demo_StarrocksProduct.list" title="msg://com.company.demo.view.product/productListView.title"/>
+        <item view="demo_StarrocksOrder.list" title="msg://com.company.demo.view.order/orderListView.title"/>
     </menu>
     <menu opened="true" id="dq" description="msg://com.company.demo/menu_config.dq.description"
           title="msg://com.company.demo/menu_config.dq.title">

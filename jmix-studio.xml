@@ -29,6 +29,15 @@
                   <DataStoreSettingsV2 />
                 </value>
               </entry>
+              <entry key="starrocks">
+                <value>
+                  <DataStoreSettingsV2>
+                    <option name="supportedTypes">
+                      <option value="mysql" />
+                    </option>
+                  </DataStoreSettingsV2>
+                </value>
+              </entry>
             </map>
           </option>
         </ModuleSettings>

@@ -56,6 +56,31 @@ services:
       retries: 5
       start_period: 80s
 
+  # Additional data store. DB `dwh`, user `dwh_reporting` / `qweasd123` on port 9030
+  # are created by starrocks-init.sql (StarRocks stores them in the FE meta volume,
+  # so re-apply that script if jmix-starrocks-fe-meta is ever removed).
+  starrocks:
+    image: "starrocks/allin1-ubuntu:3.5-latest"
+    container_name: "jmix-starrocks"
+    restart: always
+    ports:
+      - "9030:9030"
+      - "8030:8030"
+      - "8040:8040"
+    volumes:
+      - jmix-starrocks-fe-meta:/data/deploy/starrocks/fe/meta
+      - jmix-starrocks-be-storage:/data/deploy/starrocks/be/storage
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    healthcheck:
+      test: [ "CMD-SHELL", "mysql -u root -h 127.0.0.1 -P 9030 -e 'SHOW FRONTENDS\\G' | grep -q 'Alive: true'" ]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 120s
+
   adminer:
     image: adminer
     container_name: "jmix-adminer"
@@ -69,4 +94,8 @@ volumes:
   jmix-dwh-db:
      driver: local
   jmix-dwh-olap-db:
+    driver: local
+  jmix-starrocks-fe-meta:
+    driver: local
+  jmix-starrocks-be-storage:
     driver: local

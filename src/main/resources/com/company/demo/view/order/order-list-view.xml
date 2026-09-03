@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      xmlns:c="http://jmix.io/schema/flowui/jpql-condition"
+      title="msg://orderListView.title"
+      focusComponent="ordersDataGrid">
+    <data>
+        <collection id="ordersDc"
+                    class="com.company.demo.entity.starrocks.Order">
+            <fetchPlan extends="_base">
+                <property name="product" fetchPlan="_instance_name"/>
+            </fetchPlan>
+            <loader id="ordersDl" readOnly="true">
+                <query>
+                    <![CDATA[select e from demo_StarrocksOrder e]]>
+                </query>
+            </loader>
+        </collection>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+        <urlQueryParameters>
+            <pagination component="pagination"/>
+        </urlQueryParameters>
+    </facets>
+    <actions>
+        <action id="selectAction" type="lookup_select"/>
+        <action id="discardAction" type="lookup_discard"/>
+    </actions>
+    <layout>
+        <hbox id="buttonsPanel" classNames="buttons-panel">
+            <startSlot>
+                <button id="createButton" action="ordersDataGrid.createAction"/>
+                <button id="editButton" action="ordersDataGrid.editAction"/>
+                <button id="removeButton" action="ordersDataGrid.removeAction"/>
+            </startSlot>
+            <endSlot>
+                <simplePagination id="pagination" dataLoader="ordersDl"/>
+            </endSlot>
+        </hbox>
+        <dataGrid id="ordersDataGrid"
+                  width="100%"
+                  minHeight="20em"
+                  dataContainer="ordersDc"
+                  columnReorderingAllowed="true">
+            <actions>
+                <action id="createAction" type="list_create"/>
+                <action id="editAction" type="list_edit"/>
+                <action id="removeAction" type="list_remove"/>
+            </actions>
+            <columns resizable="true" filterable="true">
+                <column property="id" autoWidth="true" flexGrow="0"/>
+                <column property="product" autoWidth="true" flexGrow="0"/>
+                <column property="totalSum" autoWidth="true" flexGrow="0"/>
+                <column property="saleSum" autoWidth="true" flexGrow="0"/>
+                <column property="deliverySum" autoWidth="true" flexGrow="0"/>
+                <column property="quantity" autoWidth="true" flexGrow="0"/>
+                <column property="paymentMethod" autoWidth="true" flexGrow="0"/>
+                <column property="customerPhone" autoWidth="true" flexGrow="0"/>
+                <column property="customerEmail" autoWidth="true" flexGrow="0"/>
+                <column property="customerAddress" autoWidth="true" flexGrow="0"/>
+                <column property="customerName" autoWidth="true" flexGrow="0"/>
+                <column property="orderDate" autoWidth="true" flexGrow="0"/>
+                <column property="notes" autoWidth="true" flexGrow="0"/>
+            </columns>
+        </dataGrid>
+        <hbox id="lookupActions" visible="false">
+            <button id="selectButton" action="selectAction"/>
+            <button id="discardButton" action="discardAction"/>
+        </hbox>
+    </layout>
+</view>
