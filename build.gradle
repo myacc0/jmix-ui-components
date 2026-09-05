@@ -38,6 +38,10 @@ dependencies {
     implementation 'io.jmix.security:jmix-security-data-starter'
     implementation 'io.jmix.localfs:jmix-localfs-starter'
     implementation 'io.jmix.awsfs:jmix-awsfs-starter'
+    // The AWS SDK is a runtime-only dependency of jmix-awsfs, but S3EmployeePhotoScanner
+    // lists the bucket itself, so it needs the S3 client at compile time too.
+    // The version is managed by the Jmix BOM, which imports the AWS SDK BOM.
+    implementation 'software.amazon.awssdk:s3'
     implementation 'io.jmix.flowui:jmix-flowui-starter'
     implementation 'io.jmix.flowui:jmix-flowui-data-starter'
     implementation 'io.jmix.flowui:jmix-flowui-themes'
