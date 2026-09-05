@@ -127,9 +127,12 @@ public class OrgStructureView extends StandardView {
             return;
         }
 
-        dialogWindows.view(this, EmployeeCardView.class)
+        DialogWindow<EmployeeCardView> dialogWindow = dialogWindows.view(this, EmployeeCardView.class)
                 .withViewConfigurer(view -> view.setNode(node))
-                .open();
+                .build();
+        // lands on the vaadin-dialog-overlay element, see employee-card-view.css
+        dialogWindow.addClassName(EmployeeCardView.DIALOG_CLASS_NAME);
+        dialogWindow.open();
     }
 
     @Subscribe("employeeSearchField")

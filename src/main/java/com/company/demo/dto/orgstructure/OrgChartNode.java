@@ -24,6 +24,8 @@ public class OrgChartNode {
     private String position;
     /** Avatar URL; null renders the initials placeholder. */
     private String image;
+    /** Employee e-mail, empty for a vacant or synthetic node. */
+    private String email;
 
     private String departmentId;
     private String positionId;
@@ -78,6 +80,14 @@ public class OrgChartNode {
 
     public void setImage(String image) {
         this.image = image;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getDepartmentId() {

@@ -1,12 +1,26 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<view xmlns="http://jmix.io/schema/flowui/view"
-      title="msg://employeeCardView.title">
+<view xmlns="http://jmix.io/schema/flowui/view">
     <layout>
-        <vbox id="employeeCardHeader" classNames="employee-card-header" width="100%" padding="false">
-            <h3 id="employeeNameLabel"/>
-            <span id="jobTitleLabel" classNames="employee-card-subtitle"/>
-            <span id="departmentLabel" classNames="employee-card-subtitle"/>
-        </vbox>
+        <hbox id="employeeSummaryBox" classNames="employee-card-summary" width="100%"
+              padding="false" spacing="true" alignItems="START">
+            <image id="employeePhotoImage" classNames="employee-card-photo" visible="false"/>
+            <span id="employeePhotoPlaceholder" classNames="employee-card-photo employee-card-photo-initials"/>
+
+            <vbox id="employeeCardHeader" classNames="employee-card-header" padding="false" spacing="false">
+                <h4 id="employeeNameLabel"/>
+                <span classNames="employee-card-subtitle">
+                    <span id="jobTitleLabel"/>
+                    <span classNames="employee-card-subtitle-separator"/>
+                    <span id="subdivisionLabel"/>
+                </span>
+                <span classNames="employee-card-subtitle">
+                    <span classNames="employee-card-subtitle-contacts">
+                        <icon icon="vaadin:envelope-o" size="S"/>
+                        <span id="contactsLabel"/>
+                    </span>
+                </span>
+            </vbox>
+        </hbox>
 
         <tabSheet id="employeeCardTabSheet" width="100%" height="100%">
             <tab id="profileTab" label="msg://employeeCardView.profileTab">
@@ -14,9 +28,6 @@
             </tab>
             <tab id="careerTab" label="msg://employeeCardView.careerTab">
                 <vbox id="careerTabContent" width="100%" height="100%" padding="false"/>
-            </tab>
-            <tab id="workingDaysTab" label="msg://employeeCardView.workingDaysTab">
-                <vbox id="workingDaysTabContent" width="100%" height="100%" padding="false"/>
             </tab>
         </tabSheet>
     </layout>

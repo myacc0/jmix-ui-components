@@ -1,0 +1,89 @@
+/*
+ * Employee card dialog opened from a d3-org-chart node.
+ *
+ * The dialog chrome — the <header> of vaadin-dialog-overlay and the close button inside it —
+ * exists only in the browser, the view descriptor knows nothing about it. The rules below are
+ * scoped by the `employee-card-dialog` class OrgStructureView puts on the overlay element
+ * (EmployeeCardView.DIALOG_CLASS_NAME), so no other dialog of the application is affected.
+ */
+
+/* collapse the generated header strip: the card starts right at the top of the window */
+vaadin-dialog-overlay.employee-card-dialog::part(header) {
+    padding: 0;
+    min-height: 0;
+}
+
+vaadin-dialog-overlay.employee-card-dialog::part(title) {
+    display: none;
+}
+
+vaadin-dialog-overlay.employee-card-dialog .jmix-dialog-window-header-wrapper {
+    display: block;
+    min-height: 0;
+}
+
+/* the header content slot stays empty in this card — it must not claim a row */
+vaadin-dialog-overlay.employee-card-dialog .jmix-dialog-window-header-content {
+    display: none;
+}
+
+/* with the header collapsed the close 'x' floats over the card body */
+vaadin-dialog-overlay.employee-card-dialog::part(overlay) {
+    position: relative;
+}
+
+vaadin-dialog-overlay.employee-card-dialog .jmix-dialog-window-close-button {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1;
+    margin: 0;
+}
+
+/* --- summary row: photo on the left, name / position / contacts on the right --- */
+.employee-card-summary {
+    /* keeps the texts clear of the floating close button */
+    padding-right: 3em;
+}
+
+.employee-card-photo {
+    width: 140px;
+    height: 140px;
+    min-width: 140px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+/* shown instead of the photo when the employee has none in the file storage */
+.employee-card-photo-initials {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f0f0f0;
+    color: #716E7B;
+    font-size: 40px;
+    font-weight: 600;
+}
+
+.employee-card-header {
+    padding-bottom: 0.5em;
+}
+
+.employee-card-subtitle {
+    margin-top: 5px;
+    font-size: var(--lumo-font-size-s);
+    color: var(--lumo-secondary-text-color);
+}
+.employee-card-subtitle .employee-card-subtitle-separator {
+    display: inline-block;
+    vertical-align: middle;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background-color: var(--lumo-secondary-text-color);
+    margin: 0 5px 2px 5px;
+}
+.employee-card-subtitle-contacts span {
+    margin-left: 5px;
+    vertical-align: middle;
+}

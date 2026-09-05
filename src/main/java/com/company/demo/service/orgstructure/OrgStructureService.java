@@ -198,7 +198,8 @@ public class OrgStructureService {
                 .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE)
                         .add("department", FetchPlan.INSTANCE_NAME)
                         .add("jobTitle", FetchPlan.INSTANCE_NAME)
-                        .add("employee", FetchPlan.INSTANCE_NAME))
+                        // BASE, not INSTANCE_NAME: the employee card shows the e-mail too
+                        .add("employee", FetchPlan.BASE))
                 .list();
 
         // head first, then the most senior staff (higher lvl) first, then by employee name
@@ -233,6 +234,7 @@ public class OrgStructureService {
         // null when the employee has no photo in the file storage — the chart then renders
         // the initials placeholder instead of an <img>
         node.setImage(employee != null ? employeePhotoService.getPhotoUrl(employee.getId()) : null);
+        node.setEmail(employee != null ? employee.getEmail() : null);
 
         JobTitle jobTitle = position.getJobTitle();
         node.setPosition(jobTitle != null && jobTitle.getName() != null ? jobTitle.getName() : "");
