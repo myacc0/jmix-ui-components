@@ -14,6 +14,9 @@
             </loader>
         </collection>
     </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+    </facets>
 
     <layout>
         <split id="splitLayout" orientation="HORIZONTAL" width="100%" height="100%">

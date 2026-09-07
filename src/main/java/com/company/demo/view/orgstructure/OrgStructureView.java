@@ -43,8 +43,6 @@ public class OrgStructureView extends StandardView {
     private D3OrgChart d3OrgChart;
 
     @ViewComponent
-    private CollectionLoader<Department> departmentsDl;
-    @ViewComponent
     private CollectionContainer<Department> departmentsDc;
     @ViewComponent
     private TreeDataGrid<Department> departmentsTreeDataGrid;
@@ -71,15 +69,9 @@ public class OrgStructureView extends StandardView {
         d3OrgChart.addNodeClickListener(this::onChartNodeClick);
     }
 
-    @Subscribe
-    public void onBeforeShow(final BeforeShowEvent event) {
-        departmentsDl.load();
-    }
-
     @Subscribe(id = "departmentsDl", target = Target.DATA_LOADER)
     public void onDepartmentsDlPostLoad(final CollectionLoader.PostLoadEvent<Department> e) {
         allDepartments = new ArrayList<>(departmentsDc.getItems());
-        expandDepartmentTreeAllNodes();
     }
 
     @Subscribe("departmentSearchField")
