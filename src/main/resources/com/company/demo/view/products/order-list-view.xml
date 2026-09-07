@@ -5,13 +5,13 @@
       focusComponent="ordersDataGrid">
     <data>
         <collection id="ordersDc"
-                    class="com.company.demo.entity.starrocks.Order">
+                    class="com.company.demo.entity.Order">
             <fetchPlan extends="_base">
                 <property name="product" fetchPlan="_instance_name"/>
             </fetchPlan>
             <loader id="ordersDl" readOnly="true">
                 <query>
-                    <![CDATA[select e from demo_StarrocksOrder e]]>
+                    <![CDATA[select e from demo_Order e]]>
                 </query>
             </loader>
         </collection>

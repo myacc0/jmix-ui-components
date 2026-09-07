@@ -1,44 +1,23 @@
-package com.company.demo.entity.starrocks;
+package com.company.demo.entity;
 
+import io.jmix.core.entity.annotation.JmixGeneratedValue;
 import io.jmix.core.metamodel.annotation.DependsOnProperties;
 import io.jmix.core.metamodel.annotation.InstanceName;
 import io.jmix.core.metamodel.annotation.JmixEntity;
-import io.jmix.core.metamodel.annotation.Store;
 import jakarta.annotation.PostConstruct;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-/**
- * Maps the StarRocks {@code dwh.orders} table (mirrored from the postgres-dwh store).
- * <p>
- * Notes on the mapping:
- * <ul>
- *     <li>Lives in the {@code starrocks} data store, not the main one.</li>
- *     <li>No {@code @Version} attribute: the StarRocks table has no VERSION column.</li>
- *     <li>{@code id} is a plain INT. StarRocks has no sequence and this table is not
- *         declared AUTO_INCREMENT, so the id is NOT generated — a caller creating a new
- *         Order must assign it explicitly before saving.</li>
- *     <li>{@code product_id} is a VARCHAR(36) pointing at {@code products.id}. StarRocks
- *         does not enforce foreign keys, but the reference is mapped so the UI can show
- *         the product by its instance name.</li>
- * </ul>
- */
 @JmixEntity
-@Store(name = "starrocks")
 @Table(name = "orders")
-@Entity(name = "demo_StarrocksOrder")
+@Entity(name = "demo_Order")
 public class Order {
 
+    @JmixGeneratedValue
     @Column(name = "id", nullable = false)
     @Id
     private Integer id;

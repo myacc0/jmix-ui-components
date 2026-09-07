@@ -11,8 +11,6 @@
         <item view="demo_Operation.list" title="msg://com.company.demo.view.operation/operationListView.title"/>
         <item view="demo_JobTitle.list" title="msg://com.company.demo.view.jobtitle/jobTitleListView.title"/>
         <item view="demo_Position.list" title="msg://com.company.demo.view.position/positionListView.title"/>
-        <item view="demo_StarrocksProduct.list" title="msg://com.company.demo.view.product/productListView.title"/>
-        <item view="demo_StarrocksOrder.list" title="msg://com.company.demo.view.order/orderListView.title"/>
     </menu>
     <menu opened="true" id="dq" description="msg://com.company.demo/menu_config.dq.description"
           title="msg://com.company.demo/menu_config.dq.title">
@@ -33,5 +31,11 @@
                   description="msg://com.company.demo/menu_config.work-discipline-exceptions.description"
                   title="msg://com.company.demo/menu_config.work-discipline-exceptions.title"/>
         </menu>
+    </menu>
+    <menu id="products" description="msg://com.company.demo/menu_config.products.description"
+          title="msg://com.company.demo/menu_config.products.title">
+        <item view="demo_ProductCategory.list" title="msg://com.company.demo.view.products/productCategoryListView.title"/>
+        <item view="demo_Product.list" title="msg://com.company.demo.view.products/productListView.title"/>
+        <item view="demo_Order.list" title="msg://com.company.demo.view.products/orderListView.title"/>
     </menu>
 </menu-config>

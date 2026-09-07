@@ -4,8 +4,10 @@
       focusComponent="form">
     <data>
         <instance id="productDc"
-                  class="com.company.demo.entity.starrocks.Product">
-            <fetchPlan extends="_base"/>
+                  class="com.company.demo.entity.Product">
+            <fetchPlan extends="_base">
+                <property name="category" fetchPlan="_instance_name"/>
+            </fetchPlan>
             <loader id="productDl"/>
         </instance>
     </data>
@@ -22,12 +24,16 @@
                 <responsiveStep minWidth="0" columns="1"/>
                 <responsiveStep minWidth="40em" columns="2"/>
             </responsiveSteps>
-            <textField id="idField" property="id"/>
             <textField id="nameField" property="name"/>
-            <textField id="descriptionField" property="description"/>
+            <textArea id="descriptionField" property="description" minRows="5"/>
             <textField id="priceField" property="price"/>
             <textField id="saleField" property="sale"/>
-            <textField id="categoryField" property="category"/>
+            <entityPicker id="categoryField" property="category">
+                <actions>
+                    <action id="entityLookupAction" type="entity_lookup"/>
+                    <action id="entityClearAction" type="entity_clear"/>
+                </actions>
+            </entityPicker>
             <textField id="quantityField" property="quantity"/>
         </formLayout>
         <hbox id="detailActions">

@@ -4,7 +4,7 @@
       focusComponent="form">
     <data>
         <instance id="orderDc"
-                  class="com.company.demo.entity.starrocks.Order">
+                  class="com.company.demo.entity.Order">
             <fetchPlan extends="_base">
                 <property name="product" fetchPlan="_instance_name"/>
             </fetchPlan>
@@ -24,7 +24,6 @@
                 <responsiveStep minWidth="0" columns="1"/>
                 <responsiveStep minWidth="40em" columns="2"/>
             </responsiveSteps>
-            <textField id="idField" property="id"/>
             <entityPicker id="productField" property="product">
                 <actions>
                     <action id="entityLookupAction" type="entity_lookup"/>
@@ -41,7 +40,7 @@
             <textField id="customerAddressField" property="customerAddress"/>
             <textField id="customerNameField" property="customerName"/>
             <dateTimePicker id="orderDateField" property="orderDate"/>
-            <textField id="notesField" property="notes"/>
+            <textArea id="notesField" property="notes" minRows="5"/>
         </formLayout>
         <hbox id="detailActions">
             <button id="saveAndCloseButton" action="saveCloseAction"/>
