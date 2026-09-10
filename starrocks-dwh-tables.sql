@@ -61,3 +61,53 @@ CREATE TABLE orders (
 PRIMARY KEY(id)
 DISTRIBUTED BY HASH(id) BUCKETS 4
 PROPERTIES("replication_num" = "1");
+
+-- mirrors main.DEPARTMENT (entity demo_Department)
+DROP TABLE IF EXISTS department;
+CREATE TABLE department (
+  id                   VARCHAR(36)  NOT NULL COMMENT "source: uuid",
+  version              INT          NOT NULL DEFAULT "1",
+  name                 VARCHAR(255) NOT NULL,
+  parent_department_id VARCHAR(36)  NULL COMMENT "source: uuid -> department.id",
+  ord_no               INT          NULL
+) ENGINE=OLAP
+PRIMARY KEY(id)
+DISTRIBUTED BY HASH(id) BUCKETS 4
+PROPERTIES("replication_num" = "1");
+
+-- mirrors main.EMPLOYEE (entity demo_Employee)
+DROP TABLE IF EXISTS employee;
+CREATE TABLE employee (
+  id         VARCHAR(36)  NOT NULL COMMENT "source: uuid",
+  version    INT          NOT NULL DEFAULT "1",
+  first_name VARCHAR(255) NOT NULL COMMENT "entity attribute: fullName",
+  email      VARCHAR(255) NULL
+) ENGINE=OLAP
+PRIMARY KEY(id)
+DISTRIBUTED BY HASH(id) BUCKETS 4
+PROPERTIES("replication_num" = "1");
+
+-- mirrors main.DEMO_JOB_TITLE (entity demo_JobTitle)
+DROP TABLE IF EXISTS demo_job_title;
+CREATE TABLE demo_job_title (
+  id   VARCHAR(36)  NOT NULL COMMENT "source: uuid",
+  name VARCHAR(400) NULL
+) ENGINE=OLAP
+PRIMARY KEY(id)
+DISTRIBUTED BY HASH(id) BUCKETS 4
+PROPERTIES("replication_num" = "1");
+
+-- mirrors main.DEMO_POSITION (entity demo_Position)
+DROP TABLE IF EXISTS demo_position;
+CREATE TABLE demo_position (
+  id            VARCHAR(36) NOT NULL COMMENT "source: uuid",
+  department_id VARCHAR(36) NULL COMMENT "source: uuid -> department.id",
+  job_title_id  VARCHAR(36) NULL COMMENT "source: uuid -> demo_job_title.id",
+  employee_id   VARCHAR(36) NULL COMMENT "source: uuid -> employee.id",
+  lvl           INT         NULL,
+  ishead        INT         NULL,
+  status        VARCHAR(50) NULL COMMENT "enum PositionStatus id"
+) ENGINE=OLAP
+PRIMARY KEY(id)
+DISTRIBUTED BY HASH(id) BUCKETS 4
+PROPERTIES("replication_num" = "1");
