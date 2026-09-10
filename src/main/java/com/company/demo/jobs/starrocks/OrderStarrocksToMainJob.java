@@ -15,12 +15,12 @@ import org.springframework.beans.factory.annotation.Autowired;
  * <p>
  * Register it in <em>Administration &rarr; Quartz jobs</em> with a trigger of your choice. Orders
  * whose product is missing from the main store are skipped rather than failing the run — see
- * {@link OrdersStarrocksToMainSynchronizer#syncStarrocksToMain()} — so run {@link ProductMainToStarrocksJob}'s
+ * {@link OrdersStarrocksToMainSynchronizer#sync()} — so run {@link ProductMainToStarrocksJob}'s
  * source data into shape first if the mirror is ahead of the main store.
  */
-public class OrderStarrocksToMainSync implements Job {
+public class OrderStarrocksToMainJob implements Job {
 
-    private static final Logger log = LoggerFactory.getLogger(OrderStarrocksToMainSync.class);
+    private static final Logger log = LoggerFactory.getLogger(OrderStarrocksToMainJob.class);
 
     @Autowired
     private OrdersStarrocksToMainSynchronizer ordersStarrocksToMainSynchronizer;
@@ -28,10 +28,10 @@ public class OrderStarrocksToMainSync implements Job {
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         try {
-            SyncResult result = ordersStarrocksToMainSynchronizer.syncStarrocksToMain();
-            log.info("OrderStarrocksToMainSync finished: {}", result);
+            SyncResult result = ordersStarrocksToMainSynchronizer.sync();
+            log.info("OrderStarrocksToMainJob finished: {}", result);
         } catch (Exception e) {
-            log.error("OrderStarrocksToMainSync failed", e);
+            log.error("OrderStarrocksToMainJob failed", e);
             throw new JobExecutionException("Failed to sync orders from starrocks to main", e);
         }
     }
