@@ -8,13 +8,23 @@ import org.springframework.stereotype.Service;
 import java.sql.Types;
 
 @Service
-public class ProductCategoriesTableSynchronizer implements TableSynchronizer {
-    private static final Logger log = LoggerFactory.getLogger(ProductCategoriesTableSynchronizer.class);
+public class ProductCategoriesMainToStarrocksSynchronizer implements MainToStarrocksTableSynchronizer {
+    private static final Logger log = LoggerFactory.getLogger(ProductCategoriesMainToStarrocksSynchronizer.class);
 
     private final StarrocksSyncService starrocksSyncService;
 
-    public ProductCategoriesTableSynchronizer(StarrocksSyncService starrocksSyncService) {
+    public ProductCategoriesMainToStarrocksSynchronizer(StarrocksSyncService starrocksSyncService) {
         this.starrocksSyncService = starrocksSyncService;
+    }
+
+    @Override
+    public String provideTargetTable() {
+        return "product_categories";
+    }
+
+    @Override
+    public String provideSourceTable() {
+        return "demo_product_category";
     }
 
     @Override
@@ -31,11 +41,10 @@ public class ProductCategoriesTableSynchronizer implements TableSynchronizer {
     }
 
     @Override
-    public SyncResult syncMainToStarrocks() {
+    public SyncResult sync() {
         SyncResult result = starrocksSyncService.copyToStarrocks(
-                "product_categories", provideTableColumns(), provideTableColumnTypes(),
-                "SELECT id, version, name, description, parent_id, created_at, updated_at"
-                        + " FROM demo_product_category",
+                provideTargetTable(), provideTableColumns(), provideTableColumnTypes(),
+                "SELECT " + provideTableColumns() + " FROM " + provideSourceTable(),
                 (rs, rowNum) -> new Object[]{
                         starrocksSyncService.uuidText(rs, "id"),
                         rs.getInt("version"),
@@ -47,10 +56,5 @@ public class ProductCategoriesTableSynchronizer implements TableSynchronizer {
                 }, provideSyncBatchSize());
         log.info("Product categories main -> starrocks: {}", result);
         return result;
-    }
-
-    @Override
-    public SyncResult syncStarrocksToMain() {
-        throw new UnsupportedOperationException();
     }
 }

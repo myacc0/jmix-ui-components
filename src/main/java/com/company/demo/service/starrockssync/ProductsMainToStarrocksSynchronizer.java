@@ -8,13 +8,23 @@ import org.springframework.stereotype.Service;
 import java.sql.Types;
 
 @Service
-public class ProductsTableSynchronizer implements TableSynchronizer {
-    private static final Logger log = LoggerFactory.getLogger(ProductsTableSynchronizer.class);
+public class ProductsMainToStarrocksSynchronizer implements MainToStarrocksTableSynchronizer {
+    private static final Logger log = LoggerFactory.getLogger(ProductsMainToStarrocksSynchronizer.class);
 
     private final StarrocksSyncService starrocksSyncService;
 
-    public ProductsTableSynchronizer(StarrocksSyncService starrocksSyncService) {
+    public ProductsMainToStarrocksSynchronizer(StarrocksSyncService starrocksSyncService) {
         this.starrocksSyncService = starrocksSyncService;
+    }
+
+    @Override
+    public String provideTargetTable() {
+        return "products";
+    }
+
+    @Override
+    public String provideSourceTable() {
+        return "products";
     }
 
     @Override
@@ -31,11 +41,10 @@ public class ProductsTableSynchronizer implements TableSynchronizer {
     }
 
     @Override
-    public SyncResult syncMainToStarrocks() {
+    public SyncResult sync() {
         SyncResult result = starrocksSyncService.copyToStarrocks(
-                "products", provideTableColumns(), provideTableColumnTypes(),
-                "SELECT id, name, description, price, sale, category_id, quantity, created_at, updated_at"
-                        + " FROM products",
+                provideTargetTable(), provideTableColumns(), provideTableColumnTypes(),
+                "SELECT " + provideTableColumns() + " FROM " + provideSourceTable(),
                 (rs, rowNum) -> new Object[]{
                         starrocksSyncService.uuidText(rs, "id"),
                         rs.getString("name"),
@@ -51,8 +60,4 @@ public class ProductsTableSynchronizer implements TableSynchronizer {
         return result;
     }
 
-    @Override
-    public SyncResult syncStarrocksToMain() {
-        throw new UnsupportedOperationException();
-    }
 }

@@ -1,7 +1,7 @@
 package com.company.demo.jobs.starrocks;
 
 import com.company.demo.dto.starrockssync.SyncResult;
-import com.company.demo.service.starrockssync.OrdersTableSynchronizer;
+import com.company.demo.service.starrockssync.OrdersStarrocksToMainSynchronizer;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -15,7 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * <p>
  * Register it in <em>Administration &rarr; Quartz jobs</em> with a trigger of your choice. Orders
  * whose product is missing from the main store are skipped rather than failing the run — see
- * {@link OrdersTableSynchronizer#syncStarrocksToMain()} — so run {@link ProductMainToStarrocksSync}'s
+ * {@link OrdersStarrocksToMainSynchronizer#syncStarrocksToMain()} — so run {@link ProductMainToStarrocksJob}'s
  * source data into shape first if the mirror is ahead of the main store.
  */
 public class OrderStarrocksToMainSync implements Job {
@@ -23,12 +23,12 @@ public class OrderStarrocksToMainSync implements Job {
     private static final Logger log = LoggerFactory.getLogger(OrderStarrocksToMainSync.class);
 
     @Autowired
-    private OrdersTableSynchronizer ordersTableSynchronizer;
+    private OrdersStarrocksToMainSynchronizer ordersStarrocksToMainSynchronizer;
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         try {
-            SyncResult result = ordersTableSynchronizer.syncStarrocksToMain();
+            SyncResult result = ordersStarrocksToMainSynchronizer.syncStarrocksToMain();
             log.info("OrderStarrocksToMainSync finished: {}", result);
         } catch (Exception e) {
             log.error("OrderStarrocksToMainSync failed", e);

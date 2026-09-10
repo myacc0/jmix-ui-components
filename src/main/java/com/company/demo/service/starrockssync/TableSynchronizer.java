@@ -8,14 +8,10 @@ public interface TableSynchronizer {
         return 500;
     }
 
-    String provideTableColumns();
+    String provideTargetTable();
 
-    int[] provideTableColumnTypes();
+    String provideSourceTable();
 
-    /** Copies {@code main} into {@code starrocks}. */
-    SyncResult syncMainToStarrocks();
-
-    /** Copies {@code starrocks} into {@code main}. */
-    SyncResult syncStarrocksToMain();
+    SyncResult sync();
 
 }
