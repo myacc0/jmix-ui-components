@@ -12,7 +12,7 @@ public interface StarrocksToMainTableSynchronizer extends TableSynchronizer {
 
     String prepareSelectSQLFromSource();
 
-    record ForeignColumnTable(String tableName, boolean nullable) {
+    record ForeignColumnTable(String columnName, String tableName, boolean nullable) {
     }
 
 }

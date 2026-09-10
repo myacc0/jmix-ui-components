@@ -12,6 +12,10 @@ public interface TableSynchronizer {
 
     String provideSourceTable();
 
+    String provideTableColumns();
+
+    int[] provideTableColumnTypes();
+
     SyncResult sync();
 
 }

@@ -49,7 +49,7 @@ public class OrdersStarrocksToMainSynchronizer implements StarrocksToMainTableSy
 
     @Override
     public List<ForeignColumnTable> provideForeignColumnTables() {
-        return List.of(new ForeignColumnTable("products", false));
+        return List.of(new ForeignColumnTable("product_id", "products", false));
     }
 
     @Override
@@ -61,27 +61,34 @@ public class OrdersStarrocksToMainSynchronizer implements StarrocksToMainTableSy
         for (ForeignColumnTable fTable : fTables) {
             if (fTable.nullable()) {
                 joinItems.add("""
-                    LEFT JOIN %s ON %s.id = %s.product_id
-                    """.formatted(fTable.tableName(), provideSourceTable(), provideSourceTable()));
+                LEFT JOIN %s ON %s.id = %s.%s""".formatted(
+                        fTable.tableName(), fTable.tableName(), provideSourceTable(), fTable.columnName()));
 
                 whereItems.add("""
-                    (%s.product_id IS NULL OR %s.id IS NOT NULL)
-                    """.formatted(provideSourceTable(), fTable.tableName()));
+                (%s.%s IS NULL OR %s.id IS NOT NULL)""".formatted(
+                        provideSourceTable(), fTable.columnName(), fTable.tableName()));
             } else {
                 joinItems.add("""
-                    INNER JOIN %s ON %s.id = %s.product_id
-                    """.formatted(fTable.tableName(), provideSourceTable(), provideSourceTable()));
+                INNER JOIN %s ON %s.id = %s.%s""".formatted(
+                        fTable.tableName(), fTable.tableName(), provideSourceTable(), fTable.columnName()));
             }
         }
 
-        String joinSql = joinItems.stream().reduce("", (a, b) -> a + " " + b);
-        String whereSql = whereItems.stream().reduce("", (a, b) -> a + " AND " + b);
+        String joinSql = String.join("\n", joinItems);
+        String whereSql = String.join(" AND ", whereItems);
 
         String selectSql = """
-                SELECT %s.* FROM %s
-                %s
-                WHERE 1=1 AND %s
-                """.formatted(provideSourceTable(), provideSourceTable(), joinSql, whereSql);
+            SELECT %s.* FROM %s
+            %s
+            WHERE %s
+            """.formatted(
+                        provideSourceTable(),
+                        provideSourceTable(),
+                        joinSql.isBlank() ? "" : joinSql,
+                        whereSql.isBlank() ? "1=1" : whereSql
+                )
+                .replaceAll("(?m)^\\s*$\\n", "");
+
         log.debug("Orders starrocks -> main: select SQL: {}", selectSql);
         return selectSql;
     }
@@ -92,7 +99,7 @@ public class OrdersStarrocksToMainSynchronizer implements StarrocksToMainTableSy
         JdbcTemplate target = starrocksSyncService.getMainStoreJdbcTemplate();
 
         int totalRows = Optional.ofNullable(
-                target.queryForObject("SELECT count(*) FROM " + provideSourceTable(), Integer.class)).orElse(0);
+                source.queryForObject("SELECT count(*) FROM " + provideSourceTable(), Integer.class)).orElse(0);
 
         String upsertSql = "INSERT INTO " + provideTargetTable() + " (" + provideTableColumns() + ") VALUES ("
                 + starrocksSyncService.placeholders(provideTableColumnTypes().length) + ") ON CONFLICT (id) DO UPDATE SET "
@@ -117,7 +124,7 @@ public class OrdersStarrocksToMainSynchronizer implements StarrocksToMainTableSy
                 },
                 batch -> target.batchUpdate(upsertSql, batch, provideTableColumnTypes()), provideSyncBatchSize());
 
-        log.info("Orders starrocks -> main: {}, ignoredNotConsistent: {}", result, Math.max(0, totalRows - result.written()));
+        log.info("Orders starrocks -> main: {}, ignoredByNotConsistent: {}", result, Math.max(0, totalRows - result.written()));
         return result;
     }
 

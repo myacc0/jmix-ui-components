@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import java.sql.Types;
 
 @Service
-public class ProductCategoriesMainToStarrocksSynchronizer implements MainToStarrocksTableSynchronizer {
+public class ProductCategoriesMainToStarrocksSynchronizer implements TableSynchronizer {
     private static final Logger log = LoggerFactory.getLogger(ProductCategoriesMainToStarrocksSynchronizer.class);
 
     private final StarrocksSyncService starrocksSyncService;
