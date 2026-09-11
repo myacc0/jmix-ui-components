@@ -1,4 +1,4 @@
-package com.company.demo.service;
+package com.company.demo.service.dq;
 
 import com.company.demo.dto.SelectDto;
 import com.company.demo.enums.dq.DqSqlDialect;

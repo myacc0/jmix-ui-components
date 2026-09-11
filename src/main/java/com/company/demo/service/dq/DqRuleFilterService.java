@@ -1,4 +1,4 @@
-package com.company.demo.service;
+package com.company.demo.service.dq;
 
 import com.company.demo.dto.DqRuleFilter;
 import io.jmix.core.querycondition.JpqlCondition;

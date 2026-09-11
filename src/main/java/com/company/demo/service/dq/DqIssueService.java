@@ -1,4 +1,4 @@
-package com.company.demo.service;
+package com.company.demo.service.dq;
 
 import com.company.demo.entity.dq.DqIssue;
 import org.springframework.stereotype.Service;

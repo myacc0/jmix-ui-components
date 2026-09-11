@@ -12,7 +12,7 @@ import com.company.demo.enums.dq.DqDimension;
 import com.company.demo.enums.dq.DqIssueStatus;
 import com.company.demo.enums.dq.DqRuleType;
 import com.company.demo.enums.dq.DqSeverity;
-import com.company.demo.service.DqCheckExecutorService;
+import com.company.demo.service.dq.DqCheckExecutorService;
 import com.company.demo.test_support.AuthenticatedAsAdmin;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

@@ -2,7 +2,7 @@ package com.company.demo.view.dqissue;
 
 import com.company.demo.entity.dq.DqIssue;
 import com.company.demo.enums.dq.DqIssueStatus;
-import com.company.demo.service.DqIssueService;
+import com.company.demo.service.dq.DqIssueService;
 import com.company.demo.view.main.MainView;
 import com.vaadin.flow.router.Route;
 import io.jmix.flowui.component.select.JmixSelect;

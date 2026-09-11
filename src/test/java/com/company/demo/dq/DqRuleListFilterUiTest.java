@@ -3,7 +3,7 @@ package com.company.demo.dq;
 import com.company.demo.DemoApplication;
 import com.company.demo.dto.SelectDto;
 import com.company.demo.entity.dq.DqRule;
-import com.company.demo.service.DqDataSourceProvider;
+import com.company.demo.service.dq.DqDataSourceProvider;
 import com.company.demo.test_support.AuthenticatedAsAdmin;
 import com.company.demo.view.dqrule.DqRuleListView;
 import io.jmix.flowui.ViewNavigators;

@@ -4,7 +4,7 @@ import com.company.demo.dto.DqRuleQueries;
 import com.company.demo.entity.dq.DqRule;
 import com.company.demo.enums.dq.DqRuleType;
 import com.company.demo.enums.dq.DqSqlDialect;
-import com.company.demo.service.DqSqlQueryBuilder;
+import com.company.demo.service.dq.DqSqlQueryBuilder;
 import com.company.demo.test_support.AuthenticatedAsAdmin;
 import io.jmix.core.DataManager;
 import org.junit.jupiter.api.Disabled;

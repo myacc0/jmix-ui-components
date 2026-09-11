@@ -1,4 +1,4 @@
-package com.company.demo.service;
+package com.company.demo.service.dq;
 
 import com.company.demo.entity.dq.DqRule;
 import com.company.demo.entity.User;

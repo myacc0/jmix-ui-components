@@ -4,7 +4,7 @@ import com.company.demo.component.DqBadges;
 import com.company.demo.dto.SelectDto;
 import com.company.demo.entity.dq.DqRule;
 import com.company.demo.repository.DqRuleRepository;
-import com.company.demo.service.DqDataSourceProvider;
+import com.company.demo.service.dq.DqDataSourceProvider;
 import com.company.demo.view.main.MainView;
 import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.router.Route;

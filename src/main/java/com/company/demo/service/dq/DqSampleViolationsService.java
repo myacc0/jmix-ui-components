@@ -1,4 +1,4 @@
-package com.company.demo.service;
+package com.company.demo.service.dq;
 
 import com.company.demo.utils.JsonUtils;
 import com.fasterxml.jackson.core.type.TypeReference;

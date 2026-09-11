@@ -1,6 +1,6 @@
 package com.company.demo.dq;
 
-import com.company.demo.service.DqSampleViolationsService;
+import com.company.demo.service.dq.DqSampleViolationsService;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

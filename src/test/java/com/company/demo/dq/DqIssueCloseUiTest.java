@@ -8,7 +8,7 @@ import com.company.demo.enums.dq.DqDimension;
 import com.company.demo.enums.dq.DqIssueStatus;
 import com.company.demo.enums.dq.DqRuleType;
 import com.company.demo.enums.dq.DqSeverity;
-import com.company.demo.service.DqIssueService;
+import com.company.demo.service.dq.DqIssueService;
 import com.company.demo.test_support.AuthenticatedAsAdmin;
 import com.company.demo.view.dqissue.DqIssueCloseView;
 import com.company.demo.view.dqissue.DqIssueListView;
