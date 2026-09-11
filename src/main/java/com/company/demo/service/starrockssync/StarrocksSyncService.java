@@ -40,9 +40,6 @@ import java.util.function.Consumer;
 @Service
 public class StarrocksSyncService {
 
-    /** Rows sent to the target per statement. */
-    private static final int BATCH_SIZE = 500;
-
     private final DqDataSourceProvider dataSourceProvider;
 
     public StarrocksSyncService(DqDataSourceProvider dataSourceProvider) {
@@ -91,7 +88,7 @@ public class StarrocksSyncService {
                 return;
             }
             buffer.add(row);
-            if (buffer.size() >= BATCH_SIZE) {
+            if (buffer.size() >= batchSize) {
                 flush.accept(buffer);
                 counters[1] += buffer.size();
                 buffer.clear();
