@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      xmlns:c="http://jmix.io/schema/flowui/jpql-condition"
+      title="msg://tableSynchronizerListView.title"
+      focusComponent="tableSynchronizersDataGrid">
+    <data>
+        <collection id="tableSynchronizersDc"
+                    class="com.company.demo.entity.tablesync.TableSynchronizer">
+            <fetchPlan extends="_base"/>
+            <loader id="tableSynchronizersDl" readOnly="true">
+                <query>
+                    <![CDATA[select e from demo_TableSynchronizer e]]>
+                </query>
+            </loader>
+        </collection>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+        <urlQueryParameters>
+            <pagination component="pagination"/>
+        </urlQueryParameters>
+    </facets>
+    <actions>
+        <action id="selectAction" type="lookup_select"/>
+        <action id="discardAction" type="lookup_discard"/>
+    </actions>
+    <layout>
+        <hbox id="buttonsPanel" classNames="buttons-panel">
+            <startSlot>
+                <button id="createButton" action="tableSynchronizersDataGrid.createAction"/>
+                <button id="editButton" action="tableSynchronizersDataGrid.editAction"/>
+                <button id="removeButton" action="tableSynchronizersDataGrid.removeAction"/>
+            </startSlot>
+            <endSlot>
+                <simplePagination id="pagination" dataLoader="tableSynchronizersDl"/>
+            </endSlot>
+        </hbox>
+        <dataGrid id="tableSynchronizersDataGrid"
+                  width="100%"
+                  minHeight="20em"
+                  dataContainer="tableSynchronizersDc"
+                  columnReorderingAllowed="true">
+            <actions>
+                <action id="createAction" type="list_create"/>
+                <action id="editAction" type="list_edit"/>
+                <action id="removeAction" type="list_remove"/>
+            </actions>
+            <columns resizable="true">
+                <column property="direction" autoWidth="true" flexGrow="0"/>
+                <column property="targetTableName" autoWidth="true" flexGrow="0"/>
+                <column property="sourceTableName" autoWidth="true" flexGrow="0"/>
+                <column property="hasFK" autoWidth="true" flexGrow="0"/>
+                <column property="batchSize" autoWidth="true" flexGrow="0"/>
+                <column property="tableColConfig" autoWidth="true" flexGrow="0"/>
+                <column property="createdAt" autoWidth="true" flexGrow="0"/>
+                <column property="updatedAt" autoWidth="true" flexGrow="0"/>
+            </columns>
+        </dataGrid>
+        <hbox id="lookupActions" visible="false">
+            <button id="selectButton" action="selectAction"/>
+            <button id="discardButton" action="discardAction"/>
+        </hbox>
+    </layout>
+</view>
