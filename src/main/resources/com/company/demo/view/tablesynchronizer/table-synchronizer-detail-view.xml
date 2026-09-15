@@ -44,8 +44,8 @@
             <hbox classNames="form-block">
                 <span classNames="form-block-title" text="msg://tableSynchronizerDetailView.columnsBlock"/>
 
-                <!-- Rows are built by the controller from the tableColConfig JSON and written
-                     back to it on save; the box itself stays empty in the descriptor. -->
+                <span id="uuidSqlTypeNote" text="msg://tableColumns.uuidVarcharNote" visible="false"/>
+
                 <vbox id="columnsBox" padding="false" spacing="false" width="100%"/>
 
                 <hbox id="columnsActions" padding="false" css="margin-bottom: 10px">

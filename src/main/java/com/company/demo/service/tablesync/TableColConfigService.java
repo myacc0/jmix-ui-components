@@ -2,6 +2,7 @@ package com.company.demo.service.tablesync;
 
 import com.company.demo.entity.tablesync.TableCol;
 import com.company.demo.entity.tablesync.TableColConfig;
+import com.company.demo.entity.tablesync.TableSyncDirection;
 import com.company.demo.enums.tablesync.TableColJavaType;
 import com.company.demo.utils.JsonUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -61,6 +62,21 @@ public class TableColConfigService {
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Failed to serialize table column config", e);
         }
+    }
+
+    /**
+     * Whether the column's JDBC type is wrong for a UUID copied into StarRocks. The MySQL driver used
+     * for StarRocks has no mapping for {@link Types#OTHER} and binds such a value as a serialized Java
+     * object, so a UUID column of a main-to-starrocks synchronizer must be bound as {@link Types#VARCHAR}.
+     */
+    public boolean requiresVarcharSqlType(
+            @Nullable TableSyncDirection direction,
+            @Nullable String javaType,
+            @Nullable Integer sqlType
+    ) {
+        return direction == TableSyncDirection.MAIN_TO_STARROCKS
+                && TableColJavaType.UUID.getId().equals(javaType)
+                && !Integer.valueOf(Types.VARCHAR).equals(sqlType);
     }
 
     /** JDBC type code to its {@link Types} constant name, for the column editor's type picker. */

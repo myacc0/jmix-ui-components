@@ -1,6 +1,7 @@
 package com.company.demo.view.tablesynchronizer;
 
 import com.company.demo.entity.tablesync.TableCol;
+import com.company.demo.entity.tablesync.TableSyncDirection;
 import com.company.demo.entity.tablesync.TableSynchronizer;
 import com.company.demo.service.tablesync.TableColConfigService;
 import com.company.demo.view.main.MainView;
@@ -19,6 +20,7 @@ import io.jmix.flowui.component.combobox.JmixComboBox;
 import io.jmix.flowui.component.textfield.TypedTextField;
 import io.jmix.flowui.component.validation.ValidationErrors;
 import io.jmix.flowui.kit.component.button.JmixButton;
+import io.jmix.flowui.model.InstanceContainer;
 import io.jmix.flowui.view.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
@@ -62,11 +64,15 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
     @ViewComponent
     private VerticalLayout columnsBox;
 
+    @ViewComponent
+    private Span uuidSqlTypeNote;
+
     /** One entry per column row currently rendered in {@link #columnsBox}, in display order. */
     private final List<ColumnRow> columnRows = new ArrayList<>();
 
     @Subscribe
     public void onReady(final ReadyEvent event) {
+        uuidSqlTypeNote.getStyle().set("color", "var(--lumo-error-text-color)");
         columnsBox.removeAll();
         columnRows.clear();
         columnsBox.add(createHeaderRow());
@@ -83,6 +89,13 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
     @Subscribe(id = "addColumnButton", subject = "clickListener")
     public void onAddColumnButtonClick(final ClickEvent<JmixButton> event) {
         addColumnRow(null).nameField.focus();
+    }
+
+    @Subscribe(id = "tableSynchronizerDc", target = Target.DATA_CONTAINER)
+    public void onTableSynchronizerDcItemPropertyChange(final InstanceContainer.ItemPropertyChangeEvent<TableSynchronizer> e) {
+        if ("direction".equals(e.getProperty())) {
+            updateUuidSqlTypeNote();
+        }
     }
 
     /** Every column must be complete and named once, otherwise the JSON built on save is unusable. */
@@ -173,12 +186,21 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
         ColumnRow row = new ColumnRow(column);
         columnRows.add(row);
         columnsBox.add(row.layout);
+        updateUuidSqlTypeNote();
         return row;
     }
 
     private void removeColumnRow(ColumnRow row) {
         columnRows.remove(row);
         columnsBox.remove(row.layout);
+        updateUuidSqlTypeNote();
+    }
+
+    /** Shows the note while any UUID column of a main-to-starrocks synchronizer is not bound as VARCHAR. */
+    private void updateUuidSqlTypeNote() {
+        TableSyncDirection direction = getEditedEntity().getDirection();
+        uuidSqlTypeNote.setVisible(columnRows.stream().anyMatch(row -> tableColConfigService.requiresVarcharSqlType(
+                direction, row.javaTypeField.getValue(), row.sqlTypeField.getValue())));
     }
 
     /** One editable column of the synchronized table: the inputs plus the layout holding them. */
@@ -209,6 +231,8 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
                     sqlTypeField.setValue(suggested);
                 }
             });
+            javaTypeField.addValueChangeListener(e -> updateUuidSqlTypeNote());
+            sqlTypeField.addValueChangeListener(e -> updateUuidSqlTypeNote());
 
             layout = new HorizontalLayout();
             layout.addClassName("table-col-row");
