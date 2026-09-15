@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://tableSynchronizerDetailView.title"
+      focusComponent="form">
+    <data>
+        <instance id="tableSynchronizerDc"
+                  class="com.company.demo.entity.tablesync.TableSynchronizer">
+            <fetchPlan extends="_base"/>
+            <loader id="tableSynchronizerDl"/>
+        </instance>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+    </facets>
+    <actions>
+        <action id="saveCloseAction" type="detail_saveClose"/>
+        <action id="closeAction" type="detail_close"/>
+    </actions>
+    <layout>
+        <formLayout id="form"
+                    dataContainer="tableSynchronizerDc"
+                    autoResponsive="true"
+                    width="75%"
+                    expandColumns="true"
+                    expandFields="true">
+
+            <hbox classNames="form-block">
+                <span classNames="form-block-title" text="msg://tableSynchronizerDetailView.generalBlock"/>
+
+                <formItem label="msg://com.company.demo.entity.tablesync/TableSynchronizer.direction">
+                    <select id="directionField" property="direction" required="true"/>
+                </formItem>
+                <formItem label="msg://com.company.demo.entity.tablesync/TableSynchronizer.sourceTableName">
+                    <textField id="sourceTableNameField" property="sourceTableName" required="true"/>
+                </formItem>
+                <formItem label="msg://com.company.demo.entity.tablesync/TableSynchronizer.targetTableName">
+                    <textField id="targetTableNameField" property="targetTableName" required="true"/>
+                </formItem>
+                <formItem label="msg://com.company.demo.entity.tablesync/TableSynchronizer.batchSize">
+                    <integerField id="batchSizeField" property="batchSize" required="true" stepButtonsVisible="true"/>
+                </formItem>
+
+                <checkbox id="hasFKField"
+                          property="hasFK"
+                          label="msg://com.company.demo.entity.tablesync/TableSynchronizer.hasFK"
+                          dataContainer="tableSynchronizerDc"/>
+            </hbox>
+
+            <hbox classNames="form-block">
+                <span classNames="form-block-title" text="msg://tableSynchronizerDetailView.columnsBlock"/>
+
+                <!-- Rows are built by the controller from the tableColConfig JSON and written
+                     back to it on save; the box itself stays empty in the descriptor. -->
+                <vbox id="columnsBox" padding="false" spacing="false" width="100%"/>
+
+                <hbox id="columnsActions" padding="false" css="margin-bottom: 10px">
+                    <button id="addColumnButton"
+                            text="msg://tableSynchronizerDetailView.addColumn"
+                            icon="vaadin:plus"/>
+                </hbox>
+            </hbox>
+        </formLayout>
+
+        <hbox id="detailActions" width="75%" justifyContent="CENTER" css="padding-bottom: 40px">
+            <button id="saveAndCloseButton" action="saveCloseAction"/>
+            <button id="closeButton" action="closeAction"/>
+        </hbox>
+    </layout>
+</view>
