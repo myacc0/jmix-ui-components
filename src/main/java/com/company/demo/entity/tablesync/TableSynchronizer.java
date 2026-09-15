@@ -16,6 +16,10 @@ import java.util.UUID;
 @Table(name = "DEMO_TABLE_SYNCHRONIZER")
 @Entity(name = "demo_TableSynchronizer")
 public class TableSynchronizer {
+
+    /** Rows copied per batch when the synchronizer runs, unless the user sets another size. */
+    public static final int DEFAULT_BATCH_SIZE = 500;
+
     @JmixGeneratedValue
     @Column(name = "ID", nullable = false)
     @Id
@@ -36,7 +40,7 @@ public class TableSynchronizer {
 
     @Column(name = "BATCH_SIZE", nullable = false)
     @NotNull
-    private Integer batchSize;
+    private Integer batchSize = DEFAULT_BATCH_SIZE;
 
     @Column(name = "TABLE_COL_CONFIG", nullable = false, columnDefinition = "jsonb")
     @NotNull
