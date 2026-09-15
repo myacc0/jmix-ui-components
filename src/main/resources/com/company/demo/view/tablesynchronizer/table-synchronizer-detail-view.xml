@@ -20,7 +20,7 @@
         <formLayout id="form"
                     dataContainer="tableSynchronizerDc"
                     autoResponsive="true"
-                    width="75%"
+                    width="100%"
                     expandColumns="true"
                     expandFields="true">
 
@@ -39,11 +39,6 @@
                 <formItem label="msg://com.company.demo.entity.tablesync/TableSynchronizer.batchSize">
                     <integerField id="batchSizeField" property="batchSize" required="true" stepButtonsVisible="true"/>
                 </formItem>
-
-                <checkbox id="hasFKField"
-                          property="hasFK"
-                          label="msg://com.company.demo.entity.tablesync/TableSynchronizer.hasFK"
-                          dataContainer="tableSynchronizerDc"/>
             </hbox>
 
             <hbox classNames="form-block">

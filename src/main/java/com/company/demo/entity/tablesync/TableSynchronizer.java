@@ -34,10 +34,6 @@ public class TableSynchronizer {
     @NotNull
     private String sourceTableName;
 
-    @Column(name = "HAS_FK", nullable = false)
-    @NotNull
-    private Boolean hasFK = false;
-
     @Column(name = "BATCH_SIZE", nullable = false)
     @NotNull
     private Integer batchSize;
@@ -93,14 +89,6 @@ public class TableSynchronizer {
 
     public void setBatchSize(Integer batchSize) {
         this.batchSize = batchSize;
-    }
-
-    public Boolean getHasFK() {
-        return hasFK;
-    }
-
-    public void setHasFK(Boolean hasFK) {
-        this.hasFK = hasFK;
     }
 
     public String getSourceTableName() {

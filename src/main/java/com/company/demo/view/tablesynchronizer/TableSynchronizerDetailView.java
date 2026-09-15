@@ -44,9 +44,10 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
 
     // Column-row geometry: the three text/type inputs share the free width, the last two are fixed.
     private static final double NAME_FLEX_GROW = 3;
-    private static final double JAVA_TYPE_FLEX_GROW = 4;
+    private static final double JAVA_TYPE_FLEX_GROW = 3;
     private static final double SQL_TYPE_FLEX_GROW = 3;
     private static final String NULLABLE_WIDTH = "6em";
+    private static final String FOREIGN_KEY_WIDTH = "6em";
     private static final String REMOVE_WIDTH = "3em";
 
     @Autowired
@@ -124,7 +125,8 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
                     normalizedName(row),
                     row.javaTypeField.getValue(),
                     row.sqlTypeField.getValue(),
-                    Boolean.TRUE.equals(row.nullableField.getValue())));
+                    Boolean.TRUE.equals(row.nullableField.getValue()),
+                    Boolean.TRUE.equals(row.foreignKeyField.getValue())));
         }
         return columns;
     }
@@ -149,6 +151,12 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
                 .set("color", "var(--lumo-secondary-text-color)");
         nullableLabel.setWidth(NULLABLE_WIDTH);
         header.add(nullableLabel);
+
+        Span foreignKeyLabel = new Span(messages.getMessage(TableSynchronizerDetailView.class, "tableColumns.foreignKey"));
+        foreignKeyLabel.getStyle().set("font-size", "var(--lumo-font-size-s)")
+                .set("color", "var(--lumo-secondary-text-color)");
+        foreignKeyLabel.setWidth(FOREIGN_KEY_WIDTH);
+        header.add(foreignKeyLabel);
 
         // keeps the header columns aligned with the rows, which end with a remove button
         Span removeSpacer = new Span();
@@ -186,12 +194,14 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
         private final JmixComboBox<String> javaTypeField;
         private final JmixComboBox<Integer> sqlTypeField;
         private final JmixCheckbox nullableField;
+        private final JmixCheckbox foreignKeyField;
 
         private ColumnRow(@Nullable TableCol column) {
             nameField = createNameField(column);
             javaTypeField = createJavaTypeField(column);
             sqlTypeField = createSqlTypeField(column);
             nullableField = createNullableField(column);
+            foreignKeyField = createForeignKeyField(column);
 
             // Picking a java type fills in the JDBC type it usually maps to, unless the user
             // already chose one; typing over it afterwards always wins.
@@ -210,7 +220,7 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
             layout.setWidthFull();
             layout.setPadding(false);
             layout.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
-            layout.add(nameField, javaTypeField, sqlTypeField, nullableField, createRemoveButton());
+            layout.add(nameField, javaTypeField, sqlTypeField, nullableField, foreignKeyField, createRemoveButton());
             layout.setFlexGrow(NAME_FLEX_GROW, nameField);
             layout.setFlexGrow(JAVA_TYPE_FLEX_GROW, javaTypeField);
             layout.setFlexGrow(SQL_TYPE_FLEX_GROW, sqlTypeField);
@@ -283,6 +293,13 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
             JmixCheckbox field = uiComponents.create(JmixCheckbox.class);
             field.setWidth(NULLABLE_WIDTH);
             field.setValue(column != null && column.nullable());
+            return field;
+        }
+
+        private JmixCheckbox createForeignKeyField(@Nullable TableCol column) {
+            JmixCheckbox field = uiComponents.create(JmixCheckbox.class);
+            field.setWidth(FOREIGN_KEY_WIDTH);
+            field.setValue(column != null && column.foreignKey());
             return field;
         }
 

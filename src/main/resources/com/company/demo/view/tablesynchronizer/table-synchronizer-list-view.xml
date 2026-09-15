@@ -49,7 +49,6 @@
                 <column property="direction" autoWidth="true" flexGrow="0"/>
                 <column property="targetTableName" autoWidth="true" flexGrow="0"/>
                 <column property="sourceTableName" autoWidth="true" flexGrow="0"/>
-                <column property="hasFK" autoWidth="true" flexGrow="0"/>
                 <column property="batchSize" autoWidth="true" flexGrow="0"/>
                 <column property="tableColConfig" autoWidth="true" flexGrow="0"/>
                 <column property="createdAt" autoWidth="true" flexGrow="0"/>
