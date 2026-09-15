@@ -43,11 +43,11 @@ import java.util.Set;
 public class TableSynchronizerDetailView extends StandardDetailView<TableSynchronizer> {
 
     // Column-row geometry: the three text/type inputs share the free width, the last two are fixed.
-    private static final double NAME_FLEX_GROW = 3;
+    private static final double NAME_FLEX_GROW = 2;
     private static final double JAVA_TYPE_FLEX_GROW = 3;
     private static final double SQL_TYPE_FLEX_GROW = 3;
+    private static final double FOREIGN_TABLE_GROW = 2;
     private static final String NULLABLE_WIDTH = "6em";
-    private static final String FOREIGN_KEY_WIDTH = "6em";
     private static final String REMOVE_WIDTH = "3em";
 
     @Autowired
@@ -94,7 +94,7 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
         }
         Set<String> names = new HashSet<>();
         for (ColumnRow row : columnRows) {
-            String name = normalizedName(row);
+            String name = normalizedTextField(row.nameField);
             if (name == null) {
                 errors.add(row.nameField, messages.getMessage(TableSynchronizerDetailView.class, "tableColumns.nameRequired"));
             } else if (!names.add(name.toLowerCase())) {
@@ -122,19 +122,19 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
         for (ColumnRow row : columnRows) {
             // validation ran first and blocks the save while a name or a type is missing
             columns.add(new TableCol(
-                    normalizedName(row),
+                    normalizedTextField(row.nameField),
                     row.javaTypeField.getValue(),
                     row.sqlTypeField.getValue(),
-                    Boolean.TRUE.equals(row.nullableField.getValue()),
-                    Boolean.TRUE.equals(row.foreignKeyField.getValue())));
+                    normalizedTextField(row.foreignTableField),
+                    Boolean.TRUE.equals(row.nullableField.getValue())));
         }
         return columns;
     }
 
     @Nullable
-    private String normalizedName(ColumnRow row) {
-        String name = row.nameField.getValue();
-        return name == null || name.isBlank() ? null : name.trim();
+    private String normalizedTextField(TypedTextField<String> field) {
+        String val = field.getValue();
+        return val == null || val.isBlank() ? null : val.trim();
     }
 
     private HorizontalLayout createHeaderRow() {
@@ -145,18 +145,13 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
         header.add(headerLabel("tableColumns.name", NAME_FLEX_GROW));
         header.add(headerLabel("tableColumns.javaType", JAVA_TYPE_FLEX_GROW));
         header.add(headerLabel("tableColumns.sqlType", SQL_TYPE_FLEX_GROW));
+        header.add(headerLabel("tableColumns.foreignTable", FOREIGN_TABLE_GROW));
 
         Span nullableLabel = new Span(messages.getMessage(TableSynchronizerDetailView.class, "tableColumns.nullable"));
         nullableLabel.getStyle().set("font-size", "var(--lumo-font-size-s)")
                 .set("color", "var(--lumo-secondary-text-color)");
         nullableLabel.setWidth(NULLABLE_WIDTH);
         header.add(nullableLabel);
-
-        Span foreignKeyLabel = new Span(messages.getMessage(TableSynchronizerDetailView.class, "tableColumns.foreignKey"));
-        foreignKeyLabel.getStyle().set("font-size", "var(--lumo-font-size-s)")
-                .set("color", "var(--lumo-secondary-text-color)");
-        foreignKeyLabel.setWidth(FOREIGN_KEY_WIDTH);
-        header.add(foreignKeyLabel);
 
         // keeps the header columns aligned with the rows, which end with a remove button
         Span removeSpacer = new Span();
@@ -193,15 +188,15 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
         private final TypedTextField<String> nameField;
         private final JmixComboBox<String> javaTypeField;
         private final JmixComboBox<Integer> sqlTypeField;
+        private final TypedTextField<String> foreignTableField;
         private final JmixCheckbox nullableField;
-        private final JmixCheckbox foreignKeyField;
 
         private ColumnRow(@Nullable TableCol column) {
             nameField = createNameField(column);
             javaTypeField = createJavaTypeField(column);
             sqlTypeField = createSqlTypeField(column);
             nullableField = createNullableField(column);
-            foreignKeyField = createForeignKeyField(column);
+            foreignTableField = createForeignTableField(column);
 
             // Picking a java type fills in the JDBC type it usually maps to, unless the user
             // already chose one; typing over it afterwards always wins.
@@ -220,10 +215,11 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
             layout.setWidthFull();
             layout.setPadding(false);
             layout.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
-            layout.add(nameField, javaTypeField, sqlTypeField, nullableField, foreignKeyField, createRemoveButton());
+            layout.add(nameField, javaTypeField, sqlTypeField, foreignTableField, nullableField, createRemoveButton());
             layout.setFlexGrow(NAME_FLEX_GROW, nameField);
             layout.setFlexGrow(JAVA_TYPE_FLEX_GROW, javaTypeField);
             layout.setFlexGrow(SQL_TYPE_FLEX_GROW, sqlTypeField);
+            layout.setFlexGrow(FOREIGN_TABLE_GROW, foreignTableField);
         }
 
         @SuppressWarnings("unchecked")
@@ -289,17 +285,20 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
             return field;
         }
 
+        private TypedTextField<String> createForeignTableField(@Nullable TableCol column) {
+            TypedTextField<String> field = uiComponents.create(TypedTextField.class);
+            field.setWidth("0");
+            field.setPlaceholder(messages.getMessage(TableSynchronizerDetailView.class, "tableColumns.foreignTable"));
+            if (column != null) {
+                field.setValue(column.foreignTable() == null ? "" : column.foreignTable());
+            }
+            return field;
+        }
+
         private JmixCheckbox createNullableField(@Nullable TableCol column) {
             JmixCheckbox field = uiComponents.create(JmixCheckbox.class);
             field.setWidth(NULLABLE_WIDTH);
             field.setValue(column != null && column.nullable());
-            return field;
-        }
-
-        private JmixCheckbox createForeignKeyField(@Nullable TableCol column) {
-            JmixCheckbox field = uiComponents.create(JmixCheckbox.class);
-            field.setWidth(FOREIGN_KEY_WIDTH);
-            field.setValue(column != null && column.foreignKey());
             return field;
         }
 
