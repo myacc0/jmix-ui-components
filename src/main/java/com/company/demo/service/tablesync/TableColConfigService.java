@@ -2,6 +2,7 @@ package com.company.demo.service.tablesync;
 
 import com.company.demo.entity.tablesync.TableCol;
 import com.company.demo.entity.tablesync.TableColConfig;
+import com.company.demo.enums.tablesync.TableColJavaType;
 import com.company.demo.utils.JsonUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,10 +12,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.sql.Types;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Maps the {@code tableColConfig} JSON of a synchronizer to {@link TableCol} records and back.
@@ -27,20 +25,8 @@ public class TableColConfigService {
     private static final Logger log = LoggerFactory.getLogger(TableColConfigService.class);
 
     /** Java types offered by the column editor; the field also accepts a custom value. */
-    public static final List<String> JAVA_TYPES = List.of(
-            "java.lang.String",
-            "java.lang.Boolean",
-            "java.lang.Short",
-            "java.lang.Integer",
-            "java.lang.Long",
-            "java.lang.Double",
-            "java.math.BigDecimal",
-            "java.time.LocalDate",
-            "java.time.LocalDateTime",
-            "java.time.OffsetDateTime",
-            "java.util.UUID",
-            "byte[]"
-    );
+    public static final List<String> JAVA_TYPES = Arrays.stream(TableColJavaType.values())
+            .map(TableColJavaType::getId).toList();
 
     /** JDBC types offered by the column editor, in the order they are shown. */
     private static final Map<Integer, String> SQL_TYPES = sqlTypes();
@@ -115,18 +101,19 @@ public class TableColConfigService {
 
     private static Map<String, Integer> defaultSqlTypes() {
         Map<String, Integer> types = new LinkedHashMap<>();
-        types.put("java.lang.String", Types.VARCHAR);
-        types.put("java.lang.Boolean", Types.BOOLEAN);
-        types.put("java.lang.Short", Types.SMALLINT);
-        types.put("java.lang.Integer", Types.INTEGER);
-        types.put("java.lang.Long", Types.BIGINT);
-        types.put("java.lang.Double", Types.DOUBLE);
-        types.put("java.math.BigDecimal", Types.DECIMAL);
-        types.put("java.time.LocalDate", Types.DATE);
-        types.put("java.time.LocalDateTime", Types.TIMESTAMP);
-        types.put("java.time.OffsetDateTime", Types.TIMESTAMP_WITH_TIMEZONE);
-        types.put("java.util.UUID", Types.OTHER);
-        types.put("byte[]", Types.VARBINARY);
+        types.put(TableColJavaType.STRING.getId(), Types.VARCHAR);
+        types.put(TableColJavaType.BOOLEAN.getId(), Types.BOOLEAN);
+        types.put(TableColJavaType.SHORT.getId(), Types.SMALLINT);
+        types.put(TableColJavaType.INTEGER.getId(), Types.INTEGER);
+        types.put(TableColJavaType.LONG.getId(), Types.BIGINT);
+        types.put(TableColJavaType.DOUBLE.getId(), Types.DOUBLE);
+        types.put(TableColJavaType.BIGDECIMAL.getId(), Types.DECIMAL);
+        types.put(TableColJavaType.LOCALDATE.getId(), Types.DATE);
+        types.put(TableColJavaType.LOCALDATETIME.getId(), Types.TIMESTAMP);
+        types.put(TableColJavaType.OFFSETDATETIME.getId(), Types.TIMESTAMP_WITH_TIMEZONE);
+        types.put(TableColJavaType.UUID.getId(), Types.OTHER);
+        types.put(TableColJavaType.BYTEARRAY.getId(), Types.VARBINARY);
         return Map.copyOf(types);
     }
+
 }

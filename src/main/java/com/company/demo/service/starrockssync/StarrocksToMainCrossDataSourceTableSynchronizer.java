@@ -2,7 +2,7 @@ package com.company.demo.service.starrockssync;
 
 import java.util.List;
 
-public interface StarrocksToMainTableSynchronizer extends TableSynchronizer {
+public interface StarrocksToMainCrossDataSourceTableSynchronizer extends CrossDataSourceTableSynchronizer {
 
     List<ForeignColumnTable> provideForeignColumnTables();
 

@@ -13,7 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
-public class OrdersStarrocksToMainSynchronizer implements StarrocksToMainTableSynchronizer {
+public class OrdersStarrocksToMainSynchronizer implements StarrocksToMainCrossDataSourceTableSynchronizer {
     private static final Logger log = LoggerFactory.getLogger(OrdersStarrocksToMainSynchronizer.class);
 
     private final StarrocksSyncService starrocksSyncService;

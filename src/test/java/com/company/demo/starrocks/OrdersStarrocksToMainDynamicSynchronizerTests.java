@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-public class OrdersStarrocksToMainSynchronizerTests {
+public class OrdersStarrocksToMainDynamicSynchronizerTests {
 
     @Autowired
     OrdersStarrocksToMainSynchronizer starrocksToMainSynchronizer;

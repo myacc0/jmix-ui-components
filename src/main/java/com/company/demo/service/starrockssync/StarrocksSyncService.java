@@ -2,6 +2,8 @@ package com.company.demo.service.starrockssync;
 
 import com.company.demo.dto.starrockssync.SyncResult;
 import com.company.demo.service.dq.DqDataSourceProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
@@ -10,7 +12,9 @@ import org.springframework.stereotype.Service;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -39,6 +43,7 @@ import java.util.function.Consumer;
  */
 @Service
 public class StarrocksSyncService {
+    private static final Logger log = LoggerFactory.getLogger(StarrocksSyncService.class);
 
     private final DqDataSourceProvider dataSourceProvider;
 
@@ -137,6 +142,21 @@ public class StarrocksSyncService {
     @Nullable
     public LocalDateTime localDateTime(ResultSet rs, String column) throws SQLException {
         return rs.getObject(column, LocalDateTime.class);
+    }
+
+    @Nullable
+    public LocalDate localDate(ResultSet rs, String column) throws SQLException {
+        return rs.getObject(column, LocalDate.class);
+    }
+
+    @Nullable
+    public OffsetDateTime offsetDateTime(ResultSet rs, String column) throws SQLException {
+        return rs.getObject(column, OffsetDateTime.class);
+    }
+
+    @Nullable
+    public byte[] byteArray(ResultSet rs, String column) throws SQLException {
+        return rs.getObject(column, byte[].class);
     }
 
     /**
