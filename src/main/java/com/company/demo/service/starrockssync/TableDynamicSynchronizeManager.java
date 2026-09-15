@@ -9,12 +9,12 @@ import org.springframework.stereotype.Service;
 import java.util.UUID;
 
 @Service
-public class TableDynamicSynchronizer {
+public class TableDynamicSynchronizeManager {
     private final UnconstrainedDataManager dataManager;
     private final MainToStarrocksDynamicSynchronizer mainToStarrocksDynamicSynchronizer;
     private final StarrocksToMainDynamicSynchronizer starrocksToMainDynamicSynchronizer;
 
-    public TableDynamicSynchronizer(
+    public TableDynamicSynchronizeManager(
             UnconstrainedDataManager dataManager,
             MainToStarrocksDynamicSynchronizer mainToStarrocksDynamicSynchronizer,
             StarrocksToMainDynamicSynchronizer starrocksToMainDynamicSynchronizer

@@ -1,7 +1,7 @@
 package com.company.demo.jobs.starrocks;
 
 import com.company.demo.dto.starrockssync.SyncResult;
-import com.company.demo.service.starrockssync.TableDynamicSynchronizer;
+import com.company.demo.service.starrockssync.TableDynamicSynchronizeManager;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
@@ -16,12 +16,12 @@ public class MainToStarrocksDynamicSyncJob implements Job {
     private static final Logger log = LoggerFactory.getLogger(MainToStarrocksDynamicSyncJob.class);
 
     @Autowired
-    private TableDynamicSynchronizer tableDynamicSynchronizer;
+    private TableDynamicSynchronizeManager tableDynamicSynchronizeManager;
 
     public void execute(JobExecutionContext context) throws JobExecutionException {
         JobDataMap jobDataMap = context.getJobDetail().getJobDataMap();
         try {
-            SyncResult result = tableDynamicSynchronizer.sync(UUID.fromString(String.valueOf(jobDataMap.get("id"))));
+            SyncResult result = tableDynamicSynchronizeManager.sync(UUID.fromString(String.valueOf(jobDataMap.get("id"))));
             log.info("MainToStarrocksDynamicSyncJob finished: {}", result);
         } catch (Exception e) {
             String tableName = String.valueOf(jobDataMap.get("tableName"));
