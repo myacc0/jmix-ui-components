@@ -10,10 +10,10 @@ public enum TableColJavaType {
     INTEGER("java.lang.Integer"),
     LONG("java.lang.Long"),
     DOUBLE("java.lang.Double"),
-    BIGDECIMAL("java.lang.BigDecimal"),
-    LOCALDATE("java.lang.LocalDate"),
-    LOCALDATETIME("java.lang.LocalDateTime"),
-    OFFSETDATETIME("java.lang.OffsetDateTime"),
+    BIGDECIMAL("java.math.BigDecimal"),
+    LOCALDATE("java.time.LocalDate"),
+    LOCALDATETIME("java.time.LocalDateTime"),
+    OFFSETDATETIME("java.time.OffsetDateTime"),
     BYTEARRAY("byte[]");
 
     private final String id;

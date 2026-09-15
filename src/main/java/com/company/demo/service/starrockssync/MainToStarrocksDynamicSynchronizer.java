@@ -46,31 +46,25 @@ public class MainToStarrocksDynamicSynchronizer {
         Object[] row = new Object[cols.size()];
         for (int i = 0; i < cols.size(); i++) {
             TableCol col = cols.get(i);
-            if (TableColJavaType.fromId(col.javaType()) == TableColJavaType.STRING) {
-                row[i] = rs.getString(col.name());
-            } else if (TableColJavaType.fromId(col.javaType()) == TableColJavaType.UUID) {
-                row[i] = starrocksSyncService.uuidText(rs, col.name());
-            } else if (TableColJavaType.fromId(col.javaType()) == TableColJavaType.BOOLEAN) {
-                row[i] = rs.getBoolean(col.name());
-            } else if (TableColJavaType.fromId(col.javaType()) == TableColJavaType.SHORT) {
-                row[i] = rs.getShort(col.name());
-            } else if (TableColJavaType.fromId(col.javaType()) == TableColJavaType.INTEGER) {
-                row[i] = rs.getInt(col.name());
-            } else if (TableColJavaType.fromId(col.javaType()) == TableColJavaType.LONG) {
-                row[i] = rs.getLong(col.name());
-            } else if (TableColJavaType.fromId(col.javaType()) == TableColJavaType.DOUBLE) {
-                row[i] = rs.getDouble(col.name());
-            } else if (TableColJavaType.fromId(col.javaType()) == TableColJavaType.BIGDECIMAL) {
-                row[i] = rs.getBigDecimal(col.name());
-            } else if (TableColJavaType.fromId(col.javaType()) == TableColJavaType.LOCALDATE) {
-                row[i] = starrocksSyncService.localDate(rs, col.name());
-            } else if (TableColJavaType.fromId(col.javaType()) == TableColJavaType.LOCALDATETIME) {
-                row[i] = starrocksSyncService.localDateTime(rs, col.name());
-            } else if (TableColJavaType.fromId(col.javaType()) == TableColJavaType.OFFSETDATETIME) {
-                row[i] = starrocksSyncService.offsetDateTime(rs, col.name());
-            } else if (TableColJavaType.fromId(col.javaType()) == TableColJavaType.BYTEARRAY) {
-                row[i] = starrocksSyncService.byteArray(rs, col.name());
+            TableColJavaType javaType = TableColJavaType.fromId(col.javaType());
+            if (javaType == null) {
+                throw new IllegalStateException(
+                        "Unsupported javaType '" + col.javaType() + "' of column '" + col.name() + "'");
             }
+            row[i] = switch (javaType) {
+                case STRING -> rs.getString(col.name());
+                case UUID -> starrocksSyncService.uuidText(rs, col.name());
+                case BOOLEAN -> rs.getObject(col.name(), Boolean.class);
+                case SHORT -> rs.getObject(col.name(), Short.class);
+                case INTEGER -> rs.getObject(col.name(), Integer.class);
+                case LONG -> rs.getObject(col.name(), Long.class);
+                case DOUBLE -> rs.getObject(col.name(), Double.class);
+                case BIGDECIMAL -> rs.getBigDecimal(col.name());
+                case LOCALDATE -> starrocksSyncService.localDate(rs, col.name());
+                case LOCALDATETIME -> starrocksSyncService.localDateTime(rs, col.name());
+                case OFFSETDATETIME -> starrocksSyncService.offsetDateTime(rs, col.name());
+                case BYTEARRAY -> starrocksSyncService.byteArray(rs, col.name());
+            };
         }
         return row;
     }

@@ -111,7 +111,7 @@ public class TableColConfigService {
         types.put(TableColJavaType.LOCALDATE.getId(), Types.DATE);
         types.put(TableColJavaType.LOCALDATETIME.getId(), Types.TIMESTAMP);
         types.put(TableColJavaType.OFFSETDATETIME.getId(), Types.TIMESTAMP_WITH_TIMEZONE);
-        types.put(TableColJavaType.UUID.getId(), Types.OTHER);
+        types.put(TableColJavaType.UUID.getId(), Types.VARCHAR);
         types.put(TableColJavaType.BYTEARRAY.getId(), Types.VARBINARY);
         return Map.copyOf(types);
     }
