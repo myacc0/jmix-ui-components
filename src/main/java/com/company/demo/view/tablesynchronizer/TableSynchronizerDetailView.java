@@ -49,6 +49,7 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
     private static final double JAVA_TYPE_FLEX_GROW = 3;
     private static final double SQL_TYPE_FLEX_GROW = 3;
     private static final double FOREIGN_TABLE_GROW = 2;
+    private static final String PRIMARY_KEY_WIDTH = "6em";
     private static final String NULLABLE_WIDTH = "6em";
     private static final String REMOVE_WIDTH = "3em";
 
@@ -139,6 +140,7 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
                     row.javaTypeField.getValue(),
                     row.sqlTypeField.getValue(),
                     normalizedTextField(row.foreignTableField),
+                    Boolean.TRUE.equals(row.primaryKeyField.getValue()),
                     Boolean.TRUE.equals(row.nullableField.getValue())));
         }
         return columns;
@@ -154,11 +156,16 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
         HorizontalLayout header = new HorizontalLayout();
         header.addClassName("table-col-header");
         header.setWidthFull();
-        header.setPadding(false);
         header.add(headerLabel("tableColumns.name", NAME_FLEX_GROW));
         header.add(headerLabel("tableColumns.javaType", JAVA_TYPE_FLEX_GROW));
         header.add(headerLabel("tableColumns.sqlType", SQL_TYPE_FLEX_GROW));
         header.add(headerLabel("tableColumns.foreignTable", FOREIGN_TABLE_GROW));
+
+        Span primaryKeyLabel = new Span(messages.getMessage(TableSynchronizerDetailView.class, "tableColumns.primaryKey"));
+        primaryKeyLabel.getStyle().set("font-size", "var(--lumo-font-size-s)")
+                .set("color", "var(--lumo-secondary-text-color)");
+        primaryKeyLabel.setWidth(PRIMARY_KEY_WIDTH);
+        header.add(primaryKeyLabel);
 
         Span nullableLabel = new Span(messages.getMessage(TableSynchronizerDetailView.class, "tableColumns.nullable"));
         nullableLabel.getStyle().set("font-size", "var(--lumo-font-size-s)")
@@ -211,12 +218,14 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
         private final JmixComboBox<String> javaTypeField;
         private final JmixComboBox<Integer> sqlTypeField;
         private final TypedTextField<String> foreignTableField;
+        private final JmixCheckbox primaryKeyField;
         private final JmixCheckbox nullableField;
 
         private ColumnRow(@Nullable TableCol column) {
             nameField = createNameField(column);
             javaTypeField = createJavaTypeField(column);
             sqlTypeField = createSqlTypeField(column);
+            primaryKeyField = createPrimaryKeyField(column);
             nullableField = createNullableField(column);
             foreignTableField = createForeignTableField(column);
 
@@ -239,7 +248,7 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
             layout.setWidthFull();
             layout.setPadding(false);
             layout.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
-            layout.add(nameField, javaTypeField, sqlTypeField, foreignTableField, nullableField, createRemoveButton());
+            layout.add(nameField, javaTypeField, sqlTypeField, foreignTableField, primaryKeyField, nullableField, createRemoveButton());
             layout.setFlexGrow(NAME_FLEX_GROW, nameField);
             layout.setFlexGrow(JAVA_TYPE_FLEX_GROW, javaTypeField);
             layout.setFlexGrow(SQL_TYPE_FLEX_GROW, sqlTypeField);
@@ -316,6 +325,13 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
             if (column != null) {
                 field.setValue(column.foreignTable() == null ? "" : column.foreignTable());
             }
+            return field;
+        }
+
+        private JmixCheckbox createPrimaryKeyField(@Nullable TableCol column) {
+            JmixCheckbox field = uiComponents.create(JmixCheckbox.class);
+            field.setWidth(PRIMARY_KEY_WIDTH);
+            field.setValue(column != null && column.primaryKey());
             return field;
         }
 

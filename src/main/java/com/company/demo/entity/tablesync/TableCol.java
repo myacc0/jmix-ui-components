@@ -5,5 +5,6 @@ public record TableCol(
         String javaType,
         int sqlType,
         String foreignTable,
+        boolean primaryKey,
         boolean nullable) {
 }
