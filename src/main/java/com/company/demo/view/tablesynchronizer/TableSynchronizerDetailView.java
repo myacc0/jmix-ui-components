@@ -242,6 +242,8 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
             });
             javaTypeField.addValueChangeListener(e -> updateUuidSqlTypeNote());
             sqlTypeField.addValueChangeListener(e -> updateUuidSqlTypeNote());
+            primaryKeyField.addValueChangeListener(e -> applyPrimaryKeyState());
+            applyPrimaryKeyState();
 
             layout = new HorizontalLayout();
             layout.addClassName("table-col-row");
@@ -253,6 +255,17 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
             layout.setFlexGrow(JAVA_TYPE_FLEX_GROW, javaTypeField);
             layout.setFlexGrow(SQL_TYPE_FLEX_GROW, sqlTypeField);
             layout.setFlexGrow(FOREIGN_TABLE_GROW, foreignTableField);
+        }
+
+        /** A primary key column is never nullable and never references a foreign table. */
+        private void applyPrimaryKeyState() {
+            boolean primaryKey = Boolean.TRUE.equals(primaryKeyField.getValue());
+            if (primaryKey) {
+                nullableField.setValue(false);
+                foreignTableField.clear();
+            }
+            nullableField.setEnabled(!primaryKey);
+            foreignTableField.setEnabled(!primaryKey);
         }
 
         @SuppressWarnings("unchecked")
