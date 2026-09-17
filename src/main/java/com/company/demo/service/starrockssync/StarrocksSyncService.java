@@ -1,6 +1,7 @@
 package com.company.demo.service.starrockssync;
 
 import com.company.demo.dto.starrockssync.SyncResult;
+import com.company.demo.entity.tablesync.TableCol;
 import com.company.demo.service.dq.DqDataSourceProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +62,8 @@ public class StarrocksSyncService {
 
     public SyncResult copyToStarrocks(
             String targetTable,
-            String columns, int[] columnTypes,
+            String columns,
+            int[] columnTypes,
             String selectSql,
             RowMapper<Object[]> mapper,
             int batchSize
@@ -70,6 +72,49 @@ public class StarrocksSyncService {
         JdbcTemplate target = getStarrocksStoreJdbcTemplate();
         return copy(source, selectSql, mapper,
                 batch -> insertMultiRow(target, targetTable, columns, columnTypes, batch), batchSize);
+    }
+
+    /**
+     * Deletes the rows of {@code targetTable} whose {@code id} is absent from {@code sourceTable}, so
+     * a row removed at the source disappears from the target too. Works in either direction.
+     * <p>
+     * The two tables live in different stores and cannot be joined, so the source ids are read into
+     * memory — ids only — and compared by their text form, which is also how the StarRocks mirror
+     * stores a uuid. The orphans are removed with one {@code DELETE ... WHERE id IN (...)} per
+     * {@code batchSize} ids, as every StarRocks statement is its own load transaction. The ids are
+     * bound with {@code idSqlType}, the JDBC type the upsert binds the id with, so a PostgreSQL
+     * {@code uuid} column accepts them.
+     *
+     * @return the number of ids deleted from the target
+     */
+    public int deleteMissing(
+            JdbcTemplate source,
+            String sourceTable,
+            JdbcTemplate target,
+            String targetTable,
+            List<TableCol> primaryKeyCols,
+            int batchSize
+    ) {
+        int[] pkColTypes = primaryKeyCols.stream().mapToInt(TableCol::sqlType).toArray();
+        String primaryKeyColumnsString = String.join(", ", primaryKeyCols.stream().map(TableCol::name).toList());
+
+        Set<String> sourceIds = new HashSet<>();
+        source.query("SELECT " + primaryKeyColumnsString + " FROM " + sourceTable, (RowCallbackHandler) rs -> sourceIds.add(rs.getString(1)));
+
+        List<String> orphanIds = new ArrayList<>();
+        target.query("SELECT " + primaryKeyColumnsString + " FROM " + targetTable, (RowCallbackHandler) rs -> {
+            String id = rs.getString(1);
+            if (!sourceIds.contains(id)) {
+                orphanIds.add(id);
+            }
+        });
+
+        for (int from = 0; from < orphanIds.size(); from += batchSize) {
+            List<String> chunk = orphanIds.subList(from, Math.min(from + batchSize, orphanIds.size()));
+            target.update("DELETE FROM " + targetTable + " WHERE id IN (" + placeholders(chunk.size()) + ")",
+                    chunk.toArray(), pkColTypes);
+        }
+        return orphanIds.size();
     }
 
     /**
@@ -107,10 +152,10 @@ public class StarrocksSyncService {
     }
 
     /** {@code "a, b, c"} -> {@code "a = EXCLUDED.a, b = EXCLUDED.b, c = EXCLUDED.c"}, minus the id. */
-    public String updateAssignments(String columns) {
-        return Arrays.stream(columns.split(","))
-                .map(String::trim)
-                .filter(column -> !"id".equalsIgnoreCase(column))
+    public String updateAssignments(List<String> columns, List<String> primaryKeyColumns) {
+        return columns
+                .stream()
+                .filter(column -> !primaryKeyColumns.contains(column))
                 .map(column -> column + " = EXCLUDED." + column)
                 .reduce((a, b) -> a + ", " + b)
                 .orElseThrow();
@@ -164,8 +209,13 @@ public class StarrocksSyncService {
      * load transaction, so a JDBC batch of single-row inserts would cost one load per row; a single
      * statement carrying the whole chunk costs one. On a PRIMARY KEY table the insert is an upsert.
      */
-    private void insertMultiRow(JdbcTemplate target, String table, String columns, int[] columnTypes,
-                                List<Object[]> rows) {
+    private void insertMultiRow(
+            JdbcTemplate target,
+            String table,
+            String columns,
+            int[] columnTypes,
+            List<Object[]> rows
+    ) {
         String rowPlaceholders = "(" + placeholders(columnTypes.length) + ")";
         String sql = "INSERT INTO " + table + " (" + columns + ") VALUES "
                 + String.join(", ", Collections.nCopies(rows.size(), rowPlaceholders));

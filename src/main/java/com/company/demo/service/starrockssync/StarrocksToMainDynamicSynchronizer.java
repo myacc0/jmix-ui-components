@@ -31,37 +31,41 @@ public class StarrocksToMainDynamicSynchronizer extends DynamicTableSynchronizer
         int totalRows = Optional.ofNullable(
                 source.queryForObject("SELECT count(*) FROM " + t.getSourceTableName(), Integer.class)).orElse(0);
 
-        String upsertSql = "INSERT INTO " + t.getTargetTableName() + " (" + provideTableColumns(cfg.getColumns()) + ") VALUES ("
-                + starrocksSyncService.placeholders(provideTableColumnTypes(cfg.getColumns()).length) + ") ON CONFLICT (id) DO UPDATE SET "
-                + starrocksSyncService.updateAssignments(provideTableColumns(cfg.getColumns()));
+        int deleted = deleteMissingInTarget(source, target, t, cfg.getColumns());
+
+        String upsertSql = "INSERT INTO " + t.getTargetTableName() + " (" + provideTableColumnsString(cfg.getColumns()) + ") VALUES ("
+                + starrocksSyncService.placeholders(cfg.getColumns().size()) + ") ON CONFLICT ("
+                + providePrimaryKeyColumnsString(cfg.getColumns()) + ") DO UPDATE SET "
+                + starrocksSyncService.updateAssignments(provideTableColumns(cfg.getColumns()), providePrimaryKeyColumns(cfg.getColumns()));
 
         SyncResult result = starrocksSyncService.copy(source,
                 prepareSelectSQLFromSource(t.getSourceTableName(), cfg),
                 (rs, rowNum) -> provideTableRow(rs, cfg.getColumns()),
                 batch -> target.batchUpdate(upsertSql, batch, provideTableColumnTypes(cfg.getColumns())), t.getBatchSize());
 
-        log.info("{} starrocks -> main: {}, ignoredByNotConsistent: {}", t.getSourceTableName(), result, Math.max(0, totalRows - result.written()));
+        log.info("{} starrocks -> main: {}, ignoredByNotConsistent: {}, deleted: {}", t.getSourceTableName(), result,
+                Math.max(0, totalRows - result.written()), deleted);
         return result;
     }
 
-    public String prepareSelectSQLFromSource(String sourceTableName, TableColConfig cfg) {
+    public String prepareSelectSQLFromSource(String rootTable, TableColConfig cfg) {
         List<String> joinItems = new ArrayList<>();
         List<String> whereItems = new ArrayList<>();
 
-        List<ForeignColumnTable> fTables = provideForeignColumnTables(cfg.getColumns());
-        for (ForeignColumnTable fTable : fTables) {
-            if (fTable.nullable()) {
+        List<FKColumn> fkItems = provideFKColumns(cfg.getColumns());
+        for (FKColumn fk : fkItems) {
+            if (fk.nullable()) {
                 joinItems.add("""
-                LEFT JOIN %s ON %s.id = %s.%s""".formatted(
-                        fTable.tableName(), fTable.tableName(), sourceTableName, fTable.columnName()));
+                LEFT JOIN %s ON %s.%s = %s.%s""".formatted(
+                        fk.fkTable, fk.fkTable, fk.fkTableCol, rootTable, fk.rootCol));
 
                 whereItems.add("""
-                (%s.%s IS NULL OR %s.id IS NOT NULL)""".formatted(
-                        sourceTableName, fTable.columnName(), fTable.tableName()));
+                (%s.%s IS NULL OR %s.%s IS NOT NULL)""".formatted(
+                        rootTable, fk.rootCol, fk.fkTable(), fk.fkTableCol()));
             } else {
                 joinItems.add("""
-                INNER JOIN %s ON %s.id = %s.%s""".formatted(
-                        fTable.tableName(), fTable.tableName(), sourceTableName, fTable.columnName()));
+                INNER JOIN %s ON %s.%s = %s.%s""".formatted(
+                        fk.fkTable, fk.fkTable, fk.fkTableCol, rootTable, fk.rootCol));
             }
         }
 
@@ -73,24 +77,28 @@ public class StarrocksToMainDynamicSynchronizer extends DynamicTableSynchronizer
             %s
             WHERE %s
             """.formatted(
-                        sourceTableName,
-                        sourceTableName,
+                        rootTable,
+                        rootTable,
                         joinSql.isBlank() ? "" : joinSql,
                         whereSql.isBlank() ? "1=1" : whereSql
                 )
                 .replaceAll("(?m)^\\s*$\\n", "");
 
-        log.debug("{} starrocks -> main: select SQL: {}", sourceTableName, selectSql);
+        log.debug("{} starrocks -> main: select SQL: {}", rootTable, selectSql);
         return selectSql;
     }
 
-    private List<ForeignColumnTable> provideForeignColumnTables(List<TableCol> cols) {
+    private List<FKColumn> provideFKColumns(List<TableCol> cols) {
         return cols.stream()
-                .filter(c -> StringUtils.hasText(c.foreignTable()))
-                .map(c -> new ForeignColumnTable(c.name(), c.foreignTable(), c.nullable()))
+                .filter(c -> StringUtils.hasText(c.foreignTable()) && StringUtils.hasText(c.foreignTableColumn()))
+                .map(c -> new FKColumn(c.name(), c.foreignTable(), c.foreignTableColumn(), c.nullable()))
                 .toList();
     }
 
-    private record ForeignColumnTable(String columnName, String tableName, boolean nullable) {
+    private List<String> provideTableColumns(List<TableCol> cols) {
+        return cols.stream().map(TableCol::name).toList();
+    }
+
+    private record FKColumn(String rootCol, String fkTable, String fkTableCol, boolean nullable) {
     }
 }

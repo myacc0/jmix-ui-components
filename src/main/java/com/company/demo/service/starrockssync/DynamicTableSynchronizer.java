@@ -7,6 +7,7 @@ import com.company.demo.entity.tablesync.TableSynchronizer;
 import com.company.demo.enums.tablesync.TableColJavaType;
 import com.company.demo.utils.JsonUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -26,6 +27,21 @@ public abstract class DynamicTableSynchronizer {
 
     protected TableColConfig parseTableColConfig(TableSynchronizer t) {
         return JsonUtils.parseConfig(t.getTableColConfig(), TableColConfig.class, objectMapper);
+    }
+
+    /**
+     * Deletes the target rows whose id no longer exists at the source; run it before the upsert.
+     *
+     * @return the number of rows deleted from the target
+     */
+    protected int deleteMissingInTarget(JdbcTemplate source, JdbcTemplate target, TableSynchronizer t, List<TableCol> cols) {
+        return starrocksSyncService.deleteMissing(
+                source,
+                t.getSourceTableName(),
+                target,
+                t.getTargetTableName(),
+                cols,
+                t.getBatchSize());
     }
 
     protected Object[] provideTableRow(ResultSet rs, List<TableCol> cols) throws SQLException {
@@ -59,7 +75,15 @@ public abstract class DynamicTableSynchronizer {
         return cols.stream().mapToInt(TableCol::sqlType).toArray();
     }
 
-    protected String provideTableColumns(List<TableCol> cols) {
+    protected String provideTableColumnsString(List<TableCol> cols) {
         return cols.stream().map(TableCol::name).collect(Collectors.joining(","));
+    }
+
+    protected List<String> providePrimaryKeyColumns(List<TableCol> cols) {
+        return cols.stream().filter(TableCol::primaryKey).map(TableCol::name).toList();
+    }
+
+    protected String providePrimaryKeyColumnsString(List<TableCol> cols) {
+        return String.join(", ", providePrimaryKeyColumns(cols));
     }
 }
