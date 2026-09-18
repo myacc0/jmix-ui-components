@@ -3,21 +3,17 @@ package com.company.demo.service.starrockssync;
 import com.company.demo.dto.starrockssync.SyncResult;
 import com.company.demo.entity.tablesync.TableCol;
 import com.company.demo.service.dq.DqDataSourceProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * Mirrors tables between the MAIN store (PostgreSQL) and the StarRocks store, for the Quartz jobs
@@ -44,8 +40,6 @@ import java.util.function.Consumer;
  */
 @Service
 public class StarrocksSyncService {
-    private static final Logger log = LoggerFactory.getLogger(StarrocksSyncService.class);
-
     private final DqDataSourceProvider dataSourceProvider;
 
     public StarrocksSyncService(DqDataSourceProvider dataSourceProvider) {
@@ -75,17 +69,22 @@ public class StarrocksSyncService {
     }
 
     /**
-     * Deletes the rows of {@code targetTable} whose {@code id} is absent from {@code sourceTable}, so
+     * Deletes the rows of {@code targetTable} whose primary key is absent from {@code sourceTable}, so
      * a row removed at the source disappears from the target too. Works in either direction.
      * <p>
-     * The two tables live in different stores and cannot be joined, so the source ids are read into
-     * memory — ids only — and compared by their text form, which is also how the StarRocks mirror
-     * stores a uuid. The orphans are removed with one {@code DELETE ... WHERE id IN (...)} per
-     * {@code batchSize} ids, as every StarRocks statement is its own load transaction. The ids are
-     * bound with {@code idSqlType}, the JDBC type the upsert binds the id with, so a PostgreSQL
-     * {@code uuid} column accepts them.
+     * The two tables live in different stores and cannot be joined, so the source keys are read into
+     * memory — primary key columns only. {@code keyMapper} reads every key column as its configured
+     * java type, the same way the upsert reads it, so a key compares by value rather than by the text
+     * each JDBC driver happens to render (see {@link #comparableKey}). The orphans are removed with one
+     * {@code DELETE} per {@code batchSize} keys, as every StarRocks statement is its own load
+     * transaction: a single-column key is matched with {@code WHERE pk IN (...)}, a composite one with
+     * {@code WHERE (a = ? AND b = ?) OR ...}. Each key value is bound as read, with the {@code sqlType}
+     * of its column — the value and JDBC type the upsert binds — so both stores accept it.
      *
-     * @return the number of ids deleted from the target
+     * @param primaryKeyCols the primary key columns of the table, in a stable order
+     * @param keyMapper      maps a row selected with {@code primaryKeyCols} to its key values, in the
+     *                       order of {@code primaryKeyCols}
+     * @return the number of rows deleted from the target
      */
     public int deleteMissing(
             JdbcTemplate source,
@@ -93,26 +92,38 @@ public class StarrocksSyncService {
             JdbcTemplate target,
             String targetTable,
             List<TableCol> primaryKeyCols,
+            RowMapper<Object[]> keyMapper,
             int batchSize
     ) {
+        if (primaryKeyCols.isEmpty()) {
+            throw new IllegalArgumentException("No primary key columns configured for table " + targetTable);
+        }
         int[] pkColTypes = primaryKeyCols.stream().mapToInt(TableCol::sqlType).toArray();
-        String primaryKeyColumnsString = String.join(", ", primaryKeyCols.stream().map(TableCol::name).toList());
+        List<String> pkColNames = primaryKeyCols.stream().map(TableCol::name).toList();
+        String primaryKeyColumnsString = String.join(", ", pkColNames);
 
-        Set<String> sourceIds = new HashSet<>();
-        source.query("SELECT " + primaryKeyColumnsString + " FROM " + sourceTable, (RowCallbackHandler) rs -> sourceIds.add(rs.getString(1)));
+        Set<List<Object>> sourceIds = new HashSet<>();
+        source.query("SELECT " + primaryKeyColumnsString + " FROM " + sourceTable,
+                (RowCallbackHandler) rs -> sourceIds.add(comparableKey(keyMapper.mapRow(rs, 0))));
 
-        List<String> orphanIds = new ArrayList<>();
+        List<Object[]> orphanIds = new ArrayList<>();
         target.query("SELECT " + primaryKeyColumnsString + " FROM " + targetTable, (RowCallbackHandler) rs -> {
-            String id = rs.getString(1);
-            if (!sourceIds.contains(id)) {
+            Object[] id = keyMapper.mapRow(rs, 0);
+            if (!sourceIds.contains(comparableKey(id))) {
                 orphanIds.add(id);
             }
         });
 
         for (int from = 0; from < orphanIds.size(); from += batchSize) {
-            List<String> chunk = orphanIds.subList(from, Math.min(from + batchSize, orphanIds.size()));
-            target.update("DELETE FROM " + targetTable + " WHERE id IN (" + placeholders(chunk.size()) + ")",
-                    chunk.toArray(), pkColTypes);
+            List<Object[]> chunk = orphanIds.subList(from, Math.min(from + batchSize, orphanIds.size()));
+            Object[] args = new Object[chunk.size() * pkColTypes.length];
+            int[] types = new int[args.length];
+            for (int i = 0; i < chunk.size(); i++) {
+                System.arraycopy(chunk.get(i), 0, args, i * pkColTypes.length, pkColTypes.length);
+                System.arraycopy(pkColTypes, 0, types, i * pkColTypes.length, pkColTypes.length);
+            }
+            target.update("DELETE FROM " + targetTable + " WHERE " + keyCondition(pkColNames, chunk.size()),
+                    args, types);
         }
         return orphanIds.size();
     }
@@ -166,45 +177,6 @@ public class StarrocksSyncService {
     }
 
     /**
-     * The StarRocks mirror stores a uuid as {@code VARCHAR(36)}; pgjdbc hands back a
-     * {@link UUID} for a {@code uuid} column, so the text form is taken from the value itself.
-     */
-    @Nullable
-    public String uuidText(ResultSet rs, String column) throws SQLException {
-        Object value = rs.getObject(column);
-        return value == null ? null : value.toString();
-    }
-
-    /**
-     * Reads a timestamp as a zone-free {@link LocalDateTime}.
-     * <p>
-     * Both columns are wall-clock types — PostgreSQL {@code timestamp} and StarRocks
-     * {@code DATETIME} — and neither carries a zone, so the mirror must copy the value verbatim.
-     * {@link ResultSet#getTimestamp} would not: it resolves the value through a calendar, and the
-     * {@code serverTimezone=UTC} of the StarRocks JDBC url then shifts it by the JVM's offset in
-     * each direction, leaving the two stores showing different clock times for the same row.
-     */
-    @Nullable
-    public LocalDateTime localDateTime(ResultSet rs, String column) throws SQLException {
-        return rs.getObject(column, LocalDateTime.class);
-    }
-
-    @Nullable
-    public LocalDate localDate(ResultSet rs, String column) throws SQLException {
-        return rs.getObject(column, LocalDate.class);
-    }
-
-    @Nullable
-    public OffsetDateTime offsetDateTime(ResultSet rs, String column) throws SQLException {
-        return rs.getObject(column, OffsetDateTime.class);
-    }
-
-    @Nullable
-    public byte[] byteArray(ResultSet rs, String column) throws SQLException {
-        return rs.getObject(column, byte[].class);
-    }
-
-    /**
      * Writes a chunk as ONE multi-row {@code INSERT}. StarRocks turns every statement into its own
      * load transaction, so a JDBC batch of single-row inserts would cost one load per row; a single
      * statement carrying the whole chunk costs one. On a PRIMARY KEY table the insert is an upsert.
@@ -227,5 +199,43 @@ public class StarrocksSyncService {
             System.arraycopy(columnTypes, 0, types, i * columnTypes.length, columnTypes.length);
         }
         target.update(sql, args, types);
+    }
+
+    /**
+     * The key values in a form whose {@code equals}/{@code hashCode} match equal values read from either
+     * store. Most java types already compare by value; the exceptions are normalized:
+     * <ul>
+     *     <li>{@link BigDecimal} — {@code equals} is scale-sensitive and the stores keep different
+     *         scales ({@code 1.50} vs {@code 1.5}), so trailing zeros are stripped;</li>
+     *     <li>{@link OffsetDateTime} — {@code equals} also compares the offset, so the instant is used;</li>
+     *     <li>{@code byte[]} — {@code equals} is identity, so the bytes are wrapped in a
+     *         {@link ByteBuffer}, which compares by content.</li>
+     * </ul>
+     */
+    private List<Object> comparableKey(Object[] key) {
+        List<Object> comparable = new ArrayList<>(key.length);
+        for (Object value : key) {
+            comparable.add(switch (value) {
+                case BigDecimal decimal -> decimal.stripTrailingZeros();
+                case OffsetDateTime dateTime -> dateTime.toInstant();
+                case byte[] bytes -> ByteBuffer.wrap(bytes);
+                case null, default -> value;
+            });
+        }
+        return comparable;
+    }
+
+    /**
+     * {@code id IN (?, ?)} for a single-column key; {@code (a = ? AND b = ?) OR (a = ? AND b = ?)} for a
+     * composite one, since StarRocks does not accept a row-value {@code IN}.
+     */
+    private String keyCondition(List<String> pkColNames, int keyCount) {
+        if (pkColNames.size() == 1) {
+            return pkColNames.get(0) + " IN (" + placeholders(keyCount) + ")";
+        }
+        String keyMatch = pkColNames.stream()
+                .map(column -> column + " = ?")
+                .collect(Collectors.joining(" AND ", "(", ")"));
+        return String.join(" OR ", Collections.nCopies(keyCount, keyMatch));
     }
 }
