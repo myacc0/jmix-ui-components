@@ -80,10 +80,17 @@ public class StarrocksSyncService {
      * transaction: a single-column key is matched with {@code WHERE pk IN (...)}, a composite one with
      * {@code WHERE (a = ? AND b = ?) OR ...}. Each key value is bound as read, with the {@code sqlType}
      * of its column — the value and JDBC type the upsert binds — so both stores accept it.
+     * <p>
+     * A self-referencing table (e.g. {@code parent_id -> id}) may keep rows at the source whose parent
+     * was removed there. Before each {@code DELETE}, every {@code selfReferencedCols} column that still
+     * points at a row of the chunk is set to {@code NULL}, so the foreign key of the target does not
+     * reject the delete. Such a column always references a single-column primary key.
      *
-     * @param primaryKeyCols the primary key columns of the table, in a stable order
-     * @param keyMapper      maps a row selected with {@code primaryKeyCols} to its key values, in the
-     *                       order of {@code primaryKeyCols}
+     * @param primaryKeyCols     the primary key columns of the table, in a stable order
+     * @param selfReferencedCols the columns referencing the primary key of the same table, whose
+     *                           references to the deleted rows are cleared; empty to skip that step
+     * @param keyMapper          maps a row selected with {@code primaryKeyCols} to its key values, in the
+     *                           order of {@code primaryKeyCols}
      * @return the number of rows deleted from the target
      */
     public int deleteMissing(
@@ -92,11 +99,16 @@ public class StarrocksSyncService {
             JdbcTemplate target,
             String targetTable,
             List<TableCol> primaryKeyCols,
+            List<TableCol> selfReferencedCols,
             RowMapper<Object[]> keyMapper,
             int batchSize
     ) {
         if (primaryKeyCols.isEmpty()) {
             throw new IllegalArgumentException("No primary key columns configured for table " + targetTable);
+        }
+        if (!selfReferencedCols.isEmpty() && primaryKeyCols.size() != 1) {
+            throw new IllegalArgumentException(
+                    "Self-referenced columns require a single-column primary key in table " + targetTable);
         }
         int[] pkColTypes = primaryKeyCols.stream().mapToInt(TableCol::sqlType).toArray();
         List<String> pkColNames = primaryKeyCols.stream().map(TableCol::name).toList();
@@ -121,6 +133,10 @@ public class StarrocksSyncService {
             for (int i = 0; i < chunk.size(); i++) {
                 System.arraycopy(chunk.get(i), 0, args, i * pkColTypes.length, pkColTypes.length);
                 System.arraycopy(pkColTypes, 0, types, i * pkColTypes.length, pkColTypes.length);
+            }
+            for (TableCol selfReferencedCol : selfReferencedCols) {
+                target.update("UPDATE " + targetTable + " SET " + selfReferencedCol.name() + " = NULL WHERE "
+                        + keyCondition(List.of(selfReferencedCol.name()), chunk.size()), args, types);
             }
             target.update("DELETE FROM " + targetTable + " WHERE " + keyCondition(pkColNames, chunk.size()),
                     args, types);

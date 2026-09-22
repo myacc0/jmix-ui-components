@@ -31,7 +31,7 @@ public class StarrocksToMainDynamicSynchronizer extends DynamicTableSynchronizer
         int totalRows = Optional.ofNullable(
                 source.queryForObject("SELECT count(*) FROM " + t.getSourceTableName(), Integer.class)).orElse(0);
 
-        int deleted = deleteMissingInTarget(source, target, t, cfg.getColumns());
+        int deleted = deleteMissingInTarget(source, target, t, cfg.getColumns(), true);
 
         String upsertSql = "INSERT INTO " + t.getTargetTableName() + " (" + provideTableColumnsString(cfg.getColumns()) + ") VALUES ("
                 + starrocksSyncService.placeholders(cfg.getColumns().size()) + ") ON CONFLICT ("

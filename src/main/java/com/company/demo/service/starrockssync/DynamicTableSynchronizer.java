@@ -37,18 +37,30 @@ public abstract class DynamicTableSynchronizer {
     /**
      * Deletes the target rows whose primary key no longer exists at the source; run it before the upsert.
      *
+     * @param clearSelfReferences whether the self-referenced columns pointing at a deleted row are set
+     *                            to {@code NULL} first — needed when the target enforces the foreign key
      * @return the number of rows deleted from the target
      */
-    protected int deleteMissingInTarget(JdbcTemplate source, JdbcTemplate target, TableSynchronizer t, List<TableCol> cols) {
+    protected int deleteMissingInTarget(
+            JdbcTemplate source,
+            JdbcTemplate target,
+            TableSynchronizer t,
+            List<TableCol> cols,
+            boolean clearSelfReferences
+    ) {
         List<TableCol> primaryKeyCols = cols.stream().filter(TableCol::primaryKey).toList();
+        List<TableCol> selfReferencedCols = clearSelfReferences
+                ? cols.stream().filter(TableCol::selfReferenced).toList()
+                : List.of();
         return starrocksSyncService.deleteMissing(
                 source,
                 t.getSourceTableName(),
                 target,
                 t.getTargetTableName(),
                 primaryKeyCols,
+                selfReferencedCols,
                 (rs, rowNum) -> provideTableRow(rs, primaryKeyCols),
-                t.getBatchSize());
+                t.getBatchSize() / 2);
     }
 
     protected Object[] provideTableRow(ResultSet rs, List<TableCol> cols) throws SQLException {

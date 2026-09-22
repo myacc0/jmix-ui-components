@@ -22,7 +22,7 @@ public class MainToStarrocksDynamicSynchronizer extends DynamicTableSynchronizer
         int deleted = deleteMissingInTarget(
                 starrocksSyncService.getMainStoreJdbcTemplate(),
                 starrocksSyncService.getStarrocksStoreJdbcTemplate(),
-                t, cfg.getColumns());
+                t, cfg.getColumns(), false);
 
         String columnsString = provideTableColumnsString(cfg.getColumns());
         SyncResult result = starrocksSyncService.copyToStarrocks(
