@@ -7,5 +7,6 @@ public record TableCol(
         String foreignTable,
         String foreignTableColumn,
         boolean primaryKey,
+        boolean selfReferenced,
         boolean nullable) {
 }

@@ -16,7 +16,7 @@
         <action id="saveCloseAction" type="detail_saveClose"/>
         <action id="closeAction" type="detail_close"/>
     </actions>
-    <layout>
+    <layout classNames="table-sychronizer-detail-view">
         <formLayout id="form"
                     dataContainer="tableSynchronizerDc"
                     autoResponsive="true"

@@ -1,5 +1,8 @@
-.table-col-header {
-    gap: 1.2em;
+.table-sychronizer-detail-view .table-col-header {
+    gap: 15px;
     line-height: 1.1;
     padding: 5px 0 0 0;
+}
+.table-sychronizer-detail-view .form-block {
+    padding: 10px 5px 20px 5px;
 }

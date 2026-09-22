@@ -50,9 +50,10 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
     private static final double SQL_TYPE_FLEX_GROW = 3;
     private static final double FOREIGN_TABLE_GROW = 2;
     private static final double FOREIGN_TABLE_COL_GROW = 2;
-    private static final String PRIMARY_KEY_WIDTH = "2em";
-    private static final String NULLABLE_WIDTH = "2em";
-    private static final String REMOVE_WIDTH = "2em";
+    private static final String PRIMARY_KEY_WIDTH = "30px";
+    private static final String SELF_REFERENCED_WIDTH = "30px";
+    private static final String NULLABLE_WIDTH = "30px";
+    private static final String REMOVE_WIDTH = "30px";
 
     @Autowired
     private UiComponents uiComponents;
@@ -143,6 +144,7 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
                     normalizedTextField(row.foreignTableField),
                     normalizedTextField(row.foreignTableColumnField),
                     Boolean.TRUE.equals(row.primaryKeyField.getValue()),
+                    Boolean.TRUE.equals(row.selfReferencedField.getValue()),
                     Boolean.TRUE.equals(row.nullableField.getValue())));
         }
         return columns;
@@ -169,6 +171,13 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
                 .set("color", "var(--lumo-secondary-text-color)");
         primaryKeyLabel.setWidth(PRIMARY_KEY_WIDTH);
         header.add(primaryKeyLabel);
+
+        Span selfReferencedLabel = new Span(messages.getMessage(TableSynchronizerDetailView.class, "tableColumns.selfReferencedShort"));
+        selfReferencedLabel.getStyle().set("font-size", "var(--lumo-font-size-s)")
+                .set("color", "var(--lumo-secondary-text-color)");
+        selfReferencedLabel.setWidth(SELF_REFERENCED_WIDTH);
+        selfReferencedLabel.setTitle(messages.getMessage(TableSynchronizerDetailView.class, "tableColumns.selfReferenced"));
+        header.add(selfReferencedLabel);
 
         Span nullableLabel = new Span(messages.getMessage(TableSynchronizerDetailView.class, "tableColumns.nullable"));
         nullableLabel.getStyle().set("font-size", "var(--lumo-font-size-s)")
@@ -223,6 +232,7 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
         private final TypedTextField<String> foreignTableField;
         private final TypedTextField<String> foreignTableColumnField;
         private final JmixCheckbox primaryKeyField;
+        private final JmixCheckbox selfReferencedField;
         private final JmixCheckbox nullableField;
 
         private ColumnRow(@Nullable TableCol column) {
@@ -230,6 +240,7 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
             javaTypeField = createJavaTypeField(column);
             sqlTypeField = createSqlTypeField(column);
             primaryKeyField = createCheckboxField(column != null && column.primaryKey(), PRIMARY_KEY_WIDTH);
+            selfReferencedField = createCheckboxField(column != null && column.selfReferenced(), SELF_REFERENCED_WIDTH);
             nullableField = createCheckboxField(column != null && column.nullable(), NULLABLE_WIDTH);
             foreignTableField = createTextField(column != null ? column.foreignTable() : "", "tableColumns.foreignTable");
             foreignTableColumnField = createTextField(column != null ? column.foreignTableColumn() : "", "tableColumns.foreignTableColumn");
@@ -255,7 +266,16 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
             layout.setWidthFull();
             layout.setPadding(false);
             layout.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
-            layout.add(nameField, javaTypeField, sqlTypeField, foreignTableField, foreignTableColumnField, primaryKeyField, nullableField, createRemoveButton());
+            layout.add(
+                    nameField,
+                    javaTypeField,
+                    sqlTypeField,
+                    foreignTableField,
+                    foreignTableColumnField,
+                    primaryKeyField,
+                    selfReferencedField,
+                    nullableField,
+                    createRemoveButton());
             layout.setFlexGrow(NAME_FLEX_GROW, nameField);
             layout.setFlexGrow(JAVA_TYPE_FLEX_GROW, javaTypeField);
             layout.setFlexGrow(SQL_TYPE_FLEX_GROW, sqlTypeField);
@@ -268,10 +288,12 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
             boolean primaryKey = Boolean.TRUE.equals(primaryKeyField.getValue());
             if (primaryKey) {
                 nullableField.setValue(false);
+                selfReferencedField.setValue(false);
                 foreignTableField.clear();
                 foreignTableColumnField.clear();
             }
             nullableField.setEnabled(!primaryKey);
+            selfReferencedField.setEnabled(!primaryKey);
             foreignTableField.setEnabled(!primaryKey);
             foreignTableColumnField.setEnabled(!primaryKey);
         }
