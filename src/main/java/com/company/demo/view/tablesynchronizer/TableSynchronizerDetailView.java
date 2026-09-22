@@ -68,14 +68,17 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
     private VerticalLayout columnsBox;
 
     @ViewComponent
-    private Span uuidSqlTypeNote;
+    private Span uuidSqlTypeVarcharNote;
+    @ViewComponent
+    private Span uuidSqlTypeOtherTypeNote;
 
     /** One entry per column row currently rendered in {@link #columnsBox}, in display order. */
     private final List<ColumnRow> columnRows = new ArrayList<>();
 
     @Subscribe
     public void onReady(final ReadyEvent event) {
-        uuidSqlTypeNote.getStyle().set("color", "var(--lumo-error-text-color)");
+        uuidSqlTypeVarcharNote.getStyle().set("color", "var(--lumo-error-text-color)");
+        uuidSqlTypeOtherTypeNote.getStyle().set("color", "var(--lumo-error-text-color)");
         columnsBox.removeAll();
         columnRows.clear();
         columnsBox.add(createHeaderRow());
@@ -234,8 +237,19 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
     /** Shows the note while any UUID column of a main-to-starrocks synchronizer is not bound as VARCHAR. */
     private void updateUuidSqlTypeNote() {
         TableSyncDirection direction = getEditedEntity().getDirection();
-        uuidSqlTypeNote.setVisible(columnRows.stream().anyMatch(row -> tableColConfigService.requiresVarcharSqlType(
-                direction, row.javaTypeField.getValue(), row.sqlTypeField.getValue())));
+        if (direction == TableSyncDirection.MAIN_TO_STARROCKS) {
+            uuidSqlTypeVarcharNote.setVisible(
+                    columnRows.stream().anyMatch(
+                            row -> tableColConfigService.requiresVarcharSqlType(
+                                    row.javaTypeField.getValue(),
+                                    row.sqlTypeField.getValue())));
+        } else if (direction == TableSyncDirection.STARROCKS_TO_MAIN) {
+            uuidSqlTypeOtherTypeNote.setVisible(
+                    columnRows.stream().anyMatch(
+                            row -> tableColConfigService.requiresOtherSqlType(
+                                    row.javaTypeField.getValue(),
+                                    row.sqlTypeField.getValue())));
+        }
     }
 
     /** One editable column of the synchronized table: the inputs plus the layout holding them. */

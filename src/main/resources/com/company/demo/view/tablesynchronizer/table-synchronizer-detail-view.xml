@@ -44,7 +44,8 @@
             <hbox classNames="form-block">
                 <span classNames="form-block-title" text="msg://tableSynchronizerDetailView.columnsBlock"/>
 
-                <span id="uuidSqlTypeNote" text="msg://tableColumns.uuidVarcharNote" visible="false"/>
+                <span id="uuidSqlTypeVarcharNote" text="msg://tableColumns.uuidVarcharNote" visible="false"/>
+                <span id="uuidSqlTypeOtherTypeNote" text="msg://tableColumns.uuidOtherTypeNote" visible="false"/>
 
                 <vbox id="columnsBox" padding="false" spacing="false" width="100%"/>
 

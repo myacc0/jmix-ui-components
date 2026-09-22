@@ -69,14 +69,12 @@ public class TableColConfigService {
      * for StarRocks has no mapping for {@link Types#OTHER} and binds such a value as a serialized Java
      * object, so a UUID column of a main-to-starrocks synchronizer must be bound as {@link Types#VARCHAR}.
      */
-    public boolean requiresVarcharSqlType(
-            @Nullable TableSyncDirection direction,
-            @Nullable String javaType,
-            @Nullable Integer sqlType
-    ) {
-        return direction == TableSyncDirection.MAIN_TO_STARROCKS
-                && TableColJavaType.UUID.getId().equals(javaType)
-                && !Integer.valueOf(Types.VARCHAR).equals(sqlType);
+    public boolean requiresVarcharSqlType(@Nullable String javaType, @Nullable Integer sqlType) {
+        return TableColJavaType.UUID.getId().equals(javaType) && !Integer.valueOf(Types.VARCHAR).equals(sqlType);
+    }
+
+    public boolean requiresOtherSqlType(@Nullable String javaType, @Nullable Integer sqlType) {
+        return TableColJavaType.UUID.getId().equals(javaType) && !Integer.valueOf(Types.OTHER).equals(sqlType);
     }
 
     /** JDBC type code to its {@link Types} constant name, for the column editor's type picker. */
