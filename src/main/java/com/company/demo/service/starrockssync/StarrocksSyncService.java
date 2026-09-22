@@ -75,7 +75,7 @@ public class StarrocksSyncService {
      * The two tables live in different stores and cannot be joined, so the source keys are read into
      * memory — primary key columns only. {@code keyMapper} reads every key column as its configured
      * java type, the same way the upsert reads it, so a key compares by value rather than by the text
-     * each JDBC driver happens to render (see {@link #comparableKey}). The orphans are removed with one
+     * each JDBC driver happens to render (see {@link #comparableValue}). The orphans are removed with one
      * {@code DELETE} per {@code batchSize} keys, as every StarRocks statement is its own load
      * transaction: a single-column key is matched with {@code WHERE pk IN (...)}, a composite one with
      * {@code WHERE (a = ? AND b = ?) OR ...}. Each key value is bound as read, with the {@code sqlType}
@@ -217,8 +217,17 @@ public class StarrocksSyncService {
         target.update(sql, args, types);
     }
 
+    /** The key values in a form whose {@code equals}/{@code hashCode} match, see {@link #comparableValue}. */
+    private List<Object> comparableKey(Object[] key) {
+        List<Object> comparable = new ArrayList<>(key.length);
+        for (Object value : key) {
+            comparable.add(comparableValue(value));
+        }
+        return comparable;
+    }
+
     /**
-     * The key values in a form whose {@code equals}/{@code hashCode} match equal values read from either
+     * A key value in a form whose {@code equals}/{@code hashCode} match equal values read from either
      * store. Most java types already compare by value; the exceptions are normalized:
      * <ul>
      *     <li>{@link BigDecimal} — {@code equals} is scale-sensitive and the stores keep different
@@ -228,17 +237,13 @@ public class StarrocksSyncService {
      *         {@link ByteBuffer}, which compares by content.</li>
      * </ul>
      */
-    private List<Object> comparableKey(Object[] key) {
-        List<Object> comparable = new ArrayList<>(key.length);
-        for (Object value : key) {
-            comparable.add(switch (value) {
-                case BigDecimal decimal -> decimal.stripTrailingZeros();
-                case OffsetDateTime dateTime -> dateTime.toInstant();
-                case byte[] bytes -> ByteBuffer.wrap(bytes);
-                case null, default -> value;
-            });
-        }
-        return comparable;
+    public Object comparableValue(Object value) {
+        return switch (value) {
+            case BigDecimal decimal -> decimal.stripTrailingZeros();
+            case OffsetDateTime dateTime -> dateTime.toInstant();
+            case byte[] bytes -> ByteBuffer.wrap(bytes);
+            case null, default -> value;
+        };
     }
 
     /**
