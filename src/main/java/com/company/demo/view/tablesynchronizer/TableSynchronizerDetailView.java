@@ -259,7 +259,9 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
             javaTypeField.addValueChangeListener(e -> updateUuidSqlTypeNote());
             sqlTypeField.addValueChangeListener(e -> updateUuidSqlTypeNote());
             primaryKeyField.addValueChangeListener(e -> applyPrimaryKeyState());
+            selfReferencedField.addValueChangeListener(e -> applySelfReferencedState());
             applyPrimaryKeyState();
+            applySelfReferencedState();
 
             layout = new HorizontalLayout();
             layout.addClassName("table-col-row");
@@ -296,6 +298,18 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
             selfReferencedField.setEnabled(!primaryKey);
             foreignTableField.setEnabled(!primaryKey);
             foreignTableColumnField.setEnabled(!primaryKey);
+        }
+
+        private void applySelfReferencedState() {
+            boolean selfReferenced = Boolean.TRUE.equals(selfReferencedField.getValue());
+            if (selfReferenced) {
+                primaryKeyField.setValue(false);
+                foreignTableField.clear();
+                foreignTableColumnField.clear();
+            }
+            primaryKeyField.setEnabled(!selfReferenced);
+            foreignTableField.setEnabled(!selfReferenced);
+            foreignTableColumnField.setEnabled(!selfReferenced);
         }
 
         @SuppressWarnings("unchecked")
