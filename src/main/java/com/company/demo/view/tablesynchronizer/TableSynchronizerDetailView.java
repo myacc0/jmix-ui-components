@@ -206,6 +206,7 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
         columnRows.add(row);
         columnsBox.add(row.layout);
         updateUuidSqlTypeNote();
+        updateColumnStates();
         return row;
     }
 
@@ -213,6 +214,21 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
         columnRows.remove(row);
         columnsBox.remove(row.layout);
         updateUuidSqlTypeNote();
+        updateColumnStates();
+    }
+
+    /**
+     * A self-referenced column points at a single-column primary key, so while more than one column
+     * is marked as a primary key the self-referenced flag is cleared and locked on every row.
+     */
+    private void updateColumnStates() {
+        boolean compositePrimaryKey = columnRows.stream()
+                .filter(row -> Boolean.TRUE.equals(row.primaryKeyField.getValue()))
+                .count() > 1;
+        if (compositePrimaryKey) {
+            columnRows.forEach(row -> row.selfReferencedField.setValue(false));
+        }
+        columnRows.forEach(row -> row.applyEnabledState(compositePrimaryKey));
     }
 
     /** Shows the note while any UUID column of a main-to-starrocks synchronizer is not bound as VARCHAR. */
@@ -258,10 +274,16 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
             });
             javaTypeField.addValueChangeListener(e -> updateUuidSqlTypeNote());
             sqlTypeField.addValueChangeListener(e -> updateUuidSqlTypeNote());
-            primaryKeyField.addValueChangeListener(e -> applyPrimaryKeyState());
-            selfReferencedField.addValueChangeListener(e -> applySelfReferencedState());
-            applyPrimaryKeyState();
-            applySelfReferencedState();
+            primaryKeyField.addValueChangeListener(e -> {
+                applyPrimaryKeyValue();
+                updateColumnStates();
+            });
+            selfReferencedField.addValueChangeListener(e -> {
+                applySelfReferencedValue();
+                updateColumnStates();
+            });
+            applyPrimaryKeyValue();
+            applySelfReferencedValue();
 
             layout = new HorizontalLayout();
             layout.addClassName("table-col-row");
@@ -286,30 +308,32 @@ public class TableSynchronizerDetailView extends StandardDetailView<TableSynchro
         }
 
         /** A primary key column is never nullable and never references a foreign table. */
-        private void applyPrimaryKeyState() {
-            boolean primaryKey = Boolean.TRUE.equals(primaryKeyField.getValue());
-            if (primaryKey) {
+        private void applyPrimaryKeyValue() {
+            if (Boolean.TRUE.equals(primaryKeyField.getValue())) {
                 nullableField.setValue(false);
                 selfReferencedField.setValue(false);
                 foreignTableField.clear();
                 foreignTableColumnField.clear();
             }
-            nullableField.setEnabled(!primaryKey);
-            selfReferencedField.setEnabled(!primaryKey);
-            foreignTableField.setEnabled(!primaryKey);
-            foreignTableColumnField.setEnabled(!primaryKey);
         }
 
-        private void applySelfReferencedState() {
-            boolean selfReferenced = Boolean.TRUE.equals(selfReferencedField.getValue());
-            if (selfReferenced) {
+        /** A self-referenced column is never a primary key and references its own table only. */
+        private void applySelfReferencedValue() {
+            if (Boolean.TRUE.equals(selfReferencedField.getValue())) {
                 primaryKeyField.setValue(false);
                 foreignTableField.clear();
                 foreignTableColumnField.clear();
             }
+        }
+
+        private void applyEnabledState(boolean compositePrimaryKey) {
+            boolean primaryKey = Boolean.TRUE.equals(primaryKeyField.getValue());
+            boolean selfReferenced = Boolean.TRUE.equals(selfReferencedField.getValue());
+            nullableField.setEnabled(!primaryKey);
             primaryKeyField.setEnabled(!selfReferenced);
-            foreignTableField.setEnabled(!selfReferenced);
-            foreignTableColumnField.setEnabled(!selfReferenced);
+            selfReferencedField.setEnabled(!primaryKey && !compositePrimaryKey);
+            foreignTableField.setEnabled(!primaryKey && !selfReferenced);
+            foreignTableColumnField.setEnabled(!primaryKey && !selfReferenced);
         }
 
         @SuppressWarnings("unchecked")
