@@ -12,8 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.UUID;
 
-public class MainToStarrocksDynamicSyncJob implements Job {
-    private static final Logger log = LoggerFactory.getLogger(MainToStarrocksDynamicSyncJob.class);
+public class DynamicTableSyncJob implements Job {
+    private static final Logger log = LoggerFactory.getLogger(DynamicTableSyncJob.class);
 
     @Autowired
     private TableDynamicSynchronizeManager tableDynamicSynchronizeManager;
@@ -22,11 +22,11 @@ public class MainToStarrocksDynamicSyncJob implements Job {
         JobDataMap jobDataMap = context.getJobDetail().getJobDataMap();
         try {
             SyncResult result = tableDynamicSynchronizeManager.sync(UUID.fromString(String.valueOf(jobDataMap.get("id"))));
-            log.info("MainToStarrocksDynamicSyncJob finished: {}", result);
+            log.info("DynamicTableSyncJob finished: {}", result);
         } catch (Exception e) {
-            String tableName = String.valueOf(jobDataMap.get("tableName"));
-            log.error("MainToStarrocksDynamicSyncJob failed", e);
-            throw new JobExecutionException("Failed to sync " + tableName + " from main to starrocks", e);
+            String taskName = String.valueOf(jobDataMap.get("name"));
+            log.error("DynamicTableSyncJob failed", e);
+            throw new JobExecutionException("Failed to run sync task " + taskName, e);
         }
     }
 }
