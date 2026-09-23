@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://quartzJobExecutionListView.title"
+      focusComponent="quartzJobExecutionsDataGrid">
+    <data>
+        <collection id="quartzJobExecutionsDc"
+                    class="com.company.demo.entity.quartz.QuartzJobExecution">
+            <fetchPlan extends="_base"/>
+            <loader id="quartzJobExecutionsDl" readOnly="true">
+                <query>
+                    <![CDATA[select e from demo_QuartzJobExecution e order by e.startedAt desc]]>
+                </query>
+            </loader>
+        </collection>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+        <urlQueryParameters>
+            <genericFilter component="genericFilter"/>
+            <pagination component="pagination"/>
+        </urlQueryParameters>
+    </facets>
+    <actions>
+        <action id="selectAction" type="lookup_select"/>
+        <action id="discardAction" type="lookup_discard"/>
+    </actions>
+    <layout>
+        <genericFilter id="genericFilter"
+                       dataLoader="quartzJobExecutionsDl">
+            <properties include=".*"/>
+        </genericFilter>
+        <hbox id="buttonsPanel" classNames="buttons-panel">
+            <startSlot>
+                <button id="removeButton" action="quartzJobExecutionsDataGrid.removeAction"/>
+            </startSlot>
+            <endSlot>
+                <simplePagination id="pagination" dataLoader="quartzJobExecutionsDl"/>
+            </endSlot>
+        </hbox>
+        <dataGrid id="quartzJobExecutionsDataGrid"
+                  width="100%"
+                  minHeight="20em"
+                  dataContainer="quartzJobExecutionsDc"
+                  columnReorderingAllowed="true">
+            <actions>
+                <action id="removeAction" type="list_remove"/>
+            </actions>
+            <columns resizable="true">
+                <column property="jobName" autoWidth="true" flexGrow="0"/>
+                <column property="jobGroup" autoWidth="true" flexGrow="0"/>
+                <column property="status" autoWidth="true" flexGrow="0"/>
+                <column property="startedAt" autoWidth="true" flexGrow="0"/>
+                <column property="finishedAt" autoWidth="true" flexGrow="0"/>
+                <column property="durationMs" autoWidth="true" flexGrow="0"/>
+                <column property="triggerName" autoWidth="true" flexGrow="0"/>
+                <column property="triggerGroup" autoWidth="true" flexGrow="0"/>
+                <column property="jobClass" autoWidth="true" flexGrow="0"/>
+                <column property="fireInstanceId" autoWidth="true" flexGrow="0"/>
+                <column property="jobParams" autoWidth="true" flexGrow="0"/>
+                <column property="errorMessage" autoWidth="true" flexGrow="0"/>
+            </columns>
+        </dataGrid>
+        <hbox id="lookupActions" visible="false">
+            <button id="selectButton" action="selectAction"/>
+            <button id="discardButton" action="discardAction"/>
+        </hbox>
+    </layout>
+</view>

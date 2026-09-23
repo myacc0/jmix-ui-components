@@ -43,4 +43,26 @@
         <item view="demo_TableSynchronizer.list"
               title="msg://com.company.demo.view.tablesynchronizer/tableSynchronizerListView.title"/>
     </menu>
+    <menu id="reports" title="msg://io.jmix.reportsflowui/menu.reports.title">
+        <item view="report_Report.list" title="msg://io.jmix.reportsflowui/reportListView.menu"/>
+        <item view="report_ReportGroup.list" title="msg://io.jmix.reportsflowui/reportGroupListView.menu"/>
+        <item view="report_ReportRunView" title="msg://io.jmix.reportsflowui/reportRunView.menu"/>
+        <item view="report_ReportTableView" title="msg://io.jmix.reportsflowui/reportTableView.menu"/>
+    </menu>
+    <menu id="security" title="msg://com.company.demo/menu.security.title">
+        <item view="sec_ResourceRoleModel.list"
+              title="msg://io.jmix.securityflowui.view.resourcerole/resourceRoleModelListView.menu"/>
+        <item view="sec_RowLevelRoleModel.list"
+              title="msg://io.jmix.securityflowui.view.rowlevelrole/rowLevelRoleModelListView.menu"/>
+    </menu>
+    <menu id="quartz" title="msg://com.company.demo/menu.quartz.title">
+        <item view="quartz_JobModel.list" title="msg://io.jmix.quartzflowui.view.jobs/jobModelListView.menu"/>
+        <item view="demo_QuartzJobExecution.list" title="msg://com.company.demo.view.quartzjobexecution/quartzJobExecutionListView.title"/>
+    </menu>
+    <menu id="datatools" title="msg://com.company.demo/menu.datatools.title">
+        <item view="datatl_entityInspectorListView"
+              title="msg://io.jmix.datatoolsflowui.view.entityinspector/listTitle"/>
+        <item view="datatl_dataModelListView"
+              title="msg://io.jmix.datatoolsflowui.view.datamodel/entityModelListView.title"/>
+    </menu>
 </menu-config>
