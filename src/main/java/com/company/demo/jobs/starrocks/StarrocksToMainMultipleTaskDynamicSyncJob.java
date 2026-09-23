@@ -31,9 +31,8 @@ public class StarrocksToMainMultipleTaskDynamicSyncJob implements Job {
             }
 
             for (DynamicSyncTask task : dynamicSyncTasks) {
-//                SyncResult result = tableDynamicSynchronizeManager.sync(UUID.fromString(task.id));
-//                log.info("Task [{}] with id[{}] finished: {}", task.name, task.id, result);
-                log.info("Task [{}] with id[{}] finished", task.name, task.id);
+                SyncResult result = tableDynamicSynchronizeManager.sync(UUID.fromString(task.id));
+                log.info("Task [{}] with id[{}] finished: {}", task.name, task.id, result);
             }
             log.error("StarrocksToMainMultipleTaskDynamicSyncJob finished");
         } catch (Exception e) {
