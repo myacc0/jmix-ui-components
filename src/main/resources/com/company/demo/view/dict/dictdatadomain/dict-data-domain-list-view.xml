@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      xmlns:c="http://jmix.io/schema/flowui/jpql-condition"
+      title="msg://dictDataDomainListView.title"
+      focusComponent="dictDataDomainsDataGrid">
+    <data>
+        <collection id="dictDataDomainsDc"
+                    class="com.company.demo.entity.dict.DictDataDomain">
+            <fetchPlan extends="_base">
+                <property name="parent" fetchPlan="_instance_name"/>
+                <property name="businessOwner" fetchPlan="_instance_name"/>
+            </fetchPlan>
+            <loader id="dictDataDomainsDl" readOnly="true">
+                <query>
+                    <![CDATA[select e from demo_DictDataDomain e]]>
+                </query>
+            </loader>
+        </collection>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+        <urlQueryParameters>
+            <pagination component="pagination"/>
+        </urlQueryParameters>
+    </facets>
+    <actions>
+        <action id="selectAction" type="lookup_select"/>
+        <action id="discardAction" type="lookup_discard"/>
+    </actions>
+    <layout>
+        <hbox id="buttonsPanel" classNames="buttons-panel">
+            <startSlot>
+                <button id="createButton" action="dictDataDomainsDataGrid.createAction"/>
+                <button id="editButton" action="dictDataDomainsDataGrid.editAction"/>
+                <button id="removeButton" action="dictDataDomainsDataGrid.removeAction"/>
+            </startSlot>
+            <endSlot>
+                <simplePagination id="pagination" dataLoader="dictDataDomainsDl"/>
+            </endSlot>
+        </hbox>
+        <treeDataGrid id="dictDataDomainsDataGrid"
+                      width="100%"
+                      minHeight="20em"
+                      dataContainer="dictDataDomainsDc"
+                      hierarchyProperty="parent"
+                      columnReorderingAllowed="true">
+            <actions>
+                <action id="createAction" type="list_create"/>
+                <action id="editAction" type="list_edit"/>
+                <action id="removeAction" type="list_remove"/>
+            </actions>
+            <columns resizable="true">
+                <column property="parent"/>
+                <column property="code"/>
+                <column property="shortName"/>
+                <column property="shortNameUz"/>
+                <column property="longName"/>
+                <column property="longNameUz"/>
+                <column property="businessOwner"/>
+                <column property="assignDate"/>
+                <column property="description"/>
+                <column property="descriptionUz"/>
+            </columns>
+        </treeDataGrid>
+        <hbox id="lookupActions" visible="false">
+            <button id="selectButton" action="selectAction"/>
+            <button id="discardButton" action="discardAction"/>
+        </hbox>
+    </layout>
+</view>

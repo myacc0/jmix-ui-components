@@ -12,6 +12,11 @@
         <item view="demo_JobTitle.list" title="msg://com.company.demo.view.jobtitle/jobTitleListView.title"/>
         <item view="demo_Position.list" title="msg://com.company.demo.view.position/positionListView.title"/>
     </menu>
+    <menu id="catalog" description="msg://com.company.demo/menu_config.catalog.description"
+          title="msg://com.company.demo/menu_config.catalog.title">
+        <item view="demo_DictDataDomain.list"
+              title="msg://com.company.demo.view.dict.dictdatadomain/dictDataDomainListView.title"/>
+    </menu>
     <menu id="dq" description="msg://com.company.demo/menu_config.dq.description"
           title="msg://com.company.demo/menu_config.dq.title">
         <item view="demo_DqDataDomain.list"
@@ -34,7 +39,8 @@
     </menu>
     <menu id="products" description="msg://com.company.demo/menu_config.products.description"
           title="msg://com.company.demo/menu_config.products.title">
-        <item view="demo_ProductCategory.list" title="msg://com.company.demo.view.products/productCategoryListView.title"/>
+        <item view="demo_ProductCategory.list"
+              title="msg://com.company.demo.view.products/productCategoryListView.title"/>
         <item view="demo_Product.list" title="msg://com.company.demo.view.products/productListView.title"/>
         <item view="demo_Order.list" title="msg://com.company.demo.view.products/orderListView.title"/>
     </menu>
@@ -57,7 +63,8 @@
     </menu>
     <menu id="quartz" title="msg://com.company.demo/menu.quartz.title">
         <item view="quartz_JobModel.list" title="msg://io.jmix.quartzflowui.view.jobs/jobModelListView.menu"/>
-        <item view="demo_QuartzJobExecution.list" title="msg://com.company.demo.view.quartzjobexecution/quartzJobExecutionListView.title"/>
+        <item view="demo_QuartzJobExecution.list"
+              title="msg://com.company.demo.view.quartzjobexecution/quartzJobExecutionListView.title"/>
     </menu>
     <menu id="datatools" title="msg://com.company.demo/menu.datatools.title">
         <item view="datatl_entityInspectorListView"
