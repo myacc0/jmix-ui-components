@@ -1,6 +1,7 @@
 package com.company.demo.entity.dict;
 
 import com.company.demo.entity.orgstructure.Department;
+import com.company.demo.service.i18n.LocalizedValues;
 import io.jmix.core.DeletePolicy;
 import io.jmix.core.annotation.DeletedBy;
 import io.jmix.core.annotation.DeletedDate;
@@ -100,8 +101,8 @@ public class DictDataDomain {
 
     @InstanceName
     @DependsOnProperties({"shortNameRu", "shortNameUz"})
-    public String getLocaledShortName() {
-        return shortNameRu;
+    public String getLocaledShortName(LocalizedValues localizedValues) {
+        return localizedValues.pick(shortNameRu, shortNameUz);
     }
 
     public String getDescriptionUz() {

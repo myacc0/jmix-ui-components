@@ -27,3 +27,16 @@
     display: block;
     width: 100%;
 }
+
+
+.form-lang-group {
+    margin-top: 20px;
+}
+.form-lang-group vaadin-form-item {
+    display: block;
+    width: 100%;
+}
+.form-lang-group vaadin-form-item::part(label) {
+    display: block;
+    width: 100%;
+}

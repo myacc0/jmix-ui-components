@@ -1,4 +1,4 @@
-package com.company.demo.view.dict.dictdatadomain;
+package com.company.demo.view.dict;
 
 import com.company.demo.entity.dict.DictDataDomain;
 import com.company.demo.view.main.MainView;

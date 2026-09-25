@@ -15,7 +15,7 @@
     <menu id="catalog" description="msg://com.company.demo/menu_config.catalog.description"
           title="msg://com.company.demo/menu_config.catalog.title">
         <item view="demo_DictDataDomain.list"
-              title="msg://com.company.demo.view.dict.dictdatadomain/dictDataDomainListView.title"/>
+              title="msg://com.company.demo.view.dict/dictDataDomainListView.title"/>
     </menu>
     <menu id="dq" description="msg://com.company.demo/menu_config.dq.description"
           title="msg://com.company.demo/menu_config.dq.title">

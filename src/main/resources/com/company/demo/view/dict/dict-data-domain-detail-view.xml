@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://dictDataDomainDetailView.title"
+      focusComponent="form">
+    <data>
+        <instance id="dictDataDomainDc"
+                  class="com.company.demo.entity.dict.DictDataDomain">
+            <fetchPlan extends="_base">
+                <property name="parent" fetchPlan="_instance_name">
+                    <property name="parent" fetchPlan="_instance_name"/>
+                </property>
+                <property name="businessOwner" fetchPlan="_instance_name"/>
+            </fetchPlan>
+            <loader id="dictDataDomainDl"/>
+        </instance>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+    </facets>
+    <actions>
+        <action id="saveCloseAction" type="detail_saveClose"/>
+        <action id="closeAction" type="detail_close"/>
+    </actions>
+    <layout>
+        <vbox width="50%">
+            <formLayout id="form"
+                        dataContainer="dictDataDomainDc"
+                        autoResponsive="true"
+                        width="100%"
+                        expandColumns="true"
+                        expandFields="true">
+                <responsiveSteps>
+                    <responsiveStep minWidth="0" columns="1" />
+                </responsiveSteps>
+
+                <entityPicker id="parentField" property="parent" dataContainer="dictDataDomainDc">
+                    <actions>
+                        <action id="entityLookupAction" type="entity_lookup"/>
+                        <action id="entityClearAction" type="entity_clear"/>
+                    </actions>
+                </entityPicker>
+                <textField id="codeField" property="code" dataContainer="dictDataDomainDc"/>
+
+                <entityPicker id="businessOwnerField" property="businessOwner" dataContainer="dictDataDomainDc">
+                    <actions>
+                        <action id="entityLookupAction" type="entity_lookup"/>
+                        <action id="entityClearAction" type="entity_clear"/>
+                    </actions>
+                </entityPicker>
+                <datePicker id="assignDateField" property="assignDate" dataContainer="dictDataDomainDc"/>
+
+                <div classNames="form-lang-group">
+                    <formItem label="msg://com.company.demo.entity.dict/DictDataDomain.shortNameRu">
+                        <textField id="shortNameRuField" property="shortNameRu"/>
+                    </formItem>
+                    <formItem label="msg://com.company.demo.entity.dict/DictDataDomain.shortNameUz">
+                        <textField id="shortNameUzField" property="shortNameUz"/>
+                    </formItem>
+                </div>
+                <div classNames="form-lang-group">
+                    <formItem label="msg://com.company.demo.entity.dict/DictDataDomain.longNameRu">
+                        <textField id="longNameRuField" property="longNameRu" dataContainer="dictDataDomainDc"/>
+                    </formItem>
+                    <formItem label="msg://com.company.demo.entity.dict/DictDataDomain.longNameUz">
+                        <textField id="longNameUzField" property="longNameUz" dataContainer="dictDataDomainDc"/>
+                    </formItem>
+                </div>
+                <div classNames="form-lang-group">
+                    <formItem label="msg://com.company.demo.entity.dict/DictDataDomain.descriptionRu">
+                        <textArea id="descriptionRuField" property="descriptionRu" height="8em" dataContainer="dictDataDomainDc"/>
+                    </formItem>
+                    <formItem label="msg://com.company.demo.entity.dict/DictDataDomain.descriptionUz">
+                        <textArea id="descriptionUzField" property="descriptionUz" height="8em" dataContainer="dictDataDomainDc"/>
+                    </formItem>
+                </div>
+            </formLayout>
+            <hbox id="detailActions">
+                <button id="saveAndCloseButton" action="saveCloseAction"/>
+                <button id="closeButton" action="closeAction"/>
+            </hbox>
+        </vbox>
+    </layout>
+</view>
