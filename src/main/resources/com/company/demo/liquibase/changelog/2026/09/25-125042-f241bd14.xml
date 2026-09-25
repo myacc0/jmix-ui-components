@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd"
+        objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+        logicalFilePath="com/company/demo/liquibase/changelog/2026/09/25-125042-f241bd14.xml">
+    <changeSet id="1" author="demo">
+        <addColumn tableName="DEMO_DICT_DATA_DOMAIN">
+            <column name="DESCRIPTION_RU" type="VARCHAR(2000)"/>
+            <column name="LONG_NAME_RU" type="VARCHAR(1000)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet id="2" author="demo">
+        <addColumn tableName="DEMO_DICT_DATA_DOMAIN_STEWARD">
+            <column name="NOTES_RU" type="VARCHAR(1000)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet id="3" author="demo">
+        <addColumn tableName="DEMO_DICT_DATA_DOMAIN">
+            <column name="SHORT_NAME_RU" type="VARCHAR(255)"/>
+        </addColumn>
+
+        <addNotNullConstraint columnName="SHORT_NAME_RU" defaultNullValue="''" tableName="DEMO_DICT_DATA_DOMAIN"/>
+    </changeSet>
+    <changeSet id="4" author="demo">
+        <dropColumn columnName="description" tableName="demo_dict_data_domain"/>
+
+        <dropColumn columnName="long_name" tableName="demo_dict_data_domain"/>
+
+        <dropColumn columnName="short_name" tableName="demo_dict_data_domain"/>
+    </changeSet>
+    <changeSet id="5" author="demo">
+        <dropColumn columnName="notes" tableName="demo_dict_data_domain_steward"/>
+    </changeSet>
+</databaseChangeLog>

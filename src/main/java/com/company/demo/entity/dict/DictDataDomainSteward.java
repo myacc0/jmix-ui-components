@@ -29,9 +29,10 @@ public class DictDataDomainSteward {
     @Id
     private Integer id;
 
+    @NotNull
     @OnDeleteInverse(DeletePolicy.CASCADE)
-    @JoinColumn(name = "DOMAIN_ID")
-    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "DOMAIN_ID", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private DictDataDomain domain;
 
     @OnDeleteInverse(DeletePolicy.UNLINK)
@@ -47,8 +48,8 @@ public class DictDataDomainSteward {
     @Column(name = "DATE_END")
     private LocalDate dateEnd;
 
-    @Column(name = "NOTES", length = 1000)
-    private String notes;
+    @Column(name = "NOTES_RU", length = 1000)
+    private String notesRu;
 
     @Column(name = "NOTES_UZ", length = 1000)
     private String notesUz;
@@ -97,12 +98,12 @@ public class DictDataDomainSteward {
         this.notesUz = notesUz;
     }
 
-    public String getNotes() {
-        return notes;
+    public String getNotesRu() {
+        return notesRu;
     }
 
-    public void setNotes(String notes) {
-        this.notes = notes;
+    public void setNotesRu(String notes) {
+        this.notesRu = notes;
     }
 
     public LocalDate getDateEnd() {

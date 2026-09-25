@@ -40,15 +40,16 @@ public class DictDataDomain {
     @NotNull
     private String code;
 
-    @Column(name = "SHORT_NAME", nullable = false)
+    @Column(name = "SHORT_NAME_RU", nullable = false)
     @NotNull
-    private String shortName;
+    private String shortNameRu;
 
-    @Column(name = "SHORT_NAME_UZ", length = 500)
+    @NotNull
+    @Column(name = "SHORT_NAME_UZ", nullable = false, length = 500)
     private String shortNameUz;
 
-    @Column(name = "LONG_NAME", length = 1000)
-    private String longName;
+    @Column(name = "LONG_NAME_RU", length = 1000)
+    private String longNameRu;
 
     @Column(name = "LONG_NAME_UZ", length = 1000)
     private String longNameUz;
@@ -63,8 +64,8 @@ public class DictDataDomain {
     @NotNull
     private LocalDate assignDate;
 
-    @Column(name = "DESCRIPTION", length = 2000)
-    private String description;
+    @Column(name = "DESCRIPTION_RU", length = 2000)
+    private String descriptionRu;
 
     @Column(name = "DESCRIPTION_UZ", length = 2000)
     private String descriptionUz;
@@ -98,9 +99,9 @@ public class DictDataDomain {
     private OffsetDateTime lastModifiedDate;
 
     @InstanceName
-    @DependsOnProperties({"shortName", "shortNameUz"})
-    public String getShortLocaledShortName() {
-        return shortName;
+    @DependsOnProperties({"shortNameRu", "shortNameUz"})
+    public String getLocaledShortName() {
+        return shortNameRu;
     }
 
     public String getDescriptionUz() {
@@ -111,12 +112,12 @@ public class DictDataDomain {
         this.descriptionUz = descriptionUz;
     }
 
-    public String getDescription() {
-        return description;
+    public String getDescriptionRu() {
+        return descriptionRu;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public void setDescriptionRu(String description) {
+        this.descriptionRu = description;
     }
 
     public LocalDate getAssignDate() {
@@ -143,12 +144,12 @@ public class DictDataDomain {
         this.longNameUz = longNameUz;
     }
 
-    public String getLongName() {
-        return longName;
+    public String getLongNameRu() {
+        return longNameRu;
     }
 
-    public void setLongName(String longName) {
-        this.longName = longName;
+    public void setLongNameRu(String longName) {
+        this.longNameRu = longName;
     }
 
     public String getShortNameUz() {
@@ -159,12 +160,12 @@ public class DictDataDomain {
         this.shortNameUz = shortNameUz;
     }
 
-    public String getShortName() {
-        return shortName;
+    public String getShortNameRu() {
+        return shortNameRu;
     }
 
-    public void setShortName(String shortName) {
-        this.shortName = shortName;
+    public void setShortNameRu(String shortName) {
+        this.shortNameRu = shortName;
     }
 
     public String getCode() {

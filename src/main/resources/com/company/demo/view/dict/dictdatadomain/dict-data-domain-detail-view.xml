@@ -34,9 +34,9 @@
                 </actions>
             </entityPicker>
             <textField id="codeField" property="code"/>
-            <textField id="shortNameField" property="shortName"/>
+            <textField id="shortNameField" property="shortNameRu"/>
             <textField id="shortNameUzField" property="shortNameUz"/>
-            <textField id="longNameField" property="longName"/>
+            <textField id="longNameField" property="longNameRu"/>
             <textField id="longNameUzField" property="longNameUz"/>
             <entityPicker id="businessOwnerField" property="businessOwner">
                 <actions>
@@ -45,7 +45,7 @@
                 </actions>
             </entityPicker>
             <datePicker id="assignDateField" property="assignDate"/>
-            <textField id="descriptionField" property="description"/>
+            <textField id="descriptionField" property="descriptionRu"/>
             <textField id="descriptionUzField" property="descriptionUz"/>
         </formLayout>
         <hbox id="detailActions">
