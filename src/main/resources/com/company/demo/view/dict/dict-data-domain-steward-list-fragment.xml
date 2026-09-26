@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<fragment xmlns="http://jmix.io/schema/flowui/fragment">
+    <data>
+        <collection id="stewardsDc"
+                    class="com.company.demo.entity.dict.DictDataDomainSteward">
+            <fetchPlan extends="_base">
+                <property name="employee" fetchPlan="_instance_name"/>
+            </fetchPlan>
+            <!-- loaded by DictDataDomainStewardListFragment.setDomain(), not by a coordinator:
+                 the :domain parameter is set only for a saved domain -->
+            <loader id="stewardsDl" readOnly="true">
+                <query>
+                    <![CDATA[select e from demo_DictDataDomainSteward e
+                    where e.domain = :domain
+                    order by e.dateBegin desc]]>
+                </query>
+            </loader>
+        </collection>
+    </data>
+    <content>
+        <vbox id="root" width="100%" padding="false">
+            <hbox id="buttonsPanel" classNames="buttons-panel">
+                <button id="createButton" action="stewardsDataGrid.createAction"/>
+                <button id="editButton" action="stewardsDataGrid.editAction"/>
+                <button id="removeButton" action="stewardsDataGrid.removeAction"/>
+            </hbox>
+            <dataGrid id="stewardsDataGrid"
+                      width="100%"
+                      minHeight="20em"
+                      dataContainer="stewardsDc"
+                      columnReorderingAllowed="true">
+                <actions>
+                    <action id="createAction" type="list_create">
+                        <properties>
+                            <property name="openMode" value="DIALOG"/>
+                        </properties>
+                    </action>
+                    <action id="editAction" type="list_edit">
+                        <properties>
+                            <property name="openMode" value="DIALOG"/>
+                        </properties>
+                    </action>
+                    <action id="removeAction" type="list_remove"/>
+                </actions>
+                <columns resizable="true">
+                    <column property="employee"/>
+                    <column property="dateBegin"/>
+                    <column property="dateEnd"/>
+                    <column property="notesRu"/>
+                    <column property="notesUz"/>
+                </columns>
+            </dataGrid>
+        </vbox>
+    </content>
+</fragment>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://dictDataDomainStewardDetailView.title"
+      focusComponent="form">
+    <data>
+        <instance id="dictDataDomainStewardDc"
+                  class="com.company.demo.entity.dict.DictDataDomainSteward">
+            <fetchPlan extends="_base">
+                <property name="domain" fetchPlan="_instance_name"/>
+                <property name="employee" fetchPlan="_instance_name"/>
+            </fetchPlan>
+            <loader id="dictDataDomainStewardDl"/>
+        </instance>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+    </facets>
+    <actions>
+        <action id="saveCloseAction" type="detail_saveClose"/>
+        <action id="closeAction" type="detail_close"/>
+    </actions>
+    <layout>
+        <formLayout id="form"
+                    dataContainer="dictDataDomainStewardDc"
+                    autoResponsive="true"
+                    width="100%"
+                    expandColumns="true"
+                    expandFields="true">
+            <responsiveSteps>
+                <responsiveStep minWidth="0" columns="1"/>
+            </responsiveSteps>
+
+            <entityPicker id="employeeField" property="employee">
+                <actions>
+                    <action id="entityLookupAction" type="entity_lookup"/>
+                    <action id="entityClearAction" type="entity_clear"/>
+                </actions>
+            </entityPicker>
+            <datePicker id="dateBeginField" property="dateBegin"/>
+            <datePicker id="dateEndField" property="dateEnd"/>
+
+            <div classNames="form-lang-group">
+                <formItem label="msg://com.company.demo.entity.dict/DictDataDomainSteward.notesRu">
+                    <textArea id="notesRuField" property="notesRu" minRows="3"/>
+                </formItem>
+                <formItem label="msg://com.company.demo.entity.dict/DictDataDomainSteward.notesUz">
+                    <textArea id="notesUzField" property="notesUz" minRows="3"/>
+                </formItem>
+            </div>
+        </formLayout>
+        <hbox id="detailActions">
+            <button id="saveAndCloseButton" action="saveCloseAction"/>
+            <button id="closeButton" action="closeAction"/>
+        </hbox>
+    </layout>
+</view>
