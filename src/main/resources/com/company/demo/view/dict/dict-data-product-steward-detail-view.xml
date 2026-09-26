@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://dictDataProductStewardDetailView.title"
+      focusComponent="form">
+    <data>
+        <instance id="dictDataProductStewardDc"
+                  class="com.company.demo.entity.dict.DictDataProductSteward">
+            <fetchPlan extends="_base">
+                <property name="product" fetchPlan="_instance_name"/>
+                <property name="employee" fetchPlan="_instance_name"/>
+            </fetchPlan>
+            <loader id="dictDataProductStewardDl"/>
+        </instance>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+    </facets>
+    <actions>
+        <action id="saveCloseAction" type="detail_saveClose"/>
+        <action id="closeAction" type="detail_close"/>
+    </actions>
+    <layout>
+        <formLayout id="form"
+                    dataContainer="dictDataProductStewardDc"
+                    autoResponsive="true"
+                    width="100%"
+                    expandColumns="true"
+                    expandFields="true">
+            <responsiveSteps>
+                <responsiveStep minWidth="0" columns="1"/>
+            </responsiveSteps>
+
+            <entityPicker id="employeeField" property="employee">
+                <actions>
+                    <action id="entityLookupAction" type="entity_lookup"/>
+                    <action id="entityClearAction" type="entity_clear"/>
+                </actions>
+            </entityPicker>
+            <datePicker id="dateBeginField" property="dateBegin"/>
+            <datePicker id="dateEndField" property="dateEnd"/>
+            <textArea id="notesField" property="notes" minRows="3"/>
+        </formLayout>
+        <hbox id="detailActions">
+            <button id="saveAndCloseButton" action="saveCloseAction"/>
+            <button id="closeButton" action="closeAction"/>
+        </hbox>
+    </layout>
+</view>

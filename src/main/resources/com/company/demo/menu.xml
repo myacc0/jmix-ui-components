@@ -8,6 +8,7 @@
     <menu id="catalog" description="msg://com.company.demo/menu_config.catalog.description"
           title="msg://com.company.demo/menu_config.catalog.title">
         <item view="demo_DictDataDomain.list" title="msg://com.company.demo.view.dict/dictDataDomainListView.title"/>
+        <item view="demo_DictDataProduct.list" title="msg://com.company.demo.view.dict/dictDataProductListView.title"/>
         <item view="demo_JobTitle.list" title="msg://com.company.demo.view.dict/jobTitleListView.title"/>
         <item view="demo_Department.list" title="msg://com.company.demo.view.dict/departmentListView.title"/>
         <item view="demo_Employee.list" title="msg://com.company.demo.view.dict/employeeListView.title"/>
