@@ -1,13 +1,11 @@
 package com.company.demo.entity.dict;
 
 import com.company.demo.entity.orgstructure.Department;
-import com.company.demo.service.i18n.LocalizedValues;
 import io.jmix.core.DeletePolicy;
 import io.jmix.core.annotation.DeletedBy;
 import io.jmix.core.annotation.DeletedDate;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
 import io.jmix.core.entity.annotation.OnDeleteInverse;
-import io.jmix.core.metamodel.annotation.DependsOnProperties;
 import io.jmix.core.metamodel.annotation.InstanceName;
 import io.jmix.core.metamodel.annotation.JmixEntity;
 import jakarta.persistence.*;
@@ -41,19 +39,13 @@ public class DictDataDomain {
     @NotNull
     private String code;
 
-    @Column(name = "SHORT_NAME_RU", nullable = false)
+    @InstanceName
+    @Column(name = "SHORT_NAME", nullable = false)
     @NotNull
-    private String shortNameRu;
+    private String shortName;
 
-    @NotNull
-    @Column(name = "SHORT_NAME_UZ", nullable = false, length = 500)
-    private String shortNameUz;
-
-    @Column(name = "LONG_NAME_RU", length = 1000)
-    private String longNameRu;
-
-    @Column(name = "LONG_NAME_UZ", length = 1000)
-    private String longNameUz;
+    @Column(name = "LONG_NAME", length = 1000)
+    private String longName;
 
     @NotNull
     @OnDeleteInverse(DeletePolicy.UNLINK)
@@ -65,11 +57,8 @@ public class DictDataDomain {
     @NotNull
     private LocalDate assignDate;
 
-    @Column(name = "DESCRIPTION_RU", length = 2000)
-    private String descriptionRu;
-
-    @Column(name = "DESCRIPTION_UZ", length = 2000)
-    private String descriptionUz;
+    @Column(name = "DESCRIPTION", length = 2000)
+    private String description;
 
     @Column(name = "VERSION", nullable = false)
     @Version
@@ -99,26 +88,12 @@ public class DictDataDomain {
     @Column(name = "LAST_MODIFIED_DATE")
     private OffsetDateTime lastModifiedDate;
 
-    @InstanceName
-    @DependsOnProperties({"shortNameRu", "shortNameUz"})
-    public String getLocaledShortName(LocalizedValues localizedValues) {
-        return localizedValues.pick(shortNameRu, shortNameUz);
+    public String getDescription() {
+        return description;
     }
 
-    public String getDescriptionUz() {
-        return descriptionUz;
-    }
-
-    public void setDescriptionUz(String descriptionUz) {
-        this.descriptionUz = descriptionUz;
-    }
-
-    public String getDescriptionRu() {
-        return descriptionRu;
-    }
-
-    public void setDescriptionRu(String description) {
-        this.descriptionRu = description;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public LocalDate getAssignDate() {
@@ -137,36 +112,20 @@ public class DictDataDomain {
         this.businessOwner = businessOwner;
     }
 
-    public String getLongNameUz() {
-        return longNameUz;
+    public String getLongName() {
+        return longName;
     }
 
-    public void setLongNameUz(String longNameUz) {
-        this.longNameUz = longNameUz;
+    public void setLongName(String longName) {
+        this.longName = longName;
     }
 
-    public String getLongNameRu() {
-        return longNameRu;
+    public String getShortName() {
+        return shortName;
     }
 
-    public void setLongNameRu(String longName) {
-        this.longNameRu = longName;
-    }
-
-    public String getShortNameUz() {
-        return shortNameUz;
-    }
-
-    public void setShortNameUz(String shortNameUz) {
-        this.shortNameUz = shortNameUz;
-    }
-
-    public String getShortNameRu() {
-        return shortNameRu;
-    }
-
-    public void setShortNameRu(String shortName) {
-        this.shortNameRu = shortName;
+    public void setShortName(String shortName) {
+        this.shortName = shortName;
     }
 
     public String getCode() {

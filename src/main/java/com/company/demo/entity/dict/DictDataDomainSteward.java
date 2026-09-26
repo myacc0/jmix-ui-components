@@ -5,6 +5,7 @@ import io.jmix.core.DeletePolicy;
 import io.jmix.core.annotation.DeletedBy;
 import io.jmix.core.annotation.DeletedDate;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
+import io.jmix.core.entity.annotation.OnDelete;
 import io.jmix.core.entity.annotation.OnDeleteInverse;
 import io.jmix.core.metamodel.annotation.JmixEntity;
 import jakarta.persistence.*;
@@ -29,6 +30,7 @@ public class DictDataDomainSteward {
     @Id
     private Integer id;
 
+    @OnDelete(DeletePolicy.UNLINK)
     @NotNull
     @OnDeleteInverse(DeletePolicy.CASCADE)
     @JoinColumn(name = "DOMAIN_ID", nullable = false)
@@ -48,11 +50,8 @@ public class DictDataDomainSteward {
     @Column(name = "DATE_END")
     private LocalDate dateEnd;
 
-    @Column(name = "NOTES_RU", length = 1000)
-    private String notesRu;
-
-    @Column(name = "NOTES_UZ", length = 1000)
-    private String notesUz;
+    @Column(name = "NOTES", length = 1000)
+    private String notes;
 
     @Column(name = "VERSION", nullable = false)
     @Version
@@ -90,20 +89,12 @@ public class DictDataDomainSteward {
         this.domain = domain;
     }
 
-    public String getNotesUz() {
-        return notesUz;
+    public String getNotes() {
+        return notes;
     }
 
-    public void setNotesUz(String notesUz) {
-        this.notesUz = notesUz;
-    }
-
-    public String getNotesRu() {
-        return notesRu;
-    }
-
-    public void setNotesRu(String notes) {
-        this.notesRu = notes;
+    public void setNotes(String notes) {
+        this.notes = notes;
     }
 
     public LocalDate getDateEnd() {

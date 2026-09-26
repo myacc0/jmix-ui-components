@@ -38,15 +38,7 @@
             </entityPicker>
             <datePicker id="dateBeginField" property="dateBegin"/>
             <datePicker id="dateEndField" property="dateEnd"/>
-
-            <div classNames="form-lang-group">
-                <formItem label="msg://com.company.demo.entity.dict/DictDataDomainSteward.notesRu">
-                    <textArea id="notesRuField" property="notesRu" minRows="3"/>
-                </formItem>
-                <formItem label="msg://com.company.demo.entity.dict/DictDataDomainSteward.notesUz">
-                    <textArea id="notesUzField" property="notesUz" minRows="3"/>
-                </formItem>
-            </div>
+            <textArea id="notesField" property="notes" minRows="3"/>
         </formLayout>
         <hbox id="detailActions">
             <button id="saveAndCloseButton" action="saveCloseAction"/>

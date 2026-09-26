@@ -46,8 +46,7 @@
                     <column property="employee"/>
                     <column property="dateBegin"/>
                     <column property="dateEnd"/>
-                    <column property="notesRu"/>
-                    <column property="notesUz"/>
+                    <column property="notes"/>
                 </columns>
             </dataGrid>
         </vbox>

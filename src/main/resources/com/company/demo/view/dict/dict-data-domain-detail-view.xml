@@ -51,31 +51,9 @@
                             </actions>
                         </entityPicker>
                         <datePicker id="assignDateField" property="assignDate" dataContainer="dictDataDomainDc"/>
-
-                        <div classNames="form-lang-group">
-                            <formItem label="msg://com.company.demo.entity.dict/DictDataDomain.shortNameRu">
-                                <textField id="shortNameRuField" property="shortNameRu"/>
-                            </formItem>
-                            <formItem label="msg://com.company.demo.entity.dict/DictDataDomain.shortNameUz">
-                                <textField id="shortNameUzField" property="shortNameUz"/>
-                            </formItem>
-                        </div>
-                        <div classNames="form-lang-group">
-                            <formItem label="msg://com.company.demo.entity.dict/DictDataDomain.longNameRu">
-                                <textField id="longNameRuField" property="longNameRu"/>
-                            </formItem>
-                            <formItem label="msg://com.company.demo.entity.dict/DictDataDomain.longNameUz">
-                                <textField id="longNameUzField" property="longNameUz"/>
-                            </formItem>
-                        </div>
-                        <div classNames="form-lang-group">
-                            <formItem label="msg://com.company.demo.entity.dict/DictDataDomain.descriptionRu">
-                                <textArea id="descriptionRuField" property="descriptionRu" minRows="5"/>
-                            </formItem>
-                            <formItem label="msg://com.company.demo.entity.dict/DictDataDomain.descriptionUz">
-                                <textArea id="descriptionUzField" property="descriptionUz" minRows="5"/>
-                            </formItem>
-                        </div>
+                        <textField id="shortNameField" property="shortName"/>
+                        <textField id="longNameField" property="longName"/>
+                        <textArea id="descriptionField" property="description" minRows="5"/>
                     </formLayout>
                 </vbox>
             </tab>

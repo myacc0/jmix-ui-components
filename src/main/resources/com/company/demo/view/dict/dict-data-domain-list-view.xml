@@ -52,14 +52,11 @@
             <columns resizable="true">
                 <column property="parent"/>
                 <column property="code"/>
-                <column property="shortNameRu"/>
-                <column property="shortNameUz"/>
-                <column property="longNameRu"/>
-                <column property="longNameUz"/>
+                <column property="shortName"/>
+                <column property="longName"/>
                 <column property="businessOwner"/>
                 <column property="assignDate"/>
-                <column property="descriptionRu"/>
-                <column property="descriptionUz"/>
+                <column property="description"/>
             </columns>
         </treeDataGrid>
         <hbox id="lookupActions" visible="false">
