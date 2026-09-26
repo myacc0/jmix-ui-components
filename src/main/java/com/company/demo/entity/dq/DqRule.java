@@ -1,7 +1,7 @@
 package com.company.demo.entity.dq;
 
-import com.company.demo.entity.orgstructure.Department;
-import com.company.demo.entity.orgstructure.Employee;
+import com.company.demo.entity.dict.Department;
+import com.company.demo.entity.dict.Employee;
 import com.company.demo.entity.User;
 import com.company.demo.enums.dq.DqDimension;
 import com.company.demo.enums.dq.DqRuleType;

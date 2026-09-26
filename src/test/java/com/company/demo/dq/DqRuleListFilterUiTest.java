@@ -5,7 +5,7 @@ import com.company.demo.dto.SelectDto;
 import com.company.demo.entity.dq.DqRule;
 import com.company.demo.service.dq.DqDataSourceProvider;
 import com.company.demo.test_support.AuthenticatedAsAdmin;
-import com.company.demo.view.dqrule.DqRuleListView;
+import com.company.demo.view.dq.DqRuleListView;
 import io.jmix.flowui.ViewNavigators;
 import io.jmix.flowui.component.combobox.JmixComboBox;
 import io.jmix.flowui.component.grid.DataGrid;

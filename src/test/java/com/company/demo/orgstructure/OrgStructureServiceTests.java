@@ -1,10 +1,10 @@
 package com.company.demo.orgstructure;
 
 import com.company.demo.dto.orgstructure.OrgChartNode;
-import com.company.demo.entity.orgstructure.Department;
-import com.company.demo.entity.orgstructure.Employee;
-import com.company.demo.entity.orgstructure.JobTitle;
-import com.company.demo.entity.orgstructure.Position;
+import com.company.demo.entity.dict.Department;
+import com.company.demo.entity.dict.Employee;
+import com.company.demo.entity.dict.JobTitle;
+import com.company.demo.entity.dict.Position;
 import com.company.demo.enums.orgstructure.PositionStatus;
 import com.company.demo.service.orgstructure.OrgStructureService;
 import com.company.demo.test_support.AuthenticatedAsAdmin;

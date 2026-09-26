@@ -3,7 +3,7 @@
       xmlns:app="http://com.company.demo/schema/app-ui-components"
       title="msg://OrgStructureView.title">
     <data>
-        <collection id="departmentsDc" class="com.company.demo.entity.orgstructure.Department">
+        <collection id="departmentsDc" class="com.company.demo.entity.dict.Department">
             <fetchPlan extends="_base">
                 <property name="parentDepartment" fetchPlan="_instance_name"/>
             </fetchPlan>

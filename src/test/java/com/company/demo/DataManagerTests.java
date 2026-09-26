@@ -1,6 +1,6 @@
 package com.company.demo;
 
-import com.company.demo.entity.orgstructure.Department;
+import com.company.demo.entity.dict.Department;
 import io.jmix.core.UnconstrainedDataManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

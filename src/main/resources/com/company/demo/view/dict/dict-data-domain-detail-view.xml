@@ -43,7 +43,8 @@
                             </actions>
                         </entityPicker>
                         <textField id="codeField" property="code" dataContainer="dictDataDomainDc"/>
-
+                        <textField id="shortNameField" property="shortName"/>
+                        <textField id="longNameField" property="longName"/>
                         <entityPicker id="businessOwnerField" property="businessOwner" dataContainer="dictDataDomainDc">
                             <actions>
                                 <action id="entityLookupAction" type="entity_lookup"/>
@@ -51,8 +52,6 @@
                             </actions>
                         </entityPicker>
                         <datePicker id="assignDateField" property="assignDate" dataContainer="dictDataDomainDc"/>
-                        <textField id="shortNameField" property="shortName"/>
-                        <textField id="longNameField" property="longName"/>
                         <textArea id="descriptionField" property="description" minRows="5"/>
                     </formLayout>
                 </vbox>

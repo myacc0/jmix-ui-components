@@ -1,6 +1,6 @@
 package com.company.demo.orgstructure;
 
-import com.company.demo.entity.orgstructure.Employee;
+import com.company.demo.entity.dict.Employee;
 import com.company.demo.service.orgstructure.EmployeePhotoService;
 import com.company.demo.test_support.AuthenticatedAsAdmin;
 import io.jmix.core.DataManager;

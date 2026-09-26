@@ -4,7 +4,7 @@ import com.company.demo.DemoApplication;
 import com.company.demo.entity.dq.DqCheckRun;
 import com.company.demo.enums.dq.DqCheckRunStatus;
 import com.company.demo.test_support.AuthenticatedAsAdmin;
-import com.company.demo.view.dqcheckrun.DqCheckRunListView;
+import com.company.demo.view.dq.DqCheckRunListView;
 import io.jmix.core.DataManager;
 import io.jmix.flowui.ViewNavigators;
 import io.jmix.flowui.component.grid.DataGrid;

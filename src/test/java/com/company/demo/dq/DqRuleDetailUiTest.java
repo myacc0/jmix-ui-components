@@ -9,7 +9,7 @@ import com.company.demo.enums.dq.DqRuleType;
 import com.company.demo.enums.dq.DqSeverity;
 import com.company.demo.service.dq.DqRuleValidator;
 import com.company.demo.test_support.AuthenticatedAsAdmin;
-import com.company.demo.view.dqrule.DqRuleDetailView;
+import com.company.demo.view.dq.DqRuleDetailView;
 import io.jmix.core.DataManager;
 import io.jmix.core.FetchPlan;
 import io.jmix.flowui.ViewNavigators;

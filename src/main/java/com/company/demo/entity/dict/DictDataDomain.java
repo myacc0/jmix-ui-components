@@ -1,6 +1,5 @@
 package com.company.demo.entity.dict;
 
-import com.company.demo.entity.orgstructure.Department;
 import io.jmix.core.DeletePolicy;
 import io.jmix.core.annotation.DeletedBy;
 import io.jmix.core.annotation.DeletedDate;

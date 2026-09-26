@@ -2,10 +2,10 @@ package com.company.demo.service.orgstructure;
 
 import com.company.demo.dto.orgstructure.D3OrgChartCsvItem;
 import com.company.demo.dto.orgstructure.OrgChartNode;
-import com.company.demo.entity.orgstructure.Department;
-import com.company.demo.entity.orgstructure.Employee;
-import com.company.demo.entity.orgstructure.JobTitle;
-import com.company.demo.entity.orgstructure.Position;
+import com.company.demo.entity.dict.Department;
+import com.company.demo.entity.dict.Employee;
+import com.company.demo.entity.dict.JobTitle;
+import com.company.demo.entity.dict.Position;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opencsv.bean.CsvToBean;

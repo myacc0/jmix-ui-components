@@ -11,7 +11,7 @@ import com.company.demo.enums.dq.DqDimension;
 import com.company.demo.enums.dq.DqRuleType;
 import com.company.demo.enums.dq.DqSeverity;
 import com.company.demo.test_support.AuthenticatedAsAdmin;
-import com.company.demo.view.dqcheckrun.DqCheckRunDetailView;
+import com.company.demo.view.dq.DqCheckRunDetailView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.dialog.Dialog;

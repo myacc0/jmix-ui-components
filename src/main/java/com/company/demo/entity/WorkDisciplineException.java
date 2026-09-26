@@ -1,8 +1,8 @@
 package com.company.demo.entity;
 
-import com.company.demo.entity.orgstructure.Department;
-import com.company.demo.entity.orgstructure.Employee;
-import com.company.demo.entity.orgstructure.JobTitle;
+import com.company.demo.entity.dict.Department;
+import com.company.demo.entity.dict.Employee;
+import com.company.demo.entity.dict.JobTitle;
 import io.jmix.core.DeletePolicy;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
 import io.jmix.core.entity.annotation.OnDeleteInverse;
