@@ -30,9 +30,9 @@
     <layout>
         <hbox id="buttonsPanel" classNames="buttons-panel">
             <startSlot>
-                <button id="createButton" action="dictDataDomainsDataGrid.createAction"/>
-                <button id="editButton" action="dictDataDomainsDataGrid.editAction"/>
-                <button id="removeButton" action="dictDataDomainsDataGrid.removeAction"/>
+                <button id="createButton" action="dictDataDomainsDataGrid.createAction" text="" title="msg:///actions.Create"/>
+                <button id="editButton" action="dictDataDomainsDataGrid.editAction" text="" title="msg:///actions.Edit"/>
+                <button id="removeButton" action="dictDataDomainsDataGrid.removeAction" text="" title="msg:///actions.Remove"/>
             </startSlot>
             <endSlot>
                 <simplePagination id="pagination" dataLoader="dictDataDomainsDl"/>

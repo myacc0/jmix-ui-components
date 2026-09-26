@@ -27,9 +27,9 @@
     <layout>
         <hbox id="buttonsPanel" classNames="buttons-panel">
             <startSlot>
-                <button id="createButton" action="jobTitlesDataGrid.createAction"/>
-                <button id="editButton" action="jobTitlesDataGrid.editAction"/>
-                <button id="removeButton" action="jobTitlesDataGrid.removeAction"/>
+                <button id="createButton" action="jobTitlesDataGrid.createAction" text="" title="msg:///actions.Create"/>
+                <button id="editButton" action="jobTitlesDataGrid.editAction" text="" title="msg:///actions.Edit"/>
+                <button id="removeButton" action="jobTitlesDataGrid.removeAction" text="" title="msg:///actions.Remove"/>
             </startSlot>
             <endSlot>
                 <simplePagination id="pagination" dataLoader="jobTitlesDl"/>

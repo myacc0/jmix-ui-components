@@ -29,9 +29,9 @@
     <layout>
         <hbox id="buttonsPanel" classNames="buttons-panel">
             <startSlot>
-                <button id="createButton" action="departmentsDataGrid.createAction"/>
-                <button id="editButton" action="departmentsDataGrid.editAction"/>
-                <button id="removeButton" action="departmentsDataGrid.removeAction"/>
+                <button id="createButton" action="departmentsDataGrid.createAction" text="" title="msg:///actions.Create"/>
+                <button id="editButton" action="departmentsDataGrid.editAction" text="" title="msg:///actions.Edit"/>
+                <button id="removeButton" action="departmentsDataGrid.removeAction" text="" title="msg:///actions.Remove"/>
             </startSlot>
             <endSlot>
                 <simplePagination id="pagination" dataLoader="departmentsDl"/>

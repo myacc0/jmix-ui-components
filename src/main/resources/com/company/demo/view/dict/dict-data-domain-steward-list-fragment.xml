@@ -20,9 +20,9 @@
     <content>
         <vbox id="root" width="100%" padding="false">
             <hbox id="buttonsPanel" classNames="buttons-panel">
-                <button id="createButton" action="stewardsDataGrid.createAction"/>
-                <button id="editButton" action="stewardsDataGrid.editAction"/>
-                <button id="removeButton" action="stewardsDataGrid.removeAction"/>
+                <button id="createButton" action="stewardsDataGrid.createAction" text="" title="msg:///actions.Create"/>
+                <button id="editButton" action="stewardsDataGrid.editAction" text="" title="msg:///actions.Edit"/>
+                <button id="removeButton" action="stewardsDataGrid.removeAction" text="" title="msg:///actions.Remove"/>
             </hbox>
             <dataGrid id="stewardsDataGrid"
                       width="100%"
