@@ -4,7 +4,6 @@ import io.jmix.core.DeletePolicy;
 import io.jmix.core.annotation.DeletedBy;
 import io.jmix.core.annotation.DeletedDate;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
-import io.jmix.core.entity.annotation.OnDelete;
 import io.jmix.core.entity.annotation.OnDeleteInverse;
 import io.jmix.core.metamodel.annotation.JmixEntity;
 import jakarta.persistence.*;
@@ -29,7 +28,6 @@ public class DictDataDomainSteward {
     @Id
     private Integer id;
 
-    @OnDelete(DeletePolicy.UNLINK)
     @NotNull
     @OnDeleteInverse(DeletePolicy.CASCADE)
     @JoinColumn(name = "DOMAIN_ID", nullable = false)
