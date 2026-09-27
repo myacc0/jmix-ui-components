@@ -22,9 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.jdbc.core.JdbcTemplate;
 
-import javax.sql.DataSource;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -55,8 +53,6 @@ class DataStructureServiceTests {
 
     @Autowired
     private DataManager dataManager;
-    @Autowired
-    private DataSource dataSource;
     @Autowired
     private DataStructureService dataStructureService;
 
@@ -322,19 +318,10 @@ class DataStructureServiceTests {
         // row would keep its foreign key to the department, so they are removed for real.
         List<Object> reversed = new ArrayList<>(cleanup);
         Collections.reverse(reversed);
-        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
         for (Object entity : reversed) {
-            // a steward cannot go through DataManager: @OnDelete(UNLINK) on its NOT NULL
-            // domain / product reference nulls the column before the delete and fails
-            if (entity instanceof DictDataDomainSteward steward) {
-                jdbc.update("delete from DEMO_DICT_DATA_DOMAIN_STEWARD where ID = ?", steward.getId());
-            } else if (entity instanceof DictDataProductSteward steward) {
-                jdbc.update("delete from DEMO_DICT_DATA_PRODUCT_STEWARD where ID = ?", steward.getId());
-            } else {
-                dataManager.save(new SaveContext()
-                        .removing(entity)
-                        .setHint(PersistenceHints.SOFT_DELETION, false));
-            }
+            dataManager.save(new SaveContext()
+                    .removing(entity)
+                    .setHint(PersistenceHints.SOFT_DELETION, false));
         }
         cleanup.clear();
     }
