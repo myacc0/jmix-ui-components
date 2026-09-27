@@ -128,3 +128,54 @@
 .d3-chart-node-department .d3-chart-node-img-container {
     display: none;
 }
+
+/* --- data domain / data product node (node-template="data-asset") --- */
+.d3-chart-node .d3-chart-node-inner.d3-chart-node-asset {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    cursor: pointer;
+}
+.d3-chart-node-asset-img-container {
+    flex: 0 0 56px;
+    width: 56px;
+    height: 56px;
+}
+.d3-chart-node-asset .d3-chart-node-img {
+    width: 56px;
+    height: 56px;
+    object-fit: cover;
+}
+.d3-chart-node-asset .d3-chart-node-initials {
+    font-size: 18px;
+}
+/* min-width: 0 lets the flex item shrink, so the long lines ellipsize instead of overflowing */
+.d3-chart-node-asset-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.d3-chart-node-asset-owner,
+.d3-chart-node-asset-name,
+.d3-chart-node-asset-head {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.d3-chart-node-asset-owner {
+    font-size: 11px;
+    color: #716E7B;
+}
+.d3-chart-node-asset-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #08011E;
+}
+.d3-chart-node-asset-head {
+    font-size: 12px;
+    color: #08011E;
+}

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://dataAssetCardView.title">
+    <layout>
+        <hbox id="headSummaryBox" classNames="data-asset-card-summary" width="100%"
+              padding="false" spacing="true" alignItems="START">
+            <image id="headPhotoImage" classNames="data-asset-card-photo" visible="false"/>
+            <span id="headPhotoPlaceholder" classNames="data-asset-card-photo data-asset-card-photo-initials"/>
+
+            <vbox id="headCardHeader" classNames="data-asset-card-header" padding="false" spacing="false">
+                <span classNames="data-asset-card-caption" text="msg://dataAssetCardView.head"/>
+                <h4 id="headNameLabel"/>
+                <span classNames="data-asset-card-subtitle">
+                    <span id="headJobTitleLabel"/>
+                    <span classNames="data-asset-card-subtitle-separator"/>
+                    <span id="headDepartmentLabel"/>
+                </span>
+                <span id="headContactsBox" classNames="data-asset-card-subtitle data-asset-card-subtitle-contacts">
+                    <icon icon="vaadin:envelope-o" size="S"/>
+                    <span id="headEmailLabel"/>
+                </span>
+            </vbox>
+        </hbox>
+
+        <div id="detailsBox" classNames="data-asset-card-details" width="100%">
+            <span classNames="data-asset-card-label" text="msg://dataAssetCardView.longName"/>
+            <span id="longNameValue" classNames="data-asset-card-value"/>
+
+            <span classNames="data-asset-card-label" text="msg://dataAssetCardView.description"/>
+            <span id="descriptionValue" classNames="data-asset-card-value data-asset-card-value-multiline"/>
+
+            <span classNames="data-asset-card-label" text="msg://dataAssetCardView.createdDate"/>
+            <span id="createdDateValue" classNames="data-asset-card-value"/>
+
+            <span classNames="data-asset-card-label" text="msg://dataAssetCardView.assignDate"/>
+            <span id="assignDateValue" classNames="data-asset-card-value"/>
+
+            <span classNames="data-asset-card-label" text="msg://dataAssetCardView.businessOwner"/>
+            <span id="businessOwnerValue" classNames="data-asset-card-value"/>
+
+            <span classNames="data-asset-card-label" text="msg://dataAssetCardView.stewards"/>
+            <div id="stewardsValue" classNames="data-asset-card-value data-asset-card-stewards"/>
+        </div>
+    </layout>
+</view>

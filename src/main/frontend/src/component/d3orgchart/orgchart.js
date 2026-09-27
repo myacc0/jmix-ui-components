@@ -29,6 +29,75 @@ function avatar(data) {
     return `<div class="d3-chart-node-img d3-chart-node-initials">${escapeHtml(initials(data.name))}</div>`;
 }
 
+/** Position node of OrgStructureView: department title, then photo, employee name and job title. */
+function positionNodeContent(d, i, arr, state) {
+    const data = d.data || {};
+    const departmentOnly = data.departmentNode ? ' d3-chart-node-department' : '';
+    return `
+        <div class="d3-chart-node" style="width:${d.width}px; height:${d.height}px;">
+            <div class="d3-chart-node-inner${departmentOnly}"
+                data-id="${escapeHtml(data.id)}"
+                style="width:${d.width}px; height:${d.height}px;">
+
+                <div class="d3-chart-node-title">
+                    ${escapeHtml(data.orgLevelName)}
+                </div>
+                <div class="d3-chart-node-content">
+                    <div class="d3-chart-node-img-container">
+                        ${avatar(data)}
+                    </div>
+                    <div class="d3-chart-node-content-text">
+                        <div class="d3-chart-node-name">
+                            ${escapeHtml(data.name)}
+                        </div>
+                        <div class="d3-chart-node-position">
+                            ${escapeHtml(data.position)}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Data domain / data product node: the photo of the business owner head on the left (the
+ * initials of the domain / product name when there is none), and on the right the business
+ * owner, the domain / product name and the head name — see DataAssetChartNode.
+ */
+function dataAssetNodeContent(d, i, arr, state) {
+    const data = d.data || {};
+    return `
+        <div class="d3-chart-node" style="width:${d.width}px; height:${d.height}px;">
+            <div class="d3-chart-node-inner d3-chart-node-asset"
+                data-id="${escapeHtml(data.id)}"
+                style="width:${d.width}px; height:${d.height}px;">
+
+                <div class="d3-chart-node-asset-img-container">
+                    ${avatar(data)}
+                </div>
+                <div class="d3-chart-node-asset-text">
+                    <div class="d3-chart-node-asset-owner" title="${escapeHtml(data.businessOwnerName)}">
+                        ${escapeHtml(data.businessOwnerName)}
+                    </div>
+                    <div class="d3-chart-node-asset-name" title="${escapeHtml(data.name)}">
+                        ${escapeHtml(data.name)}
+                    </div>
+                    <div class="d3-chart-node-asset-head" title="${escapeHtml(data.headName)}">
+                        ${escapeHtml(data.headName)}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/** Node layouts by the value of the node-template attribute (D3OrgChart.NodeTemplate). */
+const NODE_TEMPLATES = {
+    'position': { width: 240, height: 105, content: positionNodeContent },
+    'data-asset': { width: 300, height: 100, content: dataAssetNodeContent },
+};
+
 class D3OrgChart extends HTMLElement {
 
     connectedCallback() {
@@ -74,42 +143,15 @@ class D3OrgChart extends HTMLElement {
      * "translate(NaN,NaN)" for every exiting node.
      */
     createChart(nodes) {
+        const template = NODE_TEMPLATES[this.getAttribute('node-template')] || NODE_TEMPLATES.position;
         return new OrgChart()
-            .nodeHeight((d) => 105)
-            .nodeWidth((d) => 240)
+            .nodeHeight((d) => template.height)
+            .nodeWidth((d) => template.width)
             .childrenMargin((d) => 50)
             .compactMarginBetween((d) => 35)
             .compactMarginPair((d) => 30)
             .neighbourMargin((a, b) => 20)
-            .nodeContent(function (d, i, arr, state) {
-                const data = d.data || {};
-                const departmentOnly = data.departmentNode ? ' d3-chart-node-department' : '';
-                return `
-                    <div class="d3-chart-node" style="width:${d.with}px; height:${d.height}px;">
-                        <div class="d3-chart-node-inner${departmentOnly}"
-                            data-id="${escapeHtml(data.id)}"
-                            style="width:${d.with}px; height:${d.height}px;">
-
-                            <div class="d3-chart-node-title">
-                                ${escapeHtml(data.orgLevelName)}
-                            </div>
-                            <div class="d3-chart-node-content">
-                                <div class="d3-chart-node-img-container">
-                                    ${avatar(data)}
-                                </div>
-                                <div class="d3-chart-node-content-text">
-                                    <div class="d3-chart-node-name">
-                                        ${escapeHtml(data.name)}
-                                    </div>
-                                    <div class="d3-chart-node-position">
-                                        ${escapeHtml(data.position)}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            })
+            .nodeContent(template.content)
             .container('.d3-orgchart-container')
             .data(nodes)
             .render();

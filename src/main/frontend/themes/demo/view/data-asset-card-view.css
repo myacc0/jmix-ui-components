@@ -1,0 +1,89 @@
+/*
+ * Data domain / data product card dialog opened from a d3-org-chart node
+ * (DataAssetCardView). Unlike the employee card, the dialog keeps its generated header:
+ * the domain / product name is the dialog title.
+ */
+
+/* --- head of the business owner: photo on the left, name / position / contacts on the right --- */
+.data-asset-card-summary {
+    padding-bottom: var(--lumo-space-m);
+    border-bottom: 1px solid var(--lumo-contrast-10pct);
+}
+
+.data-asset-card-photo {
+    width: 120px;
+    height: 120px;
+    min-width: 120px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+/* shown instead of the photo when the head has none: the initials of the domain / product */
+.data-asset-card-photo-initials {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f0f0f0;
+    color: #716E7B;
+    font-size: 36px;
+    font-weight: 600;
+}
+
+.data-asset-card-caption {
+    font-size: var(--lumo-font-size-xs);
+    color: var(--lumo-secondary-text-color);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.data-asset-card-header h4 {
+    margin-top: 2px;
+}
+
+.data-asset-card-subtitle {
+    margin-top: 5px;
+    font-size: var(--lumo-font-size-s);
+    color: var(--lumo-secondary-text-color);
+}
+.data-asset-card-subtitle .data-asset-card-subtitle-separator {
+    display: inline-block;
+    vertical-align: middle;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background-color: var(--lumo-secondary-text-color);
+    margin: 0 5px 2px 5px;
+}
+.data-asset-card-subtitle-contacts span {
+    margin-left: 5px;
+    vertical-align: middle;
+}
+
+/* --- details: caption column + value column --- */
+.data-asset-card-details {
+    display: grid;
+    grid-template-columns: minmax(10em, max-content) 1fr;
+    column-gap: var(--lumo-space-l);
+    row-gap: var(--lumo-space-s);
+    padding-top: var(--lumo-space-m);
+    font-size: var(--lumo-font-size-s);
+}
+
+.data-asset-card-label {
+    color: var(--lumo-secondary-text-color);
+}
+
+.data-asset-card-value {
+    color: var(--lumo-body-text-color);
+    overflow-wrap: anywhere;
+}
+
+.data-asset-card-value-multiline {
+    white-space: pre-line;
+}
+
+.data-asset-card-stewards {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}

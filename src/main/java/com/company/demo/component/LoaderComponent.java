@@ -93,7 +93,7 @@ public class LoaderComponent extends VerticalLayout {
     }
 
     private void addLogo() {
-        var logo = new SvgIcon("images/logo.svg");
+        var logo = new SvgIcon("images/logo.png");
         logo.addClassName("loader-animation");
         logo.setSize(logoSize);
         add(logo);

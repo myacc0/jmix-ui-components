@@ -4,6 +4,10 @@
     <menu id="application" title="msg://com.company.demo/menu.application.title">
         <item view="demo_User.list" title="msg://com.company.demo.view.user/UserListView.title"/>
         <item view="demo_OrgStructure" title="msg://com.company.demo.view.orgstructure/OrgStructureView.title"/>
+        <item view="demo_DataDomainStructure"
+              title="msg://com.company.demo.view.datastructure/dataDomainStructureView.title"/>
+        <item view="demo_DataProductStructure"
+              title="msg://com.company.demo.view.datastructure/dataProductStructureView.title"/>
     </menu>
     <menu id="catalog" description="msg://com.company.demo/menu_config.catalog.description"
           title="msg://com.company.demo/menu_config.catalog.title">

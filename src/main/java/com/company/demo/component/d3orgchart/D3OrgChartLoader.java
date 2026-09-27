@@ -13,5 +13,7 @@ public class D3OrgChartLoader extends AbstractComponentLoader<D3OrgChart> {
     public void loadComponent() {
         componentLoader().loadSizeAttributes(resultComponent, element);
         componentLoader().loadClassNames(resultComponent, element);
+        loadEnum(element, D3OrgChart.NodeTemplate.class, "nodeTemplate")
+                .ifPresent(resultComponent::setNodeTemplate);
     }
 }

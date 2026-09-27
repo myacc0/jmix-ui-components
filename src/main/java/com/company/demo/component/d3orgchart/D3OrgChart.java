@@ -16,8 +16,43 @@ import com.vaadin.flow.shared.Registration;
 @NpmPackage(value = "d3-org-chart", version = "3.1.1")
 public class D3OrgChart extends Component implements HasSize {
 
+    /**
+     * Layout of a chart node, see {@code NODE_TEMPLATES} in orgchart.js. Set it before the
+     * first {@link #setData(String)} call — the template is read when the chart is built.
+     */
+    public enum NodeTemplate {
+        /** Department title on top, then the employee photo, name and job title. */
+        POSITION("position"),
+        /**
+         * Head photo on the left; business owner, domain / product name and head name on the
+         * right — see {@code DataAssetChartNode}.
+         */
+        DATA_ASSET("data-asset");
+
+        private final String id;
+
+        NodeTemplate(String id) {
+            this.id = id;
+        }
+
+        public String getId() {
+            return id;
+        }
+    }
+
+    private NodeTemplate nodeTemplate = NodeTemplate.POSITION;
+
     public void setData(String json) {
         getElement().callJsFunction("setData", json);
+    }
+
+    public NodeTemplate getNodeTemplate() {
+        return nodeTemplate;
+    }
+
+    public void setNodeTemplate(NodeTemplate nodeTemplate) {
+        this.nodeTemplate = nodeTemplate != null ? nodeTemplate : NodeTemplate.POSITION;
+        getElement().setAttribute("node-template", this.nodeTemplate.getId());
     }
 
     /**

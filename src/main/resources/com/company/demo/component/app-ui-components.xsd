@@ -41,6 +41,14 @@
                 <xs:extension base="layout:baseComponent">
                     <xs:attributeGroup ref="layout:hasSize"/>
                     <xs:attribute name="classNames" type="xs:string"/>
+                    <xs:attribute name="nodeTemplate">
+                        <xs:simpleType>
+                            <xs:restriction base="xs:string">
+                                <xs:enumeration value="POSITION"/>
+                                <xs:enumeration value="DATA_ASSET"/>
+                            </xs:restriction>
+                        </xs:simpleType>
+                    </xs:attribute>
                 </xs:extension>
             </xs:complexContent>
         </xs:complexType>
