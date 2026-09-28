@@ -8,7 +8,6 @@
             <span id="headPhotoPlaceholder" classNames="data-asset-card-photo data-asset-card-photo-initials"/>
 
             <vbox id="headCardHeader" classNames="data-asset-card-header" padding="false" spacing="false">
-                <span classNames="data-asset-card-caption" text="msg://dataAssetCardView.head"/>
                 <h4 id="headNameLabel"/>
                 <span classNames="data-asset-card-subtitle">
                     <span id="headJobTitleLabel"/>

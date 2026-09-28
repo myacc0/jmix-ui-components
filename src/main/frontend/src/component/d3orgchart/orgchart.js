@@ -32,27 +32,24 @@ function avatar(data) {
 /** Position node of OrgStructureView: department title, then photo, employee name and job title. */
 function positionNodeContent(d, i, arr, state) {
     const data = d.data || {};
-    const departmentOnly = data.departmentNode ? ' d3-chart-node-department' : '';
     return `
         <div class="d3-chart-node" style="width:${d.width}px; height:${d.height}px;">
-            <div class="d3-chart-node-inner${departmentOnly}"
+            <div class="d3-chart-node-inner d3-chart-node-asset"
                 data-id="${escapeHtml(data.id)}"
                 style="width:${d.width}px; height:${d.height}px;">
-
-                <div class="d3-chart-node-title">
-                    ${escapeHtml(data.orgLevelName)}
+                
+                <div class="d3-chart-node-asset-img-container">
+                    ${avatar(data)}
                 </div>
-                <div class="d3-chart-node-content">
-                    <div class="d3-chart-node-img-container">
-                        ${avatar(data)}
+                <div class="d3-chart-node-asset-text">
+                    <div class="d3-chart-node-name">
+                        ${escapeHtml(data.name)}
                     </div>
-                    <div class="d3-chart-node-content-text">
-                        <div class="d3-chart-node-name">
-                            ${escapeHtml(data.name)}
-                        </div>
-                        <div class="d3-chart-node-position">
-                            ${escapeHtml(data.position)}
-                        </div>
+                    <div class="d3-chart-node-position">
+                        ${escapeHtml(data.position)}
+                    </div>
+                    <div class="d3-chart-node-title">
+                        ${escapeHtml(data.orgLevelName)}
                     </div>
                 </div>
             </div>
@@ -77,14 +74,14 @@ function dataAssetNodeContent(d, i, arr, state) {
                     ${avatar(data)}
                 </div>
                 <div class="d3-chart-node-asset-text">
-                    <div class="d3-chart-node-asset-owner" title="${escapeHtml(data.businessOwnerName)}">
-                        ${escapeHtml(data.businessOwnerName)}
-                    </div>
                     <div class="d3-chart-node-asset-name" title="${escapeHtml(data.name)}">
                         ${escapeHtml(data.name)}
                     </div>
                     <div class="d3-chart-node-asset-head" title="${escapeHtml(data.headName)}">
                         ${escapeHtml(data.headName)}
+                    </div>
+                    <div class="d3-chart-node-asset-owner" title="${escapeHtml(data.businessOwnerName)}">
+                        ${escapeHtml(data.businessOwnerName)}
                     </div>
                 </div>
             </div>
@@ -94,8 +91,8 @@ function dataAssetNodeContent(d, i, arr, state) {
 
 /** Node layouts by the value of the node-template attribute (D3OrgChart.NodeTemplate). */
 const NODE_TEMPLATES = {
-    'position': { width: 240, height: 105, content: positionNodeContent },
-    'data-asset': { width: 300, height: 100, content: dataAssetNodeContent },
+    'position': { width: 360, height: 120, content: positionNodeContent },
+    'data-asset': { width: 360, height: 120, content: dataAssetNodeContent },
 };
 
 class D3OrgChart extends HTMLElement {
