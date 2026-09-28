@@ -91,8 +91,8 @@ function dataAssetNodeContent(d, i, arr, state) {
 
 /** Node layouts by the value of the node-template attribute (D3OrgChart.NodeTemplate). */
 const NODE_TEMPLATES = {
-    'position': { width: 360, height: 120, content: positionNodeContent },
-    'data-asset': { width: 360, height: 120, content: dataAssetNodeContent },
+    'position': { width: 360, height: 110, content: positionNodeContent },
+    'data-asset': { width: 360, height: 110, content: dataAssetNodeContent },
 };
 
 class D3OrgChart extends HTMLElement {
@@ -218,7 +218,7 @@ class D3OrgChart extends HTMLElement {
         container.innerHTML = '';
         this.chart = this.createChart(nodes);
         if (nodes.length > 0) {
-            this.chart.fit();
+            this.chart.render();
         }
     }
 

@@ -76,13 +76,13 @@
     font-family: 'Inter', sans-serif;
 }
 .d3-chart-node-asset-img-container {
-    flex: 0 0 82px;
-    width: 82px;
-    height: 82px;
+    flex: 0 0 94px;
+    width: 94px;
+    height: 94px;
 }
 .d3-chart-node-asset-img-container .d3-chart-node-img {
-    width: 82px;
-    height: 82px;
+    width: 94px;
+    height: 94px;
     object-fit: cover;
     border-radius: 6px;
 }
