@@ -1,8 +1,7 @@
-package com.company.demo.view.datastructure;
+package com.company.demo.view.orgstructure;
 
 import com.company.demo.dto.datastructure.DataAssetChartNode;
 import com.company.demo.view.main.MainView;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.Route;
@@ -60,7 +59,7 @@ public class DataAssetCardView extends StandardView {
     @ViewComponent
     private Span businessOwnerValue;
     @ViewComponent
-    private Div stewardsValue;
+    private Span stewardsValue;
 
     @Autowired
     private MessageBundle messageBundle;
@@ -124,16 +123,11 @@ public class DataAssetCardView extends StandardView {
 
         stewardsValue.removeAll();
         if (node.getStewardNames().isEmpty()) {
-            stewardsValue.add(createValueSpan(EMPTY_VALUE));
+            stewardsValue.setText(EMPTY_VALUE);
         } else {
-            node.getStewardNames().forEach(name -> stewardsValue.add(createValueSpan(name)));
+            String stewardNames = StringUtils.join(node.getStewardNames(), ", ");
+            stewardsValue.setText(stewardNames);
         }
-    }
-
-    private Span createValueSpan(String text) {
-        Span span = uiComponents.create(Span.class);
-        span.setText(text);
-        return span;
     }
 
     private String initials(String name) {
