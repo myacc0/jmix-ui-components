@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://dqCheckRunDetailView.title"
+      focusComponent="form">
+    <data>
+        <instance id="dqCheckRunDc"
+                  class="uz.kapitalbank.umida.entity.dq.DqCheckRun">
+            <fetchPlan extends="_base">
+                <property name="checkResults" fetchPlan="_base">
+                    <property name="rule" fetchPlan="_instance_name"/>
+                </property>
+            </fetchPlan>
+            <loader id="dqCheckRunDl"/>
+            <collection id="checkResultsDc" property="checkResults"/>
+        </instance>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+    </facets>
+    <actions>
+        <action id="closeAction" type="detail_close"/>
+    </actions>
+    <layout>
+        <formLayout id="form" dataContainer="dqCheckRunDc" width="60%">
+            <responsiveSteps>
+                <responsiveStep minWidth="0" columns="1"/>
+            </responsiveSteps>
+            <textField id="dataSourceField" property="dataSource"/>
+            <textField id="triggeredUsernameField" property="triggeredUsername"/>
+            <dateTimePicker id="startedAtField" property="startedAt"/>
+            <dateTimePicker id="finishedAtField" property="finishedAt"/>
+            <select id="statusField" property="status"/>
+            <textField id="rulesTotalField" property="rulesTotal"/>
+            <textField id="rulesPassedField" property="rulesPassed"/>
+            <textField id="rulesFailedField" property="rulesFailed"/>
+            <textField id="rulesSkippedField" property="rulesSkipped"/>
+            <textField id="dqScoreField" property="dqScore"/>
+            <textArea id="errorMessageField" property="errorMessage" minRows="5"/>
+        </formLayout>
+        <hbox id="checkResultsButtonsPanel" classNames="buttons-panel">
+            <button id="executedQueryButton" themeNames="primary" action="checkResultsDataGrid.executedQueryAction"/>
+            <button id="sampleViolationsButton" themeNames="primary" action="checkResultsDataGrid.sampleViolationsAction"/>
+        </hbox>
+        <dataGrid id="checkResultsDataGrid"
+                  width="100%"
+                  minHeight="20em"
+                  dataContainer="checkResultsDc"
+                  columnReorderingAllowed="true">
+            <actions>
+                <action id="executedQueryAction"
+                        type="list_itemTracking"
+                        text="msg://dqCheckRunDetailView.executedQueryAction"
+                        icon="vaadin:code"/>
+                <action id="sampleViolationsAction"
+                        type="list_itemTracking"
+                        text="msg://dqCheckRunDetailView.sampleViolationsAction"
+                        icon="vaadin:file-search"/>
+            </actions>
+            <columns resizable="true">
+                <column key="ruleName"
+                        property="rule.name"
+                        header="msg://dqCheckRunDetailView.ruleNameColumn"
+                        autoWidth="true"
+                        flexGrow="0"/>
+                <column property="status" autoWidth="true" flexGrow="0"/>
+                <column property="totalRecords" autoWidth="true" flexGrow="0"/>
+                <column property="failedRecords" autoWidth="true" flexGrow="0"/>
+                <column property="passRate" autoWidth="true" flexGrow="0"/>
+                <column property="executionMs" autoWidth="true" flexGrow="0"/>
+                <column property="errorMessage" autoWidth="true" flexGrow="1"/>
+            </columns>
+        </dataGrid>
+        <hbox id="detailActions" width="60%" css="padding-bottom: 40px">
+            <button id="closeButton" action="closeAction"/>
+        </hbox>
+    </layout>
+</view>

@@ -1,4 +1,4 @@
-# Demo
+# UMIDA
 
 This is a web application based on the [Jmix](https://www.jmix.io) framework.
 

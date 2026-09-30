@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      xmlns:app="http://uz.kapitalbank.umida/schema/app-ui-components"
+      title="msg://dqRuleDetailView.title"
+      focusComponent="form">
+    <data>
+        <instance id="dqRuleDc" class="uz.kapitalbank.umida.entity.dq.DqRule">
+            <fetchPlan extends="_base">
+                <property name="group" fetchPlan="_instance_name"/>
+                <property name="owner" fetchPlan="_instance_name"/>
+                <property name="domain" fetchPlan="_instance_name"/>
+                <property name="dataProduct" fetchPlan="_instance_name"/>
+                <property name="assigneeSubdivision" fetchPlan="_instance_name"/>
+                <property name="assigneeEmployee" fetchPlan="_instance_name"/>
+            </fetchPlan>
+            <loader id="dqRuleDl"/>
+        </instance>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+    </facets>
+    <actions>
+        <action id="saveCloseAction" type="detail_saveClose"/>
+        <action id="closeAction" type="detail_close"/>
+    </actions>
+    <layout>
+        <formLayout
+                id="form"
+                dataContainer="dqRuleDc"
+                autoResponsive="true"
+                width="50%"
+                expandColumns="true"
+                expandFields="true">
+
+            <hbox classNames="form-block">
+                <span classNames="form-block-title" text="Общая информация"/>
+
+                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.name">
+                    <textField id="nameField" property="name"/>
+                </formItem>
+                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.description">
+                    <textArea id="descriptionField" property="description" minRows="5"/>
+                </formItem>
+                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.group">
+                    <entityPicker id="groupField" property="group" required="true">
+                        <actions>
+                            <action id="entityLookupAction" type="entity_lookup"/>
+                            <action id="entityClearAction" type="entity_clear"/>
+                        </actions>
+                    </entityPicker>
+                </formItem>
+                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.domain">
+                    <entityPicker id="domainField" property="domain" required="true">
+                        <actions>
+                            <action id="entityLookupAction" type="entity_lookup"/>
+                            <action id="entityClearAction" type="entity_clear"/>
+                        </actions>
+                    </entityPicker>
+                </formItem>
+                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.dataProduct">
+                    <entityPicker id="dataProductField" property="dataProduct">
+                        <actions>
+                            <action id="entityLookupAction" type="entity_lookup"/>
+                            <action id="entityClearAction" type="entity_clear"/>
+                        </actions>
+                    </entityPicker>
+                </formItem>
+                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.dimension">
+                    <select id="dimensionField" property="dimension"/>
+                </formItem>
+                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.severity">
+                    <select id="severityField" property="severity"/>
+                </formItem>
+            </hbox>
+
+            <hbox classNames="form-block">
+                <span classNames="form-block-title" text="Ответственное подразделение (за исправление ошибок, при обнаружении данным правилом)"/>
+
+                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.assigneeSubdivision">
+                    <entityPicker id="assigneeSubdivisionField" property="assigneeSubdivision" required="true">
+                        <actions>
+                            <action id="entityLookupAction" type="entity_lookup"/>
+                            <action id="entityClearAction" type="entity_clear"/>
+                        </actions>
+                    </entityPicker>
+                </formItem>
+                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.assigneeEmployee">
+                    <entityPicker id="assigneeEmployeeField" property="assigneeEmployee">
+                        <actions>
+                            <action id="entityLookupAction" type="entity_lookup"/>
+                            <action id="entityClearAction" type="entity_clear"/>
+                        </actions>
+                    </entityPicker>
+                </formItem>
+            </hbox>
+
+            <hbox classNames="form-block">
+                <span classNames="form-block-title" text="Источник данных"/>
+
+                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.dataSource">
+                    <select id="dataSourceField" property="dataSource" required="true"/>
+                </formItem>
+                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.dbSchema">
+                    <comboBox id="dbSchemaField" property="dbSchema" required="true"/>
+                </formItem>
+                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.tableName">
+                    <comboBox id="tableNameField" property="tableName" required="true"/>
+                </formItem>
+                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.columnName">
+                    <comboBox id="columnNameField" property="columnName" required="true"/>
+                </formItem>
+            </hbox>
+
+            <hbox classNames="form-block">
+                <span classNames="form-block-title" text="Настройки"/>
+
+                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.ruleType">
+                    <select id="ruleTypeField" property="ruleType"/>
+                </formItem>
+
+                <vbox id="rangeBox" visible="false" padding="false" width="100%">
+                    <formLayout>
+                        <responsiveSteps>
+                            <responsiveStep minWidth="0" columns="2"/>
+                        </responsiveSteps>
+                        <numberField id="minNumberField" label="msg://ruleConfig.min"/>
+                        <datePicker id="minDateField" label="msg://ruleConfig.min"/>
+                        <checkbox id="minIncludedField" label="msg://ruleConfig.minIncluded"/>
+                    </formLayout>
+                    <formLayout>
+                        <responsiveSteps>
+                            <responsiveStep minWidth="0" columns="2"/>
+                        </responsiveSteps>
+                        <numberField id="maxNumberField" label="msg://ruleConfig.max"/>
+                        <datePicker id="maxDateField" label="msg://ruleConfig.max"/>
+                        <checkbox id="maxIncludedField" label="msg://ruleConfig.maxIncluded"/>
+                    </formLayout>
+                </vbox>
+
+                <hbox id="regexpBox" visible="false" width="100%">
+                    <formItem label="msg://ruleConfig.regexp">
+                        <textField id="regexpField"/>
+                    </formItem>
+                </hbox>
+
+                <app:slider id="thresholdField"
+                            label="msg://ruleConfig.threshold"
+                            min="0"
+                            max="100"
+                            value="100"
+                            css="margin-top: 10px"/>
+
+                <formItem label="msg://ruleConfig.sampleSize">
+                    <numberField id="sampleSizeField" stepButtonsVisible="true"/>
+                </formItem>
+
+                <formItem label="msg://ruleConfig.samplesQueryColumns">
+                    <multiSelectComboBox id="samplesQueryColumnsField"
+                                         placeholder="msg://ruleConfig.samplesQueryColumns.placeholder"
+                                         clearButtonVisible="true"
+                                         selectedItemsOnTop="true"
+                                         width="100%"/>
+                </formItem>
+
+                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.ruleConfig" css="margin-bottom: 10px">
+                    <textArea id="ruleConfigField" property="ruleConfig" minRows="5" readOnly="true"/>
+                </formItem>
+
+                <checkbox id="activeField" property="active" label="msg://uz.kapitalbank.umida.entity.dq/DqRule.active" dataContainer="dqRuleDc"/>
+            </hbox>
+        </formLayout>
+
+        <hbox id="detailActions" width="50%" justifyContent="CENTER" css="padding-bottom: 40px">
+            <button id="saveAndCloseButton" action="saveCloseAction"/>
+            <button id="closeButton" action="closeAction"/>
+        </hbox>
+    </layout>
+</view>

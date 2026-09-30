@@ -9,10 +9,10 @@ apply plugin: 'com.vaadin'
 
 jmix {
     bomVersion = '2.8.2'
-    projectId = 'demo'
+    projectId = 'umida'
 }
 
-group = 'com.company'
+group = 'uz.kapitalbank'
 version = '0.0.1-SNAPSHOT'
 
 repositories {

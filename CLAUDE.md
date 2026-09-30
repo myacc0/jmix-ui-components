@@ -15,7 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew test
 
 # Run a single test class
-./gradlew test --tests "com.company.demo.SomeTest"
+./gradlew test --tests "uz.kapitalbank.umida.SomeTest"
 
 # Start PostgreSQL and DWH databases
 docker-compose up -d
@@ -31,7 +31,7 @@ PostgreSQL is required (no HSQLDB fallback configured). The Docker Compose file 
 
 ## Architecture
 
-- Jmix 2.8.2 (Spring Boot + Vaadin FlowUI + EclipseLink) app. Root package: `com.company.demo`.
+- Jmix 2.8.2 (Spring Boot + Vaadin FlowUI + EclipseLink) app. Root package: `uz.kapitalbank.umida`.
 - Java 21
 - PostgreSQL
 - Relational database with Liquibase migrations
@@ -51,17 +51,17 @@ PostgreSQL is required (no HSQLDB fallback configured). The Docker Compose file 
 
 ### View pattern
 
-Every view is a pair: `view/XxxView.java` ↔ `resources/com/company/demo/view/xxx/xxx-view.xml`. The XML defines layout and data containers (`<data>`, `<layout>`); the Java class handles event subscriptions via `@Subscribe`.
+Every view is a pair: `view/XxxView.java` ↔ `resources/uz/kapitalbank/umida/view/xxx/xxx-view.xml`. The XML defines layout and data containers (`<data>`, `<layout>`); the Java class handles event subscriptions via `@Subscribe`.
 
 Data is loaded through `CollectionLoader` → `CollectionContainer`. Views inject these with `@ViewComponent`. JPQL queries run through the loader; parameters are set on the loader before calling `load()`.
 
 ### Database migrations
 
-Liquibase changelogs live under `resources/com/company/demo/liquibase/changelog/`. New changelogs go in date-organized subdirectories (e.g., `2026/07/`). The root `changelog.xml` includes them.
+Liquibase changelogs live under `resources/uz/kapitalbank/umida/liquibase/changelog/`. New changelogs go in date-organized subdirectories (e.g., `2026/07/`). The root `changelog.xml` includes them.
 
 ### i18n
 
-Message bundles: `messages_en.properties` and `messages_ru.properties` under `resources/com/company/demo/`. Both locales are enabled (`jmix.core.available-locales=en,ru`). Views reference messages via `msg://` in XML.
+Message bundles: `messages_en.properties` and `messages_ru.properties` under `resources/uz/kapitalbank/umida/`. Both locales are enabled (`jmix.core.available-locales=en,ru`). Views reference messages via `msg://` in XML.
 
 ## Architecture rules
 - Business logic only in @Service classes, NOT in View controllers
