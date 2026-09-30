@@ -1,16 +1,16 @@
 package com.company.demo.datastructure;
 
-import com.company.demo.dto.datastructure.DataAssetChartNode;
-import com.company.demo.entity.dict.Department;
+import com.company.demo.dto.orgstructure.DataAssetChartNode;
+import com.company.demo.entity.orgstructure.Department;
 import com.company.demo.entity.dict.DictDataDomain;
 import com.company.demo.entity.dict.DictDataDomainSteward;
 import com.company.demo.entity.dict.DictDataProduct;
 import com.company.demo.entity.dict.DictDataProductSteward;
-import com.company.demo.entity.dict.Employee;
-import com.company.demo.entity.dict.JobTitle;
-import com.company.demo.entity.dict.Position;
-import com.company.demo.enums.orgstructure.PositionStatus;
-import com.company.demo.service.datastructure.DataStructureService;
+import com.company.demo.entity.orgstructure.Employee;
+import com.company.demo.entity.orgstructure.JobTitle;
+import com.company.demo.entity.orgstructure.Position;
+import com.company.demo.enums.orgstructure.OrgStructurePositionStatus;
+import com.company.demo.service.orgstructure.DataStructureService;
 import com.company.demo.test_support.AuthenticatedAsAdmin;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -261,7 +261,7 @@ class DataStructureServiceTests {
         position.setEmployee(employee);
         position.setLvl(lvl);
         position.setIshead(ishead);
-        position.setStatus(employee != null ? PositionStatus.FILLED : PositionStatus.VACANT);
+        position.setStatus(employee != null ? OrgStructurePositionStatus.FILLED : OrgStructurePositionStatus.VACANT);
         track(dataManager.save(position));
     }
 

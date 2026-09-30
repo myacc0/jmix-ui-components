@@ -1,10 +1,10 @@
 package com.company.demo.view.workdisciplineexception;
 
-import com.company.demo.entity.WorkDisciplineException;
-import com.company.demo.entity.dict.Department;
-import com.company.demo.entity.dict.Employee;
-import com.company.demo.entity.dict.JobTitle;
-import com.company.demo.enums.WorkDisciplineTargetType;
+import com.company.demo.entity.hr.WorkDisciplineException;
+import com.company.demo.entity.orgstructure.Department;
+import com.company.demo.entity.orgstructure.Employee;
+import com.company.demo.entity.orgstructure.JobTitle;
+import com.company.demo.enums.hr.WorkDisciplineTargetType;
 import com.company.demo.view.main.MainView;
 import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.router.Route;

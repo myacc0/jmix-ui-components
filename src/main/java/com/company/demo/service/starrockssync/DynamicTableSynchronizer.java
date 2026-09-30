@@ -1,10 +1,10 @@
 package com.company.demo.service.starrockssync;
 
 import com.company.demo.dto.starrockssync.SyncResult;
-import com.company.demo.entity.tablesync.TableCol;
-import com.company.demo.entity.tablesync.TableColConfig;
-import com.company.demo.entity.tablesync.TableSynchronizer;
-import com.company.demo.enums.tablesync.TableColJavaType;
+import com.company.demo.entity.starrockssync.TableCol;
+import com.company.demo.entity.starrockssync.TableColConfig;
+import com.company.demo.entity.starrockssync.TableSynchronizer;
+import com.company.demo.enums.starrockssync.TableColJavaType;
 import com.company.demo.utils.JsonUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.jdbc.core.JdbcTemplate;

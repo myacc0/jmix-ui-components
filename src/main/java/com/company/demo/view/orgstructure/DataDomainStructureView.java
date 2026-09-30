@@ -2,9 +2,9 @@ package com.company.demo.view.orgstructure;
 
 import com.company.demo.component.LoaderComponent;
 import com.company.demo.component.d3orgchart.D3OrgChart;
-import com.company.demo.dto.datastructure.DataAssetChartNode;
+import com.company.demo.dto.orgstructure.DataAssetChartNode;
 import com.company.demo.entity.dict.DictDataDomain;
-import com.company.demo.service.datastructure.DataStructureService;
+import com.company.demo.service.orgstructure.DataStructureService;
 import com.company.demo.view.main.MainView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.html.Div;

@@ -2,14 +2,14 @@ package com.company.demo.datastructure;
 
 import com.company.demo.DemoApplication;
 import com.company.demo.component.d3orgchart.D3OrgChart;
-import com.company.demo.entity.dict.Department;
+import com.company.demo.entity.orgstructure.Department;
 import com.company.demo.entity.dict.DictDataDomain;
 import com.company.demo.entity.dict.DictDataDomainSteward;
 import com.company.demo.entity.dict.DictDataProduct;
-import com.company.demo.entity.dict.Employee;
-import com.company.demo.entity.dict.JobTitle;
-import com.company.demo.entity.dict.Position;
-import com.company.demo.enums.orgstructure.PositionStatus;
+import com.company.demo.entity.orgstructure.Employee;
+import com.company.demo.entity.orgstructure.JobTitle;
+import com.company.demo.entity.orgstructure.Position;
+import com.company.demo.enums.orgstructure.OrgStructurePositionStatus;
 import com.company.demo.test_support.AuthenticatedAsAdmin;
 import com.company.demo.view.orgstructure.DataAssetCardView;
 import com.company.demo.view.orgstructure.DataDomainStructureView;
@@ -89,7 +89,7 @@ public class DataStructureViewsUiTest {
             p.setJobTitle(title);
             p.setEmployee(head);
             p.setIshead(1);
-            p.setStatus(PositionStatus.FILLED);
+            p.setStatus(OrgStructurePositionStatus.FILLED);
         });
 
         rootDomain = create(DictDataDomain.class, d -> fillDomain(d, "Root domain " + suffix, null, owner));

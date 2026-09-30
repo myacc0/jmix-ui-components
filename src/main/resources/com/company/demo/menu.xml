@@ -49,9 +49,9 @@
     <menu id="quartz" title="msg://com.company.demo/menu.quartz.title">
         <item view="quartz_JobModel.list" title="msg://io.jmix.quartzflowui.view.jobs/jobModelListView.menu"/>
         <item view="demo_QuartzJobExecution.list"
-              title="msg://com.company.demo.view.quartzjobexecution/quartzJobExecutionListView.title"/>
+              title="msg://com.company.demo.view.quartz/quartzJobExecutionListView.title"/>
         <item view="demo_TableSynchronizer.list"
-              title="msg://com.company.demo.view.tablesynchronizer/tableSynchronizerListView.title"/>
+              title="msg://com.company.demo.view.starrockssync/tableSynchronizerListView.title"/>
     </menu>
     <menu id="datatools" title="msg://com.company.demo/menu.datatools.title">
         <item view="datatl_entityInspectorListView"

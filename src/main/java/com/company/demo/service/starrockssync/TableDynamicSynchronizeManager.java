@@ -1,8 +1,8 @@
 package com.company.demo.service.starrockssync;
 
 import com.company.demo.dto.starrockssync.SyncResult;
-import com.company.demo.entity.tablesync.TableSyncDirection;
-import com.company.demo.entity.tablesync.TableSynchronizer;
+import com.company.demo.entity.starrockssync.TableSyncDirection;
+import com.company.demo.entity.starrockssync.TableSynchronizer;
 import io.jmix.core.UnconstrainedDataManager;
 import org.springframework.stereotype.Service;
 

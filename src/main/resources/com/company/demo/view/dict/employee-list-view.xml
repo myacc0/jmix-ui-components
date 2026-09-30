@@ -5,7 +5,7 @@
       focusComponent="employeesDataGrid">
     <data>
         <collection id="employeesDc"
-                    class="com.company.demo.entity.dict.Employee">
+                    class="com.company.demo.entity.orgstructure.Employee">
             <fetchPlan extends="_base">
             </fetchPlan>
             <loader id="employeesDl" readOnly="true">

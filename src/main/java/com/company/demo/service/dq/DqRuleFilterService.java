@@ -1,6 +1,6 @@
 package com.company.demo.service.dq;
 
-import com.company.demo.dto.DqRuleFilter;
+import com.company.demo.dto.dq.DqRuleFilter;
 import io.jmix.core.querycondition.JpqlCondition;
 import io.jmix.core.querycondition.LogicalCondition;
 import org.springframework.stereotype.Service;

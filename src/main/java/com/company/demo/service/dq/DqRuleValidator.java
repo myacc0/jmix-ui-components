@@ -1,7 +1,7 @@
 package com.company.demo.service.dq;
 
-import com.company.demo.dto.DqRuleConfig;
-import com.company.demo.dto.DqRuleValidationError;
+import com.company.demo.dto.dq.DqRuleConfig;
+import com.company.demo.dto.dq.DqRuleValidationError;
 import com.company.demo.entity.dq.DqRule;
 import com.company.demo.enums.dq.DqRuleType;
 import com.company.demo.utils.DateUtils;
@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import static com.company.demo.dto.DqRuleValidationError.*;
+import static com.company.demo.dto.dq.DqRuleValidationError.*;
 
 /**
  * Validates the {@code ruleConfig} JSON of a {@link DqRule} against the requirements of its

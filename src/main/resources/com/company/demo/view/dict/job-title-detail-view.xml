@@ -4,7 +4,7 @@
       focusComponent="form">
     <data>
         <instance id="jobTitleDc"
-                  class="com.company.demo.entity.dict.JobTitle">
+                  class="com.company.demo.entity.orgstructure.JobTitle">
             <fetchPlan extends="_base"/>
             <loader id="jobTitleDl"/>
         </instance>

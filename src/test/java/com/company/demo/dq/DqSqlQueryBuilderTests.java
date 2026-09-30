@@ -1,6 +1,6 @@
 package com.company.demo.dq;
 
-import com.company.demo.dto.DqRuleQueries;
+import com.company.demo.dto.dq.DqRuleQueries;
 import com.company.demo.entity.dq.DqRule;
 import com.company.demo.enums.dq.DqRuleType;
 import com.company.demo.enums.dq.DqSqlDialect;

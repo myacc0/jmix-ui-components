@@ -1,6 +1,6 @@
 package com.company.demo.view.orgstructure;
 
-import com.company.demo.dto.datastructure.DataAssetChartNode;
+import com.company.demo.dto.orgstructure.DataAssetChartNode;
 import com.company.demo.view.main.MainView;
 import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.Span;

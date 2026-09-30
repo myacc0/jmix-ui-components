@@ -5,7 +5,7 @@
       focusComponent="positionsDataGrid">
     <data>
         <collection id="positionsDc"
-                    class="com.company.demo.entity.dict.Position">
+                    class="com.company.demo.entity.orgstructure.Position">
             <fetchPlan>
                 <property name="lvl"/>
                 <property name="ishead"/>

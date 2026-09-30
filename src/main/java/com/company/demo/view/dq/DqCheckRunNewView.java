@@ -1,7 +1,7 @@
 package com.company.demo.view.dq;
 
 
-import com.company.demo.dto.DqRuleFilter;
+import com.company.demo.dto.dq.DqRuleFilter;
 import com.company.demo.dto.SelectDto;
 import com.company.demo.entity.dq.DqCheckRun;
 import com.company.demo.entity.dq.DqRule;

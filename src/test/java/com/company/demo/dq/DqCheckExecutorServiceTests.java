@@ -1,6 +1,6 @@
 package com.company.demo.dq;
 
-import com.company.demo.dto.DqRuleFilter;
+import com.company.demo.dto.dq.DqRuleFilter;
 import com.company.demo.entity.dq.DqCheckRun;
 import com.company.demo.entity.dq.DqCheckRunResult;
 import com.company.demo.entity.dq.DqDataDomain;

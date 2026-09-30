@@ -1,9 +1,9 @@
 package com.company.demo.service.dq;
 
-import com.company.demo.dto.DqRuleConfig;
-import com.company.demo.dto.DqRuleFilter;
-import com.company.demo.dto.DqRuleQueries;
-import com.company.demo.dto.DqSqlQuery;
+import com.company.demo.dto.dq.DqRuleConfig;
+import com.company.demo.dto.dq.DqRuleFilter;
+import com.company.demo.dto.dq.DqRuleQueries;
+import com.company.demo.dto.dq.DqSqlQuery;
 import com.company.demo.entity.dq.DqCheckRun;
 import com.company.demo.entity.dq.DqCheckRunResult;
 import com.company.demo.entity.dq.DqIssue;

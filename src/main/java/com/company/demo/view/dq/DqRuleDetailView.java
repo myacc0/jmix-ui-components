@@ -1,8 +1,8 @@
 package com.company.demo.view.dq;
 
 import com.company.demo.component.slider.Slider;
-import com.company.demo.dto.DqRuleConfig;
-import com.company.demo.dto.DqRuleValidationError;
+import com.company.demo.dto.dq.DqRuleConfig;
+import com.company.demo.dto.dq.DqRuleValidationError;
 import com.company.demo.dto.SelectDto;
 import com.company.demo.entity.dq.DqRule;
 import com.company.demo.enums.dq.DqRuleType;

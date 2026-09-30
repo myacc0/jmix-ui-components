@@ -1,7 +1,7 @@
 package com.company.demo.service.starrockssync;
 
 import com.company.demo.dto.starrockssync.SyncResult;
-import com.company.demo.entity.tablesync.TableCol;
+import com.company.demo.entity.starrockssync.TableCol;
 import com.company.demo.service.dq.DqDataSourceProvider;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowCallbackHandler;

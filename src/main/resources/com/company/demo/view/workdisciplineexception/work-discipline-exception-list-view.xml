@@ -5,7 +5,7 @@
       focusComponent="workDisciplineExceptionsDataGrid">
     <data>
         <collection id="workDisciplineExceptionsDc"
-                    class="com.company.demo.entity.WorkDisciplineException">
+                    class="com.company.demo.entity.hr.WorkDisciplineException">
             <fetchPlan extends="_base">
                 <property name="subdivision" fetchPlan="_instance_name"/>
                 <property name="employee" fetchPlan="_instance_name"/>

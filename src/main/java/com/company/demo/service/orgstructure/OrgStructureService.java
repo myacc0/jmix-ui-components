@@ -1,34 +1,19 @@
 package com.company.demo.service.orgstructure;
 
-import com.company.demo.dto.orgstructure.D3OrgChartCsvItem;
 import com.company.demo.dto.orgstructure.OrgChartNode;
-import com.company.demo.entity.dict.Department;
-import com.company.demo.entity.dict.Employee;
-import com.company.demo.entity.dict.JobTitle;
-import com.company.demo.entity.dict.Position;
+import com.company.demo.entity.orgstructure.Department;
+import com.company.demo.entity.orgstructure.Employee;
+import com.company.demo.entity.orgstructure.JobTitle;
+import com.company.demo.entity.orgstructure.Position;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.opencsv.bean.CsvToBean;
-import com.opencsv.bean.CsvToBeanBuilder;
 import io.jmix.core.DataManager;
 import io.jmix.core.FetchPlan;
 import io.jmix.core.Messages;
 import io.jmix.core.Sort;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class OrgStructureService {
@@ -270,33 +255,6 @@ public class OrgStructureService {
 
     private UUID referencedId(Department department) {
         return department != null ? department.getId() : null;
-    }
-
-    public String getNodesJsonFromCsv() {
-        try {
-            return objectMapper.writeValueAsString(
-                    parseCsv("data/d3-orgchart-demo-data.csv"));
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Json load error", e);
-        }
-    }
-
-    private List<D3OrgChartCsvItem> parseCsv(String path) {
-        try {
-            ClassPathResource resource = new ClassPathResource(path);
-
-            try (Reader reader = new InputStreamReader(resource.getInputStream())) {
-                CsvToBean<D3OrgChartCsvItem> csvToBean = new CsvToBeanBuilder<D3OrgChartCsvItem>(reader)
-                        .withType(D3OrgChartCsvItem.class)
-                        .withIgnoreLeadingWhiteSpace(true)
-                        .build();
-
-                return csvToBean.parse();
-            }
-
-        } catch (Exception e) {
-            throw new RuntimeException("Csv load error", e);
-        }
     }
 
 }

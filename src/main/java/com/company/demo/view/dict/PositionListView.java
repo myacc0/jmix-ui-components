@@ -1,6 +1,6 @@
 package com.company.demo.view.dict;
 
-import com.company.demo.entity.dict.Position;
+import com.company.demo.entity.orgstructure.Position;
 import com.company.demo.view.main.MainView;
 import com.vaadin.flow.router.Route;
 import io.jmix.flowui.view.*;

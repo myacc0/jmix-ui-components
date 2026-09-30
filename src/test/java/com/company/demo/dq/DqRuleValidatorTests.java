@@ -1,6 +1,6 @@
 package com.company.demo.dq;
 
-import com.company.demo.dto.DqRuleValidationError;
+import com.company.demo.dto.dq.DqRuleValidationError;
 import com.company.demo.entity.dq.DqRule;
 import com.company.demo.enums.dq.DqRuleType;
 import com.company.demo.service.dq.DqRuleValidator;
@@ -15,7 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.List;
 
-import static com.company.demo.dto.DqRuleValidationError.*;
+import static com.company.demo.dto.dq.DqRuleValidationError.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

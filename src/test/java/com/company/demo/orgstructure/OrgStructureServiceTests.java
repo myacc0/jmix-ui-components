@@ -1,11 +1,11 @@
 package com.company.demo.orgstructure;
 
 import com.company.demo.dto.orgstructure.OrgChartNode;
-import com.company.demo.entity.dict.Department;
-import com.company.demo.entity.dict.Employee;
-import com.company.demo.entity.dict.JobTitle;
-import com.company.demo.entity.dict.Position;
-import com.company.demo.enums.orgstructure.PositionStatus;
+import com.company.demo.entity.orgstructure.Department;
+import com.company.demo.entity.orgstructure.Employee;
+import com.company.demo.entity.orgstructure.JobTitle;
+import com.company.demo.entity.orgstructure.Position;
+import com.company.demo.enums.orgstructure.OrgStructurePositionStatus;
 import com.company.demo.service.orgstructure.OrgStructureService;
 import com.company.demo.test_support.AuthenticatedAsAdmin;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -106,7 +106,7 @@ class OrgStructureServiceTests {
         assertEquals("Root " + suffix, rootHeadNode.getOrgLevelName());
         assertEquals("Root Head " + suffix, rootHeadNode.getName());
         assertEquals("Director " + suffix, rootHeadNode.getPosition());
-        assertEquals(PositionStatus.FILLED.getId(), rootHeadNode.getStatus());
+        assertEquals(OrgStructurePositionStatus.FILLED.getId(), rootHeadNode.getStatus());
         assertEquals("Child " + suffix, childStaffNode.getOrgLevelName());
     }
 
@@ -275,7 +275,7 @@ class OrgStructureServiceTests {
         position.setEmployee(employee);
         position.setLvl(lvl);
         position.setIshead(ishead);
-        position.setStatus(PositionStatus.FILLED);
+        position.setStatus(OrgStructurePositionStatus.FILLED);
         Position saved = dataManager.save(position);
         cleanup.add(saved);
         return saved;

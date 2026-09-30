@@ -1,9 +1,9 @@
 package com.company.demo.service.starrockssync;
 
 import com.company.demo.dto.starrockssync.SyncResult;
-import com.company.demo.entity.tablesync.TableCol;
-import com.company.demo.entity.tablesync.TableColConfig;
-import com.company.demo.entity.tablesync.TableSynchronizer;
+import com.company.demo.entity.starrockssync.TableCol;
+import com.company.demo.entity.starrockssync.TableColConfig;
+import com.company.demo.entity.starrockssync.TableSynchronizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;

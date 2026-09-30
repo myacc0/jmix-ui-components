@@ -1,11 +1,11 @@
 package com.company.demo.orgstructure;
 
 import com.company.demo.dto.orgstructure.OrgChartNode;
-import com.company.demo.entity.dict.Department;
-import com.company.demo.entity.dict.Employee;
-import com.company.demo.entity.dict.JobTitle;
-import com.company.demo.entity.dict.Position;
-import com.company.demo.enums.orgstructure.PositionStatus;
+import com.company.demo.entity.orgstructure.Department;
+import com.company.demo.entity.orgstructure.Employee;
+import com.company.demo.entity.orgstructure.JobTitle;
+import com.company.demo.entity.orgstructure.Position;
+import com.company.demo.enums.orgstructure.OrgStructurePositionStatus;
 import com.company.demo.service.orgstructure.EmployeePhotoService;
 import com.company.demo.service.orgstructure.OrgStructureService;
 import com.company.demo.test_support.AuthenticatedAsAdmin;
@@ -238,7 +238,7 @@ class EmployeePhotoS3StorageTests {
         position.setEmployee(employee);
         position.setLvl(lvl);
         position.setIshead(ishead);
-        position.setStatus(PositionStatus.FILLED);
+        position.setStatus(OrgStructurePositionStatus.FILLED);
         Position saved = dataManager.save(position);
         cleanup.add(saved);
         return saved;
