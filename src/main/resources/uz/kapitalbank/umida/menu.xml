@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <menu-config xmlns="http://jmix.io/schema/flowui/menu">
 
-    <menu id="application" title="msg://uz.kapitalbank.umida/menu.application.title">
-        <item view="umida_User.list" title="msg://uz.kapitalbank.umida.view.user/UserListView.title"/>
+    <item view="umida_MainView" id="mainView" description="msg://uz.kapitalbank.umida/menu_config.mainView.description"
+          title="msg://uz.kapitalbank.umida/menu_config.mainView.title"/>
+    <menu id="orgstructure" description="msg://uz.kapitalbank.umida/menu_config.orgstructure.description"
+          title="msg://uz.kapitalbank.umida/menu_config.orgstructure.title">
         <item view="umida_OrgStructure" title="msg://uz.kapitalbank.umida.view.orgstructure/OrgStructureView.title"/>
         <item view="umida_DataDomainStructure"
               title="msg://uz.kapitalbank.umida.view.orgstructure/dataDomainStructureView.title"/>
@@ -11,12 +13,18 @@
     </menu>
     <menu id="catalog" description="msg://uz.kapitalbank.umida/menu_config.catalog.description"
           title="msg://uz.kapitalbank.umida/menu_config.catalog.title">
-        <item view="umida_DictDataDomain.list" title="msg://uz.kapitalbank.umida.view.dict/dictDataDomainListView.title"/>
-        <item view="umida_DictDataProduct.list" title="msg://uz.kapitalbank.umida.view.dict/dictDataProductListView.title"/>
-        <item view="umida_OrgStructureJobTitle.list" title="msg://uz.kapitalbank.umida.view.dict/orgStructureJobTitleListView.title"/>
-        <item view="umida_OrgStructureSubdivision.list" title="msg://uz.kapitalbank.umida.view.dict/orgStructureSubdivisionListView.title"/>
-        <item view="umida_OrgStructureEmployee.list" title="msg://uz.kapitalbank.umida.view.dict/orgStructureEmployeeListView.title"/>
-        <item view="umida_OrgStructurePosition.list" title="msg://uz.kapitalbank.umida.view.dict/orgStructurePositionListView.title"/>
+        <item view="umida_DictDataDomain.list"
+              title="msg://uz.kapitalbank.umida.view.dict/dictDataDomainListView.title"/>
+        <item view="umida_DictDataProduct.list"
+              title="msg://uz.kapitalbank.umida.view.dict/dictDataProductListView.title"/>
+        <item view="umida_OrgStructureJobTitle.list"
+              title="msg://uz.kapitalbank.umida.view.dict/orgStructureJobTitleListView.title"/>
+        <item view="umida_OrgStructureSubdivision.list"
+              title="msg://uz.kapitalbank.umida.view.dict/orgStructureSubdivisionListView.title"/>
+        <item view="umida_OrgStructureEmployee.list"
+              title="msg://uz.kapitalbank.umida.view.dict/orgStructureEmployeeListView.title"/>
+        <item view="umida_OrgStructurePosition.list"
+              title="msg://uz.kapitalbank.umida.view.dict/orgStructurePositionListView.title"/>
     </menu>
     <menu id="dq" description="msg://uz.kapitalbank.umida/menu_config.dq.description"
           title="msg://uz.kapitalbank.umida/menu_config.dq.title">
@@ -41,6 +49,7 @@
         <item view="report_ReportTableView" title="msg://io.jmix.reportsflowui/reportTableView.menu"/>
     </menu>
     <menu id="security" title="msg://uz.kapitalbank.umida/menu.security.title">
+        <item view="umida_User.list" title="msg://uz.kapitalbank.umida.view.user/UserListView.title"/>
         <item view="sec_ResourceRoleModel.list"
               title="msg://io.jmix.securityflowui.view.resourcerole/resourceRoleModelListView.menu"/>
         <item view="sec_RowLevelRoleModel.list"
