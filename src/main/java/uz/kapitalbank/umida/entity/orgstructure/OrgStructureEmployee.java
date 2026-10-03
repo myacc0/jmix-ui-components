@@ -53,7 +53,7 @@ public class OrgStructureEmployee {
         this.email = email;
     }
 
-    public String setAdAccount() {
+    public String getAdAccount() {
         return adAccount;
     }
 
@@ -77,7 +77,7 @@ public class OrgStructureEmployee {
         this.fullName = name;
     }
 
-    public String setPersonnelNumber() {
+    public String getPersonnelNumber() {
         return personnelNumber;
     }
 
