@@ -1,15 +1,14 @@
 package uz.kapitalbank.umida.controller.orgstructure;
 
-import uz.kapitalbank.umida.service.orgstructure.EmployeePhotoService;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
+import uz.kapitalbank.umida.service.orgstructure.EmployeePhotoService;
 
 import java.time.Duration;
-import java.util.UUID;
 
 /**
  * Serves employee photos stored in the Jmix file storage under the employee id, so that an
@@ -29,7 +28,7 @@ public class EmployeePhotoController {
     }
 
     @GetMapping(EmployeePhotoService.PHOTO_URL_PREFIX + "{employeeId}")
-    public ResponseEntity<byte[]> getEmployeePhoto(@PathVariable UUID employeeId) {
+    public ResponseEntity<byte[]> getEmployeePhoto(@PathVariable String employeeId) {
         return employeePhotoService.loadPhoto(employeeId)
                 .map(photo -> ResponseEntity.ok()
                         .contentType(MediaType.parseMediaType(photo.contentType()))

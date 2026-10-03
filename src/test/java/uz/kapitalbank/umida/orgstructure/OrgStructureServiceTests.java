@@ -1,10 +1,10 @@
 package uz.kapitalbank.umida.orgstructure;
 
 import uz.kapitalbank.umida.dto.orgstructure.OrgChartNode;
-import uz.kapitalbank.umida.entity.orgstructure.Department;
-import uz.kapitalbank.umida.entity.orgstructure.Employee;
-import uz.kapitalbank.umida.entity.orgstructure.JobTitle;
-import uz.kapitalbank.umida.entity.orgstructure.Position;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructurePosition;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureJobTitle;
 import uz.kapitalbank.umida.enums.orgstructure.OrgStructurePositionStatus;
 import uz.kapitalbank.umida.service.orgstructure.OrgStructureService;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Verifies how {@link OrgStructureService#getOrgChartNodes(UUID)} flattens a department
+ * Verifies how {@link OrgStructureService#getOrgChartNodes(String)} flattens a subdivision
  * subtree into d3-org-chart nodes.
  * <p>
  * The whole fixture is created by the test and removed afterwards, and the assertions only
@@ -63,20 +63,20 @@ class OrgStructureServiceTests {
     private final List<Path> photoFiles = new ArrayList<>();
 
     @Test
-    void buildsPositionHierarchyAcrossDepartments() {
+    void buildsPositionHierarchyAcrossSubdivisions() {
         String suffix = UUID.randomUUID().toString();
 
-        Department root = createDepartment("Root " + suffix, null, 1);
-        Department child = createDepartment("Child " + suffix, root, 2);
+        OrgStructureSubdivision root = createSubdivision("Root " + suffix, null, 1);
+        OrgStructureSubdivision child = createSubdivision("Child " + suffix, root, 2);
 
-        JobTitle directorTitle = createJobTitle("Director " + suffix);
-        JobTitle managerTitle = createJobTitle("Manager " + suffix);
-        JobTitle specialistTitle = createJobTitle("Specialist " + suffix);
+        OrgStructureJobTitle directorTitle = createJobTitle("Director " + suffix);
+        OrgStructureJobTitle managerTitle = createJobTitle("Manager " + suffix);
+        OrgStructureJobTitle specialistTitle = createJobTitle("Specialist " + suffix);
 
-        Position rootHead = createPosition(root, directorTitle, createEmployee("Root Head " + suffix), 10, 1);
-        Position rootStaff = createPosition(root, specialistTitle, createEmployee("Root Staff " + suffix), 6, 0);
-        Position childHead = createPosition(child, managerTitle, createEmployee("Child Head " + suffix), 8, 1);
-        Position childStaff = createPosition(child, specialistTitle, createEmployee("Child Staff " + suffix), 6, 0);
+        OrgStructurePosition rootHead = createPosition(root, directorTitle, createEmployee("Root Head " + suffix), "10", 1);
+        OrgStructurePosition rootStaff = createPosition(root, specialistTitle, createEmployee("Root Staff " + suffix), "6", 0);
+        OrgStructurePosition childHead = createPosition(child, managerTitle, createEmployee("Child Head " + suffix), "8", 1);
+        OrgStructurePosition childStaff = createPosition(child, specialistTitle, createEmployee("Child Staff " + suffix), "6", 0);
 
         Map<String, OrgChartNode> nodes = nodesById(root.getId());
 
@@ -91,18 +91,18 @@ class OrgStructureServiceTests {
         assertNotNull(childHeadNode);
         assertNotNull(childStaffNode);
 
-        // the head of the selected department is the single root of the chart
+        // the head of the selected subdivision is the single root of the chart
         assertNull(rootHeadNode.getParentId());
         assertTrue(rootHeadNode.isHead());
 
-        // staff hang under the head of their own department
+        // staff hang under the head of their own subdivision
         assertEquals(rootHeadNode.getId(), rootStaffNode.getParentId());
         assertEquals(childHeadNode.getId(), childStaffNode.getParentId());
 
-        // the head of a child department hangs under the head of the parent department
+        // the head of a child subdivision hangs under the head of the parent subdivision
         assertEquals(rootHeadNode.getId(), childHeadNode.getParentId());
 
-        // node payload: department name as title, employee as name, job title as position
+        // node payload: subdivision name as title, employee as name, job title as position
         assertEquals("Root " + suffix, rootHeadNode.getOrgLevelName());
         assertEquals("Root Head " + suffix, rootHeadNode.getName());
         assertEquals("Director " + suffix, rootHeadNode.getPosition());
@@ -111,32 +111,32 @@ class OrgStructureServiceTests {
     }
 
     @Test
-    void createsSyntheticNodeForDepartmentWithoutHeadPosition() {
+    void createsSyntheticNodeForSubdivisionWithoutHeadPosition() {
         String suffix = UUID.randomUUID().toString();
 
-        Department root = createDepartment("Root " + suffix, null, 1);
-        Department headless = createDepartment("Headless " + suffix, root, 2);
-        Department grandChild = createDepartment("GrandChild " + suffix, headless, 3);
+        OrgStructureSubdivision root = createSubdivision("Root " + suffix, null, 1);
+        OrgStructureSubdivision headless = createSubdivision("Headless " + suffix, root, 2);
+        OrgStructureSubdivision grandChild = createSubdivision("GrandChild " + suffix, headless, 3);
 
-        JobTitle directorTitle = createJobTitle("Director " + suffix);
-        JobTitle specialistTitle = createJobTitle("Specialist " + suffix);
+        OrgStructureJobTitle directorTitle = createJobTitle("Director " + suffix);
+        OrgStructureJobTitle specialistTitle = createJobTitle("Specialist " + suffix);
 
-        Position rootHead = createPosition(root, directorTitle, createEmployee("Root Head " + suffix), 10, 1);
-        // headless department has staff but no ishead = 1 position
-        Position headlessStaff = createPosition(headless, specialistTitle, createEmployee("Headless Staff " + suffix), 6, 0);
-        Position grandChildHead = createPosition(grandChild, directorTitle, createEmployee("GrandChild Head " + suffix), 8, 1);
+        OrgStructurePosition rootHead = createPosition(root, directorTitle, createEmployee("Root Head " + suffix), "10", 1);
+        // headless subdivision has staff but no ishead = 1 position
+        OrgStructurePosition headlessStaff = createPosition(headless, specialistTitle, createEmployee("Headless Staff " + suffix), "6", 0);
+        OrgStructurePosition grandChildHead = createPosition(grandChild, directorTitle, createEmployee("GrandChild Head " + suffix), "8", 1);
 
         Map<String, OrgChartNode> nodes = nodesById(root.getId());
 
         OrgChartNode syntheticNode = nodes.get("dept-" + headless.getId());
-        assertNotNull(syntheticNode, "department without a head position must get a synthetic node");
-        assertTrue(syntheticNode.isDepartmentNode());
+        assertNotNull(syntheticNode, "subdivision without a head position must get a synthetic node");
+        assertTrue(syntheticNode.isSubdivisionNode());
         assertEquals("Headless " + suffix, syntheticNode.getOrgLevelName());
         assertEquals("", syntheticNode.getName());
         assertEquals("", syntheticNode.getPosition());
         assertEquals("pos-" + rootHead.getId(), syntheticNode.getParentId());
 
-        // the synthetic node anchors both its own staff and the child department below it
+        // the synthetic node anchors both its own staff and the child subdivision below it
         assertEquals(syntheticNode.getId(), nodes.get("pos-" + headlessStaff.getId()).getParentId());
         assertEquals(syntheticNode.getId(), nodes.get("pos-" + grandChildHead.getId()).getParentId());
 
@@ -144,36 +144,36 @@ class OrgStructureServiceTests {
     }
 
     @Test
-    void selectedDepartmentWithoutPositionsBecomesTheRoot() {
+    void selectedSubdivisionWithoutPositionsBecomesTheRoot() {
         String suffix = UUID.randomUUID().toString();
 
-        Department root = createDepartment("Empty Root " + suffix, null, 1);
-        Department child = createDepartment("Child " + suffix, root, 2);
-        createPosition(child, createJobTitle("Manager " + suffix), createEmployee("Child Head " + suffix), 8, 1);
+        OrgStructureSubdivision root = createSubdivision("Empty Root " + suffix, null, 1);
+        OrgStructureSubdivision child = createSubdivision("Child " + suffix, root, 2);
+        createPosition(child, createJobTitle("Manager " + suffix), createEmployee("Child Head " + suffix), "8", 1);
 
         Map<String, OrgChartNode> nodes = nodesById(root.getId());
 
         OrgChartNode rootNode = nodes.get("dept-" + root.getId());
         assertNotNull(rootNode);
         assertNull(rootNode.getParentId());
-        assertTrue(rootNode.isDepartmentNode());
+        assertTrue(rootNode.isSubdivisionNode());
         assertEquals(1, countRoots(nodes.values()));
     }
 
     @Test
-    void excludesDepartmentsOutsideTheSelectedSubtree() {
+    void excludesSubdivisionsOutsideTheSelectedSubtree() {
         String suffix = UUID.randomUUID().toString();
 
-        Department root = createDepartment("Root " + suffix, null, 1);
-        Department child = createDepartment("Child " + suffix, root, 2);
-        Department sibling = createDepartment("Sibling " + suffix, root, 3);
+        OrgStructureSubdivision root = createSubdivision("Root " + suffix, null, 1);
+        OrgStructureSubdivision child = createSubdivision("Child " + suffix, root, 2);
+        OrgStructureSubdivision sibling = createSubdivision("Sibling " + suffix, root, 3);
 
-        JobTitle title = createJobTitle("Manager " + suffix);
-        createPosition(root, title, createEmployee("Root Head " + suffix), 10, 1);
-        Position childHead = createPosition(child, title, createEmployee("Child Head " + suffix), 8, 1);
-        Position siblingHead = createPosition(sibling, title, createEmployee("Sibling Head " + suffix), 8, 1);
+        OrgStructureJobTitle title = createJobTitle("Manager " + suffix);
+        createPosition(root, title, createEmployee("Root Head " + suffix), "10", 1);
+        OrgStructurePosition childHead = createPosition(child, title, createEmployee("Child Head " + suffix), "8", 1);
+        OrgStructurePosition siblingHead = createPosition(sibling, title, createEmployee("Sibling Head " + suffix), "8", 1);
 
-        // selecting the child department yields only that branch
+        // selecting the child subdivision yields only that branch
         Map<String, OrgChartNode> nodes = nodesById(child.getId());
 
         assertEquals(1, nodes.size());
@@ -186,9 +186,9 @@ class OrgStructureServiceTests {
     void serializesNodesToJsonForTheChartComponent() throws Exception {
         String suffix = UUID.randomUUID().toString();
 
-        Department root = createDepartment("Root " + suffix, null, 1);
-        Position head = createPosition(root, createJobTitle("Director " + suffix),
-                createEmployee("Root Head " + suffix), 10, 1);
+        OrgStructureSubdivision root = createSubdivision("Root " + suffix, null, 1);
+        OrgStructurePosition head = createPosition(root, createJobTitle("Director " + suffix),
+                createEmployee("Root Head " + suffix), "10", 1);
 
         String json = orgStructureService.getOrgChartNodesJson(root.getId());
 
@@ -209,13 +209,13 @@ class OrgStructureServiceTests {
     void putsThePhotoUrlOfTheEmployeeOnTheNode() throws IOException {
         String suffix = UUID.randomUUID().toString();
 
-        Department root = createDepartment("Root " + suffix, null, 1);
-        JobTitle title = createJobTitle("Director " + suffix);
+        OrgStructureSubdivision root = createSubdivision("Root " + suffix, null, 1);
+        OrgStructureJobTitle title = createJobTitle("Director " + suffix);
 
-        Employee withPhoto = createEmployee("With Photo " + suffix);
-        Employee withoutPhoto = createEmployee("Without Photo " + suffix);
-        Position head = createPosition(root, title, withPhoto, 10, 1);
-        Position staff = createPosition(root, title, withoutPhoto, 6, 0);
+        OrgStructureEmployee withPhoto = createEmployee("With Photo " + suffix);
+        OrgStructureEmployee withoutPhoto = createEmployee("Without Photo " + suffix);
+        OrgStructurePosition head = createPosition(root, title, withPhoto, "10", 1);
+        OrgStructurePosition staff = createPosition(root, title, withoutPhoto, "6", 0);
 
         writePhoto(withPhoto.getId() + ".jpg");
 
@@ -227,13 +227,13 @@ class OrgStructureServiceTests {
     }
 
     @Test
-    void returnsEmptyListForUnknownOrNullDepartment() {
+    void returnsEmptyListForUnknownOrNullSubdivision() {
         assertTrue(orgStructureService.getOrgChartNodes(null).isEmpty());
-        assertTrue(orgStructureService.getOrgChartNodes(UUID.randomUUID()).isEmpty());
+        assertTrue(orgStructureService.getOrgChartNodes(UUID.randomUUID().toString()).isEmpty());
     }
 
-    private Map<String, OrgChartNode> nodesById(UUID departmentId) {
-        return orgStructureService.getOrgChartNodes(departmentId).stream()
+    private Map<String, OrgChartNode> nodesById(String subdivisionId) {
+        return orgStructureService.getOrgChartNodes(subdivisionId).stream()
                 .collect(Collectors.toMap(OrgChartNode::getId, Function.identity()));
     }
 
@@ -241,42 +241,41 @@ class OrgStructureServiceTests {
         return nodes.stream().filter(node -> node.getParentId() == null).count();
     }
 
-    private Department createDepartment(String name, Department parent, int ordNo) {
-        Department department = dataManager.create(Department.class);
-        department.setName(name);
-        department.setParentDepartment(parent);
-        department.setOrdNo(ordNo);
-        Department saved = dataManager.save(department);
+    private OrgStructureSubdivision createSubdivision(String name, OrgStructureSubdivision parent, int ordNo) {
+        OrgStructureSubdivision subdivision = dataManager.create(OrgStructureSubdivision.class);
+        subdivision.setName(name);
+        subdivision.setParent(parent);
+        OrgStructureSubdivision saved = dataManager.save(subdivision);
         cleanup.add(saved);
         return saved;
     }
 
-    private JobTitle createJobTitle(String name) {
-        JobTitle jobTitle = dataManager.create(JobTitle.class);
+    private OrgStructureJobTitle createJobTitle(String name) {
+        OrgStructureJobTitle jobTitle = dataManager.create(OrgStructureJobTitle.class);
         jobTitle.setName(name);
-        JobTitle saved = dataManager.save(jobTitle);
+        OrgStructureJobTitle saved = dataManager.save(jobTitle);
         cleanup.add(saved);
         return saved;
     }
 
-    private Employee createEmployee(String fullName) {
-        Employee employee = dataManager.create(Employee.class);
-        employee.setFullName(fullName);
-        Employee saved = dataManager.save(employee);
+    private OrgStructureEmployee createEmployee(String fullName) {
+        OrgStructureEmployee orgStructureEmployee = dataManager.create(OrgStructureEmployee.class);
+        orgStructureEmployee.setFullName(fullName);
+        OrgStructureEmployee saved = dataManager.save(orgStructureEmployee);
         cleanup.add(saved);
         return saved;
     }
 
-    private Position createPosition(Department department, JobTitle jobTitle, Employee employee,
-                                    Integer lvl, Integer ishead) {
-        Position position = dataManager.create(Position.class);
-        position.setDepartment(department);
+    private OrgStructurePosition createPosition(OrgStructureSubdivision subdivision, OrgStructureJobTitle jobTitle, OrgStructureEmployee orgStructureEmployee,
+                                                String lvl, Integer ishead) {
+        OrgStructurePosition position = dataManager.create(OrgStructurePosition.class);
+        position.setSubdivision(subdivision);
         position.setJobTitle(jobTitle);
-        position.setEmployee(employee);
+        position.setEmployee(orgStructureEmployee);
         position.setLvl(lvl);
-        position.setIshead(ishead);
+        position.setIsheadofsubdivision(ishead);
         position.setStatus(OrgStructurePositionStatus.FILLED);
-        Position saved = dataManager.save(position);
+        OrgStructurePosition saved = dataManager.save(position);
         cleanup.add(saved);
         return saved;
     }
@@ -309,8 +308,8 @@ class OrgStructureServiceTests {
 
     @AfterEach
     void tearDown() throws IOException {
-        // reverse creation order: positions before the departments/employees they reference,
-        // and child departments before their parents
+        // reverse creation order: positions before the subdivisions/employees they reference,
+        // and child subdivisions before their parents
         List<Object> reversed = new ArrayList<>(cleanup);
         Collections.reverse(reversed);
         reversed.forEach(dataManager::remove);

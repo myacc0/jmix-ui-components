@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      xmlns:c="http://jmix.io/schema/flowui/jpql-condition"
+      title="msg://uz.kapitalbank.umida.view.dict/subdivisionListView.title"
+      focusComponent="subdivisionsDataGrid">
+    <data>
+        <collection id="subdivisionsDc"
+                    class="uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision">
+            <fetchPlan extends="_base">
+                <property name="parent" fetchPlan="_base"/>
+            </fetchPlan>
+            <loader id="subdivisionsDl" readOnly="true">
+                <query>
+                    <![CDATA[select e from umida_OrgStructureSubdivision e]]>
+                </query>
+            </loader>
+        </collection>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+        <urlQueryParameters>
+            <pagination component="pagination"/>
+        </urlQueryParameters>
+    </facets>
+    <actions>
+        <action id="selectAction" type="lookup_select"/>
+        <action id="discardAction" type="lookup_discard"/>
+    </actions>
+    <layout>
+        <hbox id="buttonsPanel" classNames="buttons-panel">
+            <startSlot>
+                <button id="createButton" action="subdivisionsDataGrid.createAction" text="" title="msg:///actions.Create"/>
+                <button id="editButton" action="subdivisionsDataGrid.editAction" text="" title="msg:///actions.Edit"/>
+                <button id="removeButton" action="subdivisionsDataGrid.removeAction" text="" title="msg:///actions.Remove"/>
+            </startSlot>
+            <endSlot>
+                <simplePagination id="pagination" dataLoader="subdivisionsDl"/>
+            </endSlot>
+        </hbox>
+        <treeDataGrid id="subdivisionsDataGrid"
+                  width="100%"
+                  minHeight="20em"
+                  dataContainer="subdivisionsDc"
+                  columnReorderingAllowed="true"
+                  hierarchyProperty="parent"
+                  showOrphans="true">
+            <actions>
+                <action id="createAction" type="list_create"/>
+                <action id="editAction" type="list_edit"/>
+                <action id="removeAction" type="list_remove"/>
+            </actions>
+            <columns resizable="true">
+                <column property="name" filterable="true"/>
+                <column property="parent" filterable="true"/>
+            </columns>
+        </treeDataGrid>
+        <hbox id="lookupActions" visible="false">
+            <button id="selectButton" action="selectAction"/>
+            <button id="discardButton" action="discardAction"/>
+        </hbox>
+    </layout>
+</view>

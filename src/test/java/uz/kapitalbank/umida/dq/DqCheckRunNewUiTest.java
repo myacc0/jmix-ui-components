@@ -81,7 +81,7 @@ public class DqCheckRunNewUiTest {
         rule = dataManager.create(DqRule.class);
         rule.setName("dq ui test rule " + suffix);
         rule.setDataSource("main");
-        rule.setTableName("demo_dq_data_domain");
+        rule.setTableName("umida_dq_data_domain");
         rule.setColumnName("name");
         rule.setDimension(DqDimension.COMPLETENESS);
         rule.setRuleType(DqRuleType.NOT_NULL);
@@ -129,7 +129,7 @@ public class DqCheckRunNewUiTest {
     /** The run the button started: the only one covering exactly the rule created by this test. */
     private DqCheckRun loadStartedRun() {
         List<DqCheckRun> runs = dataManager.load(DqCheckRun.class)
-                .query("select distinct r.checkRun from demo_DqCheckRunResult r where r.rule = :rule")
+                .query("select distinct r.checkRun from umida_DqCheckRunResult r where r.rule = :rule")
                 .parameter("rule", rule)
                 .fetchPlan(FetchPlan.BASE)
                 .list();
@@ -145,7 +145,7 @@ public class DqCheckRunNewUiTest {
         long deadline = System.currentTimeMillis() + RUN_TIMEOUT_MS;
         while (System.currentTimeMillis() < deadline) {
             List<DqCheckRun> runs = dataManager.load(DqCheckRun.class)
-                    .query("select distinct r.checkRun from demo_DqCheckRunResult r where r.rule = :rule")
+                    .query("select distinct r.checkRun from umida_DqCheckRunResult r where r.rule = :rule")
                     .parameter("rule", rule)
                     .fetchPlan(FetchPlan.BASE)
                     .list();
@@ -182,7 +182,7 @@ public class DqCheckRunNewUiTest {
     @AfterEach
     void tearDown() {
         dataManager.load(DqIssue.class)
-                .query("select i from demo_DqIssue i where i.rule = :rule")
+                .query("select i from umida_DqIssue i where i.rule = :rule")
                 .parameter("rule", rule)
                 .fetchPlan(FetchPlan.BASE)
                 .list()
@@ -190,7 +190,7 @@ public class DqCheckRunNewUiTest {
 
         for (DqCheckRun run : checkRuns) {
             dataManager.load(DqCheckRunResult.class)
-                    .query("select r from demo_DqCheckRunResult r where r.checkRun = :checkRun")
+                    .query("select r from umida_DqCheckRunResult r where r.checkRun = :checkRun")
                     .parameter("checkRun", run)
                     .fetchPlan(FetchPlan.BASE)
                     .list()

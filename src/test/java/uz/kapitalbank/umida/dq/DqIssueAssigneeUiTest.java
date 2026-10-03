@@ -82,7 +82,7 @@ public class DqIssueAssigneeUiTest {
         rule = dataManager.create(DqRule.class);
         rule.setName("dq assignee ui test rule " + suffix);
         rule.setDataSource("main");
-        rule.setTableName("demo_dq_data_domain");
+        rule.setTableName("umida_dq_data_domain");
         rule.setColumnName("name");
         rule.setDimension(DqDimension.COMPLETENESS);
         rule.setRuleType(DqRuleType.NOT_NULL);

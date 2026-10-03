@@ -42,7 +42,7 @@ public class DataAssetCardView extends StandardView {
     @ViewComponent
     private Span headJobTitleLabel;
     @ViewComponent
-    private Span headDepartmentLabel;
+    private Span headSubdivisionLabel;
     @ViewComponent
     private Span headContactsBox;
     @ViewComponent
@@ -83,7 +83,7 @@ public class DataAssetCardView extends StandardView {
         boolean hasHead = StringUtils.isNotBlank(node.getHeadName());
         headNameLabel.setText(hasHead ? node.getHeadName() : messageBundle.getMessage("dataAssetCardView.noHead"));
         headJobTitleLabel.setText(StringUtils.defaultIfBlank(node.getHeadJobTitle(), EMPTY_VALUE));
-        headDepartmentLabel.setText(StringUtils.defaultIfBlank(node.getBusinessOwnerName(), EMPTY_VALUE));
+        headSubdivisionLabel.setText(StringUtils.defaultIfBlank(node.getBusinessOwnerName(), EMPTY_VALUE));
 
         headContactsBox.setVisible(StringUtils.isNotBlank(node.getHeadEmail()));
         headEmailLabel.setText(StringUtils.defaultString(node.getHeadEmail()));

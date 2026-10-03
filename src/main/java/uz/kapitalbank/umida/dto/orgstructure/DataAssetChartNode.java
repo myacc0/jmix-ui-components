@@ -11,7 +11,7 @@ import java.util.List;
  * One node of the d3-org-chart rendered in {@code DataDomainStructureView} and
  * {@code DataProductStructureView} — a data domain or a data product.
  * <p>
- * The chart node shows the business owner (a {@code Department}) on top, the domain /
+ * The chart node shows the business owner (a {@code OrgStructureSubdivision}) on top, the domain /
  * product name in the middle and the head of the business owner (the employee of its
  * {@code ishead = 1} position) at the bottom, with the photo of that head on the left.
  * The remaining attributes are only used by {@code DataAssetCardView} and are left out
@@ -27,9 +27,9 @@ public class DataAssetChartNode {
 
     /** Domain / product short name — the main line of the node, also the source of the initials. */
     private String name;
-    /** Business owner department name — the top line of the node. */
+    /** Business owner subdivision name — the top line of the node. */
     private String businessOwnerName;
-    /** Full name of the head of the business owner, empty when the department has no head. */
+    /** Full name of the head of the business owner, empty when the subdivision has no head. */
     private String headName;
     /** Photo URL of the head; null renders the initials of {@link #name}. */
     private String image;

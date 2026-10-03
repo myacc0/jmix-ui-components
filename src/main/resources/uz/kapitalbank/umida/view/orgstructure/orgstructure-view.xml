@@ -3,13 +3,13 @@
       xmlns:app="http://uz.kapitalbank.umida/schema/app-ui-components"
       title="msg://OrgStructureView.title">
     <data>
-        <collection id="departmentsDc" class="uz.kapitalbank.umida.entity.orgstructure.Department">
+        <collection id="subdivisionsDc" class="uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision">
             <fetchPlan extends="_base">
-                <property name="parentDepartment" fetchPlan="_instance_name"/>
+                <property name="parent" fetchPlan="_instance_name"/>
             </fetchPlan>
-            <loader id="departmentsDl" readOnly="true">
+            <loader id="subdivisionsDl" readOnly="true">
                 <query>
-                    <![CDATA[select e from umida_Department e order by e.ordNo]]>
+                    <![CDATA[select e from umida_OrgStructureSubdivision e]]>
                 </query>
             </loader>
         </collection>
@@ -20,9 +20,9 @@
 
     <layout>
         <split id="splitLayout" orientation="HORIZONTAL" width="100%" height="100%">
-            <vbox id="departmentsPanel" width="30%" height="100%">
-                <textField id="departmentSearchField"
-                           placeholder="msg://departmentSearch"
+            <vbox id="subdivisionsPanel" width="30%" height="100%">
+                <textField id="subdivisionSearchField"
+                           placeholder="msg://uz.kapitalbank.umida.view.orgstructure/subdivisionSearch"
                            width="100%"
                            valueChangeMode="LAZY"
                            clearButtonVisible="true">
@@ -31,9 +31,9 @@
                     </suffix>
                 </textField>
 
-                <treeDataGrid id="departmentsTreeDataGrid"
-                              dataContainer="departmentsDc"
-                              hierarchyProperty="parentDepartment"
+                <treeDataGrid id="subdivisionsTreeDataGrid"
+                              dataContainer="subdivisionsDc"
+                              hierarchyProperty="parent"
                               themeNames="no-header no-row-borders compact"
                               width="100%"
                               height="100%">

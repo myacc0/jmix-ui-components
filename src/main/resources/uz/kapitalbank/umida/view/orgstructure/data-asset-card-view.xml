@@ -12,7 +12,7 @@
                 <span classNames="data-asset-card-subtitle">
                     <span id="headJobTitleLabel"/>
                     <span classNames="data-asset-card-subtitle-separator"/>
-                    <span id="headDepartmentLabel"/>
+                    <span id="headSubdivisionLabel"/>
                 </span>
                 <span id="headContactsBox" classNames="data-asset-card-subtitle data-asset-card-subtitle-contacts">
                     <icon icon="vaadin:envelope-o" size="S"/>

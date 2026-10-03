@@ -399,7 +399,7 @@ public class DqCheckExecutorService {
     private DqIssue issueFor(DqCheckRunResult result) {
         DqRule rule = result.getRule();
         DqIssue issue = dataManager.load(DqIssue.class)
-                .query("select i from demo_DqIssue i" +
+                .query("select i from umida_DqIssue i" +
                         " where i.rule = :rule and i.dataSource = :dataSource and i.status = :status" +
                         " order by i.createdAt desc")
                 .parameter("rule", rule)
@@ -466,7 +466,7 @@ public class DqCheckExecutorService {
 
     private List<DqRule> loadRules(DqRuleFilter filter) {
         return dataManager.load(DqRule.class)
-                .query("select e from demo_DqRule e")
+                .query("select e from umida_DqRule e")
                 .condition(ruleFilterService.createRuleCondition())
                 .parameters(ruleFilterService.createRuleParameters(filter))
                 .sort(Sort.by("name"))

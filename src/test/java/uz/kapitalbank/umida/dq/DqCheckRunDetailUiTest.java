@@ -83,7 +83,7 @@ public class DqCheckRunDetailUiTest {
         rule = dataManager.create(DqRule.class);
         rule.setName("dq check run detail ui test rule " + suffix);
         rule.setDataSource("main");
-        rule.setTableName("demo_dq_data_domain");
+        rule.setTableName("umida_dq_data_domain");
         rule.setColumnName("name");
         rule.setDimension(DqDimension.COMPLETENESS);
         rule.setRuleType(DqRuleType.NOT_NULL);
@@ -229,7 +229,7 @@ public class DqCheckRunDetailUiTest {
         result.setFailedRecords(BigInteger.valueOf(status == DqCheckResultStatus.FAILED ? 5 : 0));
         result.setPassRate(new BigDecimal(status == DqCheckResultStatus.FAILED ? "95.00" : "100.00"));
         result.setExecutionMs(12L);
-        result.setExecutedQuery("select count(*) from demo_dq_data_domain");
+        result.setExecutedQuery("select count(*) from umida_dq_data_domain");
         if (status == DqCheckResultStatus.FAILED) {
             result.setSampleViolations(SAMPLE_VIOLATIONS);
             result.setErrorMessage("5 rows violate the rule");

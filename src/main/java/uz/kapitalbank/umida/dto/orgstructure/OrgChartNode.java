@@ -3,9 +3,9 @@ package uz.kapitalbank.umida.dto.orgstructure;
 /**
  * One node of the d3-org-chart rendered in {@code OrgStructureView}.
  * <p>
- * A node is normally a {@code Position}: the node title is the department name, the
- * main line is the employee's full name and the sub-line is the job title. A department
- * that has no head position gets a synthetic node carrying only the department name,
+ * A node is normally a {@code OrgStructurePosition}: the node title is the subdivision name, the
+ * main line is the employee's full name and the sub-line is the job title. A subdivision
+ * that has no head position gets a synthetic node carrying only the subdivision name,
  * so that the chart stays connected and single-rooted.
  * <p>
  * Plain POJO on purpose — the instances are only serialized to JSON and passed to
@@ -16,23 +16,23 @@ public class OrgChartNode {
     private String id;
     private String parentId;
 
-    /** Node title — the department name (read by {@code d.data.orgLevelName} in orgchart.js). */
+    /** Node title — the subdivision name (read by {@code d.data.orgLevelName} in orgchart.js). */
     private String orgLevelName;
-    /** Employee full name, empty for a vacant or synthetic node. */
+    /** OrgStructureEmployee full name, empty for a vacant or synthetic node. */
     private String name;
-    /** Job title name, empty for a synthetic department node. */
+    /** Job title name, empty for a synthetic subdivision node. */
     private String position;
     /** Avatar URL; null renders the initials placeholder. */
     private String image;
-    /** Employee e-mail, empty for a vacant or synthetic node. */
+    /** OrgStructureEmployee e-mail, empty for a vacant or synthetic node. */
     private String email;
 
-    private String departmentId;
+    private String subdivisionId;
     private String positionId;
     private String employeeId;
     private String status;
     private boolean head;
-    private boolean departmentNode;
+    private boolean subdivisionNode;
 
     public String getId() {
         return id;
@@ -90,12 +90,12 @@ public class OrgChartNode {
         this.email = email;
     }
 
-    public String getDepartmentId() {
-        return departmentId;
+    public String getSubdivisionId() {
+        return subdivisionId;
     }
 
-    public void setDepartmentId(String departmentId) {
-        this.departmentId = departmentId;
+    public void setSubdivisionId(String subdivisionId) {
+        this.subdivisionId = subdivisionId;
     }
 
     public String getPositionId() {
@@ -130,12 +130,12 @@ public class OrgChartNode {
         this.head = head;
     }
 
-    public boolean isDepartmentNode() {
-        return departmentNode;
+    public boolean isSubdivisionNode() {
+        return subdivisionNode;
     }
 
-    public void setDepartmentNode(boolean departmentNode) {
-        this.departmentNode = departmentNode;
+    public void setSubdivisionNode(boolean subdivisionNode) {
+        this.subdivisionNode = subdivisionNode;
     }
 
     @Override

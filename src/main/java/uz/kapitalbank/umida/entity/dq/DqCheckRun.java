@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 @JmixEntity
-@Table(name = "DEMO_DQ_CHECK_RUN")
+@Table(name = "UMIDA_DQ_CHECK_RUN")
 @Entity(name = "umida_DqCheckRun")
 public class DqCheckRun {
     @JmixGeneratedValue

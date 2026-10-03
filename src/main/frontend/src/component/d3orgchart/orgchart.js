@@ -29,7 +29,7 @@ function avatar(data) {
     return `<div class="d3-chart-node-img d3-chart-node-initials">${escapeHtml(initials(data.name))}</div>`;
 }
 
-/** Position node of OrgStructureView: department title, then photo, employee name and job title. */
+/** Position node of OrgStructureView: subdivision title, then photo, employee name and job title. */
 function positionNodeContent(d, i, arr, state) {
     const data = d.data || {};
     return `

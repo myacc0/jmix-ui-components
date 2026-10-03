@@ -1,10 +1,10 @@
 package uz.kapitalbank.umida.service.orgstructure;
 
 import uz.kapitalbank.umida.dto.orgstructure.OrgChartNode;
-import uz.kapitalbank.umida.entity.orgstructure.Department;
-import uz.kapitalbank.umida.entity.orgstructure.Employee;
-import uz.kapitalbank.umida.entity.orgstructure.JobTitle;
-import uz.kapitalbank.umida.entity.orgstructure.Position;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructurePosition;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureJobTitle;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jmix.core.DataManager;
@@ -19,7 +19,7 @@ import java.util.*;
 public class OrgStructureService {
 
     protected static final String POSITION_NODE_PREFIX = "pos-";
-    protected static final String DEPARTMENT_NODE_PREFIX = "dept-";
+    protected static final String SUBDIVISION_NODE_PREFIX = "dept-";
 
     private final DataManager dataManager;
     private final Messages messages;
@@ -34,9 +34,9 @@ public class OrgStructureService {
         this.employeePhotoService = employeePhotoService;
     }
 
-    public List<Position> getPositions(String searchText, int size) {
-        return dataManager.load(Position.class)
-                .query("select p from umida_Position p where p.employee.fullName like :name")
+    public List<OrgStructurePosition> getPositions(String searchText, int size) {
+        return dataManager.load(OrgStructurePosition.class)
+                .query("select p from umida_OrgStructurePosition p where p.employee.fullName like :name")
                 .parameter("name", "(?i)%" + searchText + "%")
                 .sort(Sort.by(Sort.Order.asc("employee.fullName")))
                 .firstResult(0)
@@ -45,11 +45,11 @@ public class OrgStructureService {
     }
 
     /**
-     * Builds the org chart for the given department and serializes it for
+     * Builds the org chart for the given subdivision and serializes it for
      * {@code D3OrgChart.setData(String)}.
      */
-    public String getOrgChartNodesJson(UUID rootDepartmentId) {
-        return toJson(getOrgChartNodes(rootDepartmentId));
+    public String getOrgChartNodesJson(String rootSubdivisionId) {
+        return toJson(getOrgChartNodes(rootSubdivisionId));
     }
 
     /**
@@ -65,153 +65,153 @@ public class OrgStructureService {
     }
 
     /**
-     * Collects the whole department subtree below {@code rootDepartmentId} (the root
-     * department itself included) together with the positions of every department, and
+     * Collects the whole subdivision subtree below {@code rootSubdivisionId} (the root
+     * subdivision itself included) together with the positions of every subdivision, and
      * flattens it into d3-org-chart nodes.
      * <p>
-     * Linking rules: the head position ({@code ishead = 1}) of a department is the
-     * department's anchor — its remaining positions become its children, and the anchor
-     * of a child department hangs under the anchor of its parent department. A department
-     * without a head position gets a synthetic department node as its anchor, which keeps
+     * Linking rules: the head position ({@code ishead = 1}) of a subdivision is the
+     * subdivision's anchor — its remaining positions become its children, and the anchor
+     * of a child subdivision hangs under the anchor of its parent subdivision. A subdivision
+     * without a head position gets a synthetic subdivision node as its anchor, which keeps
      * the result single-rooted as d3-org-chart requires.
      */
-    public List<OrgChartNode> getOrgChartNodes(UUID rootDepartmentId) {
-        if (rootDepartmentId == null) {
+    public List<OrgChartNode> getOrgChartNodes(String rootSubdivisionId) {
+        if (rootSubdivisionId == null) {
             return List.of();
         }
 
-        Map<UUID, Department> departmentsById = loadDepartmentsById();
-        Department rootDepartment = departmentsById.get(rootDepartmentId);
-        if (rootDepartment == null) {
+        Map<String, OrgStructureSubdivision> subdivisionsById = loadSubdivisionsById();
+        OrgStructureSubdivision rootSubdivision = subdivisionsById.get(rootSubdivisionId);
+        if (rootSubdivision == null) {
             return List.of();
         }
 
-        List<Department> subtree = collectSubtree(rootDepartment, departmentsById);
-        Map<UUID, List<Position>> positionsByDepartment = loadPositionsByDepartment(subtree);
+        List<OrgStructureSubdivision> subtree = collectSubtree(rootSubdivision, subdivisionsById);
+        Map<String, List<OrgStructurePosition>> positionsBySubdivision = loadPositionsBySubdivision(subtree);
 
         List<OrgChartNode> nodes = new ArrayList<>();
-        // anchor node id per department; filled top-down, so a parent anchor is always
+        // anchor node id per subdivision; filled top-down, so a parent anchor is always
         // present by the time its children are processed
-        Map<UUID, String> anchorNodeIds = new HashMap<>();
+        Map<String, String> anchorNodeIds = new HashMap<>();
 
-        for (Department department : subtree) {
-            List<Position> positions = positionsByDepartment.getOrDefault(department.getId(), List.of());
-            Position headPosition = positions.stream()
+        for (OrgStructureSubdivision subdivision : subtree) {
+            List<OrgStructurePosition> positions = positionsBySubdivision.getOrDefault(subdivision.getId(), List.of());
+            OrgStructurePosition headPosition = positions.stream()
                     .filter(this::isHead)
                     .findFirst()
                     .orElse(null);
 
-            String parentNodeId = department.equals(rootDepartment)
+            String parentNodeId = subdivision.equals(rootSubdivision)
                     ? null
-                    : anchorNodeIds.get(referencedId(department.getParentDepartment()));
+                    : anchorNodeIds.get(referencedId(subdivision.getParent()));
 
             String anchorNodeId;
             if (headPosition != null) {
-                OrgChartNode headNode = createPositionNode(headPosition, department, parentNodeId);
+                OrgChartNode headNode = createPositionNode(headPosition, subdivision, parentNodeId);
                 anchorNodeId = headNode.getId();
                 nodes.add(headNode);
             } else {
-                OrgChartNode departmentNode = createDepartmentNode(department, parentNodeId);
-                anchorNodeId = departmentNode.getId();
-                nodes.add(departmentNode);
+                OrgChartNode subdivisionNode = createSubdivisionNode(subdivision, parentNodeId);
+                anchorNodeId = subdivisionNode.getId();
+                nodes.add(subdivisionNode);
             }
-            anchorNodeIds.put(department.getId(), anchorNodeId);
+            anchorNodeIds.put(subdivision.getId(), anchorNodeId);
 
-            for (Position position : positions) {
+            for (OrgStructurePosition position : positions) {
                 if (position.equals(headPosition)) {
                     continue;
                 }
-                nodes.add(createPositionNode(position, department, anchorNodeId));
+                nodes.add(createPositionNode(position, subdivision, anchorNodeId));
             }
         }
 
         return nodes;
     }
 
-    private Map<UUID, Department> loadDepartmentsById() {
-        List<Department> departments = dataManager.load(Department.class)
-                .query("select d from umida_Department d order by d.ordNo")
+    private Map<String, OrgStructureSubdivision> loadSubdivisionsById() {
+        List<OrgStructureSubdivision> subdivisions = dataManager.load(OrgStructureSubdivision.class)
+                .query("select d from umida_OrgStructureSubdivision d")
                 .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE)
-                        .add("parentDepartment", FetchPlan.INSTANCE_NAME))
+                        .add("parent", FetchPlan.INSTANCE_NAME))
                 .list();
 
-        Map<UUID, Department> departmentsById = new LinkedHashMap<>();
-        for (Department department : departments) {
-            departmentsById.put(department.getId(), department);
+        Map<String, OrgStructureSubdivision> subdivisionsById = new LinkedHashMap<>();
+        for (OrgStructureSubdivision subdivision : subdivisions) {
+            subdivisionsById.put(subdivision.getId(), subdivision);
         }
-        return departmentsById;
+        return subdivisionsById;
     }
 
     /**
-     * Breadth-first walk from the root department, so that every department is listed
+     * Breadth-first walk from the root subdivision, so that every subdivision is listed
      * after its parent and the sibling order of {@code ordNo} is preserved.
      */
-    private List<Department> collectSubtree(Department rootDepartment, Map<UUID, Department> departmentsById) {
-        Map<UUID, List<Department>> childrenByParent = new HashMap<>();
-        for (Department department : departmentsById.values()) {
-            UUID parentId = referencedId(department.getParentDepartment());
+    private List<OrgStructureSubdivision> collectSubtree(OrgStructureSubdivision rootSubdivision, Map<String, OrgStructureSubdivision> subdivisionsById) {
+        Map<String, List<OrgStructureSubdivision>> childrenByParent = new HashMap<>();
+        for (OrgStructureSubdivision subdivision : subdivisionsById.values()) {
+            String parentId = referencedId(subdivision.getParent());
             if (parentId != null) {
-                childrenByParent.computeIfAbsent(parentId, key -> new ArrayList<>()).add(department);
+                childrenByParent.computeIfAbsent(parentId, key -> new ArrayList<>()).add(subdivision);
             }
         }
 
-        List<Department> subtree = new ArrayList<>();
-        Deque<Department> queue = new ArrayDeque<>();
-        queue.add(rootDepartment);
+        List<OrgStructureSubdivision> subtree = new ArrayList<>();
+        Deque<OrgStructureSubdivision> queue = new ArrayDeque<>();
+        queue.add(rootSubdivision);
 
         while (!queue.isEmpty()) {
-            Department department = queue.removeFirst();
-            // guards against a cycle in PARENT_DEPARTMENT_ID, which would otherwise loop forever
-            if (subtree.contains(department)) {
+            OrgStructureSubdivision subdivision = queue.removeFirst();
+            // guards against a cycle in PARENT_ID, which would otherwise loop forever
+            if (subtree.contains(subdivision)) {
                 continue;
             }
-            subtree.add(department);
-            queue.addAll(childrenByParent.getOrDefault(department.getId(), List.of()));
+            subtree.add(subdivision);
+            queue.addAll(childrenByParent.getOrDefault(subdivision.getId(), List.of()));
         }
 
         return subtree;
     }
 
-    private Map<UUID, List<Position>> loadPositionsByDepartment(List<Department> departments) {
-        List<UUID> departmentIds = departments.stream()
-                .map(Department::getId)
+    private Map<String, List<OrgStructurePosition>> loadPositionsBySubdivision(List<OrgStructureSubdivision> subdivisions) {
+        List<String> subdivisionIds = subdivisions.stream()
+                .map(OrgStructureSubdivision::getId)
                 .toList();
 
-        List<Position> positions = dataManager.load(Position.class)
-                .query("select p from umida_Position p where p.department.id in :departmentIds")
-                .parameter("departmentIds", departmentIds)
+        List<OrgStructurePosition> positions = dataManager.load(OrgStructurePosition.class)
+                .query("select p from umida_OrgStructurePosition p where p.subdivision.id in :subdivisionIds")
+                .parameter("subdivisionIds", subdivisionIds)
                 .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE)
-                        .add("department", FetchPlan.INSTANCE_NAME)
+                        .add("subdivision", FetchPlan.INSTANCE_NAME)
                         .add("jobTitle", FetchPlan.INSTANCE_NAME)
                         // BASE, not INSTANCE_NAME: the employee card shows the e-mail too
                         .add("employee", FetchPlan.BASE))
                 .list();
 
         // head first, then the most senior staff (higher lvl) first, then by employee name
-        Comparator<Position> order = Comparator
-                .comparing((Position p) -> isHead(p) ? 0 : 1)
-                .thenComparing(Position::getLvl, Comparator.nullsLast(Comparator.reverseOrder()))
+        Comparator<OrgStructurePosition> order = Comparator
+                .comparing((OrgStructurePosition p) -> isHead(p) ? 0 : 1)
+                .thenComparing(OrgStructurePosition::getLvl, Comparator.nullsLast(Comparator.reverseOrder()))
                 .thenComparing(this::employeeName, Comparator.nullsLast(Comparator.naturalOrder()));
 
-        Map<UUID, List<Position>> positionsByDepartment = new HashMap<>();
-        for (Position position : positions) {
-            UUID departmentId = referencedId(position.getDepartment());
-            if (departmentId != null) {
-                positionsByDepartment.computeIfAbsent(departmentId, key -> new ArrayList<>()).add(position);
+        Map<String, List<OrgStructurePosition>> positionsBySubdivision = new HashMap<>();
+        for (OrgStructurePosition position : positions) {
+            String subdivisionId = referencedId(position.getSubdivision());
+            if (subdivisionId != null) {
+                positionsBySubdivision.computeIfAbsent(subdivisionId, key -> new ArrayList<>()).add(position);
             }
         }
-        positionsByDepartment.values().forEach(list -> list.sort(order));
+        positionsBySubdivision.values().forEach(list -> list.sort(order));
 
-        return positionsByDepartment;
+        return positionsBySubdivision;
     }
 
-    private OrgChartNode createPositionNode(Position position, Department department, String parentNodeId) {
+    private OrgChartNode createPositionNode(OrgStructurePosition position, OrgStructureSubdivision subdivision, String parentNodeId) {
         OrgChartNode node = new OrgChartNode();
         node.setId(POSITION_NODE_PREFIX + position.getId());
         node.setParentId(parentNodeId);
-        node.setOrgLevelName(department.getName());
+        node.setOrgLevelName(subdivision.getName());
 
-        Employee employee = position.getEmployee();
+        OrgStructureEmployee employee = position.getEmployee();
         node.setName(employee != null && employee.getFullName() != null
                 ? employee.getFullName()
                 : messages.getMessage(OrgStructureService.class, "orgChart.vacantPosition"));
@@ -221,40 +221,40 @@ public class OrgStructureService {
         node.setImage(employee != null ? employeePhotoService.getPhotoUrl(employee.getId()) : null);
         node.setEmail(employee != null ? employee.getEmail() : null);
 
-        JobTitle jobTitle = position.getJobTitle();
+        OrgStructureJobTitle jobTitle = position.getJobTitle();
         node.setPosition(jobTitle != null && jobTitle.getName() != null ? jobTitle.getName() : "");
 
-        node.setDepartmentId(String.valueOf(department.getId()));
+        node.setSubdivisionId(String.valueOf(subdivision.getId()));
         node.setPositionId(String.valueOf(position.getId()));
         node.setStatus(position.getStatus() != null ? position.getStatus().getId() : null);
         node.setHead(isHead(position));
-        node.setDepartmentNode(false);
+        node.setSubdivisionNode(false);
         return node;
     }
 
-    private OrgChartNode createDepartmentNode(Department department, String parentNodeId) {
+    private OrgChartNode createSubdivisionNode(OrgStructureSubdivision subdivision, String parentNodeId) {
         OrgChartNode node = new OrgChartNode();
-        node.setId(DEPARTMENT_NODE_PREFIX + department.getId());
+        node.setId(SUBDIVISION_NODE_PREFIX + subdivision.getId());
         node.setParentId(parentNodeId);
-        node.setOrgLevelName(department.getName());
+        node.setOrgLevelName(subdivision.getName());
         node.setName("");
         node.setPosition("");
-        node.setDepartmentId(String.valueOf(department.getId()));
+        node.setSubdivisionId(String.valueOf(subdivision.getId()));
         node.setHead(false);
-        node.setDepartmentNode(true);
+        node.setSubdivisionNode(true);
         return node;
     }
 
-    private boolean isHead(Position position) {
-        return Objects.equals(position.getIshead(), 1);
+    private boolean isHead(OrgStructurePosition position) {
+        return Objects.equals(position.getIsheadofsubdivision(), 1);
     }
 
-    private String employeeName(Position position) {
+    private String employeeName(OrgStructurePosition position) {
         return position.getEmployee() != null ? position.getEmployee().getFullName() : null;
     }
 
-    private UUID referencedId(Department department) {
-        return department != null ? department.getId() : null;
+    private String referencedId(OrgStructureSubdivision subdivision) {
+        return subdivision != null ? subdivision.getId() : null;
     }
 
 }

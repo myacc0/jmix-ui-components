@@ -69,7 +69,7 @@ public class DqRuleDetailUiTest {
         rule = dataManager.create(DqRule.class);
         rule.setName("dq sample size ui test rule " + suffix);
         rule.setDataSource("main");
-        rule.setTableName("demo_dq_data_domain");
+        rule.setTableName("umida_dq_data_domain");
         rule.setColumnName("name");
         rule.setDimension(DqDimension.COMPLETENESS);
         rule.setRuleType(DqRuleType.NOT_NULL);
@@ -130,7 +130,7 @@ public class DqRuleDetailUiTest {
     @Test
     void savingAnOwnedRuleKeepsItsOwner() {
         User otherOwner = dataManager.load(User.class)
-                .query("select u from demo_User u where u.username <> :username")
+                .query("select u from umida_User u where u.username <> :username")
                 .parameter("username", "admin")
                 .fetchPlan(FetchPlan.BASE)
                 .maxResults(1)

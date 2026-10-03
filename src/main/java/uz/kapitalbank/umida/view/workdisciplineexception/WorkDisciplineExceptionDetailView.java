@@ -1,9 +1,9 @@
 package uz.kapitalbank.umida.view.workdisciplineexception;
 
 import uz.kapitalbank.umida.entity.hr.WorkDisciplineException;
-import uz.kapitalbank.umida.entity.orgstructure.Department;
-import uz.kapitalbank.umida.entity.orgstructure.Employee;
-import uz.kapitalbank.umida.entity.orgstructure.JobTitle;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureJobTitle;
 import uz.kapitalbank.umida.enums.hr.WorkDisciplineTargetType;
 import uz.kapitalbank.umida.view.main.MainView;
 import com.vaadin.flow.component.AbstractField;
@@ -23,11 +23,11 @@ public class WorkDisciplineExceptionDetailView extends StandardDetailView<WorkDi
     @ViewComponent
     private JmixRadioButtonGroup<WorkDisciplineTargetType> targetTypeField;
     @ViewComponent
-    private EntityPicker<Department> subdivisionField;
+    private EntityPicker<OrgStructureSubdivision> subdivisionField;
     @ViewComponent
-    private EntityPicker<JobTitle> jobTitleField;
+    private EntityPicker<OrgStructureJobTitle> jobTitleField;
     @ViewComponent
-    private EntityPicker<Employee> employeeField;
+    private EntityPicker<OrgStructureEmployee> employeeField;
 
     @ViewComponent
     private MessageBundle messageBundle;

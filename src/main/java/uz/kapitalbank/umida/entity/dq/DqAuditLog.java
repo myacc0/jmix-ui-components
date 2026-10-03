@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @JmixEntity
-@Table(name = "DEMO_DQ_AUDIT_LOG")
+@Table(name = "UMIDA_DQ_AUDIT_LOG")
 @Entity(name = "umida_DqAuditLog")
 public class DqAuditLog {
     @JmixGeneratedValue

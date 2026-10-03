@@ -1,6 +1,6 @@
 package uz.kapitalbank.umida.entity.dict;
 
-import uz.kapitalbank.umida.entity.orgstructure.Department;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import io.jmix.core.DeletePolicy;
 import io.jmix.core.annotation.DeletedBy;
 import io.jmix.core.annotation.DeletedDate;
@@ -19,9 +19,9 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
 @JmixEntity
-@Table(name = "DEMO_DICT_DATA_PRODUCT", indexes = {
-        @Index(name = "IDX_DEMO_DICT_DATA_PRODUCT_PARENT", columnList = "PARENT_ID"),
-        @Index(name = "IDX_DEMO_DICT_DATA_PRODUCT_BUSINESS_OWNER", columnList = "BUSINESS_OWNER_ID")
+@Table(name = "UMIDA_DICT_DATA_PRODUCT", indexes = {
+        @Index(name = "IDX_UMIDA_DICT_DATA_PRODUCT_PARENT", columnList = "PARENT_ID"),
+        @Index(name = "IDX_UMIDA_DICT_DATA_PRODUCT_BUSINESS_OWNER", columnList = "BUSINESS_OWNER_ID")
 })
 @Entity(name = "umida_DictDataProduct")
 public class DictDataProduct {
@@ -51,7 +51,7 @@ public class DictDataProduct {
     @OnDeleteInverse(DeletePolicy.UNLINK)
     @JoinColumn(name = "BUSINESS_OWNER_ID", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    private Department businessOwner;
+    private OrgStructureSubdivision businessOwner;
 
     @Column(name = "ASSIGN_DATE", nullable = false)
     @NotNull
@@ -104,11 +104,11 @@ public class DictDataProduct {
         this.assignDate = assignDate;
     }
 
-    public Department getBusinessOwner() {
+    public OrgStructureSubdivision getBusinessOwner() {
         return businessOwner;
     }
 
-    public void setBusinessOwner(Department businessOwner) {
+    public void setBusinessOwner(OrgStructureSubdivision businessOwner) {
         this.businessOwner = businessOwner;
     }
 

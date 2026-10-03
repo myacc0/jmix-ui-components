@@ -1,5 +1,5 @@
 /*
- * Employee card dialog opened from a d3-org-chart node.
+ * OrgStructureEmployee card dialog opened from a d3-org-chart node.
  *
  * The dialog chrome — the <header> of vaadin-dialog-overlay and the close button inside it —
  * exists only in the browser, the view descriptor knows nothing about it. The rules below are

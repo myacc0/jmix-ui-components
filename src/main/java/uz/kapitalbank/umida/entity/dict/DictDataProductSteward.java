@@ -1,6 +1,6 @@
 package uz.kapitalbank.umida.entity.dict;
 
-import uz.kapitalbank.umida.entity.orgstructure.Employee;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
 import io.jmix.core.DeletePolicy;
 import io.jmix.core.annotation.DeletedBy;
 import io.jmix.core.annotation.DeletedDate;
@@ -18,9 +18,9 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
 @JmixEntity
-@Table(name = "DEMO_DICT_DATA_PRODUCT_STEWARD", indexes = {
-        @Index(name = "IDX_DEMO_DICT_DATA_PRODUCT_STEWARD_EMPLOYEE", columnList = "EMPLOYEE_ID"),
-        @Index(name = "IDX_DEMO_DICT_DATA_PRODUCT_STEWARD_PRODUCT", columnList = "PRODUCT_ID")
+@Table(name = "UMIDA_DICT_DATA_PRODUCT_STEWARD", indexes = {
+        @Index(name = "IDX_UMIDA_DICT_DATA_PRODUCT_STEWARD_EMPLOYEE", columnList = "EMPLOYEE_ID"),
+        @Index(name = "IDX_UMIDA_DICT_DATA_PRODUCT_STEWARD_PRODUCT", columnList = "PRODUCT_ID")
 })
 @Entity(name = "umida_DictDataProductSteward")
 public class DictDataProductSteward {
@@ -39,7 +39,7 @@ public class DictDataProductSteward {
     @JoinColumn(name = "EMPLOYEE_ID", nullable = false)
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    private Employee employee;
+    private OrgStructureEmployee employee;
 
     @Column(name = "DATE_BEGIN", nullable = false)
     @NotNull
@@ -111,11 +111,11 @@ public class DictDataProductSteward {
         this.dateBegin = dateBegin;
     }
 
-    public Employee getEmployee() {
+    public OrgStructureEmployee getEmployee() {
         return employee;
     }
 
-    public void setEmployee(Employee employee) {
+    public void setEmployee(OrgStructureEmployee employee) {
         this.employee = employee;
     }
 

@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Exercises a real check run end to end against the main store: the rules are evaluated over
- * {@code demo_dq_data_domain}, the table behind {@link DqDataDomain}, so the SQL the builder
+ * {@code umida_dq_data_domain}, the table behind {@link DqDataDomain}, so the SQL the builder
  * produces is actually executed.
  * <p>
  * The rules are tied to a domain created by the test and the filter selects that domain, so a run
@@ -54,7 +54,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @ExtendWith(AuthenticatedAsAdmin.class)
 public class DqCheckExecutorServiceTests {
 
-    private static final String TABLE = "demo_dq_data_domain";
+    private static final String TABLE = "umida_dq_data_domain";
     private static final long RUN_TIMEOUT_MS = 60_000;
 
     @Autowired
@@ -260,7 +260,7 @@ public class DqCheckExecutorServiceTests {
 
     private List<DqCheckRunResult> loadResults(DqCheckRun run) {
         return dataManager.load(DqCheckRunResult.class)
-                .query("select r from demo_DqCheckRunResult r where r.checkRun = :checkRun")
+                .query("select r from umida_DqCheckRunResult r where r.checkRun = :checkRun")
                 .parameter("checkRun", run)
                 // _base carries every local attribute; the references are only read for their id
                 .fetchPlan(FetchPlan.BASE)
@@ -269,7 +269,7 @@ public class DqCheckExecutorServiceTests {
 
     private List<DqIssue> loadIssues(DqRule rule) {
         return dataManager.load(DqIssue.class)
-                .query("select i from demo_DqIssue i where i.rule = :rule")
+                .query("select i from umida_DqIssue i where i.rule = :rule")
                 .parameter("rule", rule)
                 .fetchPlan(FetchPlan.BASE)
                 .list();

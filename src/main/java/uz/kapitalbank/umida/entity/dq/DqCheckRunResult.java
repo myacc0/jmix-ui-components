@@ -18,9 +18,9 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @JmixEntity
-@Table(name = "DEMO_DQ_CHECK_RUN_RESULT", indexes = {
-        @Index(name = "IDX_DEMO_DQ_CHECK_RUN_RESULT_CHECK_RUN", columnList = "CHECK_RUN_ID"),
-        @Index(name = "IDX_DEMO_DQ_CHECK_RUN_RESULT_RULE", columnList = "RULE_ID")
+@Table(name = "UMIDA_DQ_CHECK_RUN_RESULT", indexes = {
+        @Index(name = "IDX_UMIDA_DQ_CHECK_RUN_RESULT_CHECK_RUN", columnList = "CHECK_RUN_ID"),
+        @Index(name = "IDX_UMIDA_DQ_CHECK_RUN_RESULT_RULE", columnList = "RULE_ID")
 })
 @Entity(name = "umida_DqCheckRunResult")
 public class DqCheckRunResult {

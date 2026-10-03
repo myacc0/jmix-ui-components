@@ -1,14 +1,14 @@
 package uz.kapitalbank.umida.datastructure;
 
 import uz.kapitalbank.umida.dto.orgstructure.DataAssetChartNode;
-import uz.kapitalbank.umida.entity.orgstructure.Department;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructurePosition;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.entity.dict.DictDataDomain;
 import uz.kapitalbank.umida.entity.dict.DictDataDomainSteward;
 import uz.kapitalbank.umida.entity.dict.DictDataProduct;
 import uz.kapitalbank.umida.entity.dict.DictDataProductSteward;
-import uz.kapitalbank.umida.entity.orgstructure.Employee;
-import uz.kapitalbank.umida.entity.orgstructure.JobTitle;
-import uz.kapitalbank.umida.entity.orgstructure.Position;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureJobTitle;
 import uz.kapitalbank.umida.enums.orgstructure.OrgStructurePositionStatus;
 import uz.kapitalbank.umida.service.orgstructure.DataStructureService;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
@@ -62,12 +62,12 @@ class DataStructureServiceTests {
     void buildsDomainSubtreeWithBusinessOwnerAndItsHead() {
         String suffix = UUID.randomUUID().toString();
 
-        Department ownerA = createDepartment("Owner A " + suffix);
-        Department ownerB = createDepartment("Owner B " + suffix);
-        Employee headA = createEmployee("Head A " + suffix, "head.a@test.com");
-        createPosition(ownerA, createJobTitle("Director " + suffix), headA, 10, 1);
-        // a non-head position of the same department must not be taken for the head
-        createPosition(ownerA, createJobTitle("Specialist " + suffix), createEmployee("Staff A " + suffix, null), 12, 0);
+        OrgStructureSubdivision ownerA = createSubdivision("Owner A " + suffix);
+        OrgStructureSubdivision ownerB = createSubdivision("Owner B " + suffix);
+        OrgStructureEmployee headA = createEmployee("Head A " + suffix, "head.a@test.com");
+        createPosition(ownerA, createJobTitle("Director " + suffix), headA, "10", 1);
+        // a non-head position of the same subdivision must not be taken for the head
+        createPosition(ownerA, createJobTitle("Specialist " + suffix), createEmployee("Staff A " + suffix, null), "12", 0);
 
         DictDataDomain root = createDomain("Root " + suffix, null, ownerA);
         DictDataDomain child = createDomain("Child " + suffix, root, ownerB);
@@ -111,7 +111,7 @@ class DataStructureServiceTests {
     @Test
     void selectedDomainBecomesTheRootOfTheChart() {
         String suffix = UUID.randomUUID().toString();
-        Department owner = createDepartment("Owner " + suffix);
+        OrgStructureSubdivision owner = createSubdivision("Owner " + suffix);
 
         DictDataDomain root = createDomain("Root " + suffix, null, owner);
         DictDataDomain child = createDomain("Child " + suffix, root, owner);
@@ -129,11 +129,11 @@ class DataStructureServiceTests {
     @Test
     void prefersFilledAndSeniorHeadPosition() {
         String suffix = UUID.randomUUID().toString();
-        Department owner = createDepartment("Owner " + suffix);
-        JobTitle title = createJobTitle("Head " + suffix);
-        createPosition(owner, title, null, 20, 1);
-        createPosition(owner, title, createEmployee("Junior head " + suffix, null), 5, 1);
-        createPosition(owner, title, createEmployee("Senior head " + suffix, null), 9, 1);
+        OrgStructureSubdivision owner = createSubdivision("Owner " + suffix);
+        OrgStructureJobTitle title = createJobTitle("Head " + suffix);
+        createPosition(owner, title, null, "20", 1);
+        createPosition(owner, title, createEmployee("Junior head " + suffix, null), "5", 1);
+        createPosition(owner, title, createEmployee("Senior head " + suffix, null), "9", 1);
 
         DictDataDomain domain = createDomain("Domain " + suffix, null, owner);
 
@@ -145,7 +145,7 @@ class DataStructureServiceTests {
     @Test
     void listsOnlyStewardsActiveToday() {
         String suffix = UUID.randomUUID().toString();
-        Department owner = createDepartment("Owner " + suffix);
+        OrgStructureSubdivision owner = createSubdivision("Owner " + suffix);
         DictDataDomain domain = createDomain("Domain " + suffix, null, owner);
         LocalDate today = LocalDate.now();
 
@@ -162,9 +162,9 @@ class DataStructureServiceTests {
     @Test
     void buildsProductSubtreeWithActiveStewards() {
         String suffix = UUID.randomUUID().toString();
-        Department owner = createDepartment("Owner " + suffix);
-        Employee head = createEmployee("Head " + suffix, null);
-        createPosition(owner, createJobTitle("Director " + suffix), head, 10, 1);
+        OrgStructureSubdivision owner = createSubdivision("Owner " + suffix);
+        OrgStructureEmployee head = createEmployee("Head " + suffix, null);
+        createPosition(owner, createJobTitle("Director " + suffix), head, "10", 1);
 
         DictDataProduct root = createProduct("Root " + suffix, null, owner);
         DictDataProduct child = createProduct("Child " + suffix, root, owner);
@@ -189,8 +189,8 @@ class DataStructureServiceTests {
     @Test
     void serializesOnlyTheChartFieldsToJson() throws Exception {
         String suffix = UUID.randomUUID().toString();
-        Department owner = createDepartment("Owner " + suffix);
-        createPosition(owner, createJobTitle("Director " + suffix), createEmployee("Head " + suffix, null), 10, 1);
+        OrgStructureSubdivision owner = createSubdivision("Owner " + suffix);
+        createPosition(owner, createJobTitle("Director " + suffix), createEmployee("Head " + suffix, null), "10", 1);
         DictDataDomain domain = createDomain("Domain " + suffix, null, owner);
 
         String json = dataStructureService.toJson(dataStructureService.getDomainChartNodes(domain.getId()));
@@ -211,7 +211,7 @@ class DataStructureServiceTests {
     @Test
     void searchesDomainsAndProductsByNameIgnoringCase() {
         String suffix = UUID.randomUUID().toString();
-        Department owner = createDepartment("Owner " + suffix);
+        OrgStructureSubdivision owner = createSubdivision("Owner " + suffix);
         DictDataDomain domain = createDomain("Findable " + suffix, null, owner);
         DictDataProduct product = createProduct("Findable " + suffix, null, owner);
 
@@ -235,37 +235,37 @@ class DataStructureServiceTests {
         return nodes.stream().collect(Collectors.toMap(DataAssetChartNode::getId, Function.identity()));
     }
 
-    private Department createDepartment(String name) {
-        Department department = dataManager.create(Department.class);
-        department.setName(name);
-        return track(dataManager.save(department));
+    private OrgStructureSubdivision createSubdivision(String name) {
+        OrgStructureSubdivision subdivision = dataManager.create(OrgStructureSubdivision.class);
+        subdivision.setName(name);
+        return track(dataManager.save(subdivision));
     }
 
-    private JobTitle createJobTitle(String name) {
-        JobTitle jobTitle = dataManager.create(JobTitle.class);
+    private OrgStructureJobTitle createJobTitle(String name) {
+        OrgStructureJobTitle jobTitle = dataManager.create(OrgStructureJobTitle.class);
         jobTitle.setName(name);
         return track(dataManager.save(jobTitle));
     }
 
-    private Employee createEmployee(String fullName, String email) {
-        Employee employee = dataManager.create(Employee.class);
-        employee.setFullName(fullName);
-        employee.setEmail(email);
-        return track(dataManager.save(employee));
+    private OrgStructureEmployee createEmployee(String fullName, String email) {
+        OrgStructureEmployee orgStructureEmployee = dataManager.create(OrgStructureEmployee.class);
+        orgStructureEmployee.setFullName(fullName);
+        orgStructureEmployee.setEmail(email);
+        return track(dataManager.save(orgStructureEmployee));
     }
 
-    private void createPosition(Department department, JobTitle jobTitle, Employee employee, Integer lvl, Integer ishead) {
-        Position position = dataManager.create(Position.class);
-        position.setDepartment(department);
+    private void createPosition(OrgStructureSubdivision subdivision, OrgStructureJobTitle jobTitle, OrgStructureEmployee orgStructureEmployee, String lvl, Integer ishead) {
+        OrgStructurePosition position = dataManager.create(OrgStructurePosition.class);
+        position.setSubdivision(subdivision);
         position.setJobTitle(jobTitle);
-        position.setEmployee(employee);
+        position.setEmployee(orgStructureEmployee);
         position.setLvl(lvl);
-        position.setIshead(ishead);
-        position.setStatus(employee != null ? OrgStructurePositionStatus.FILLED : OrgStructurePositionStatus.VACANT);
+        position.setIsheadofsubdivision(ishead);
+        position.setStatus(orgStructureEmployee != null ? OrgStructurePositionStatus.FILLED : OrgStructurePositionStatus.VACANT);
         track(dataManager.save(position));
     }
 
-    private DictDataDomain createDomain(String shortName, DictDataDomain parent, Department owner) {
+    private DictDataDomain createDomain(String shortName, DictDataDomain parent, OrgStructureSubdivision owner) {
         DictDataDomain domain = dataManager.create(DictDataDomain.class);
         domain.setCode("code-" + UUID.randomUUID());
         domain.setShortName(shortName);
@@ -277,7 +277,7 @@ class DataStructureServiceTests {
         return track(dataManager.save(domain));
     }
 
-    private DictDataProduct createProduct(String shortName, DictDataProduct parent, Department owner) {
+    private DictDataProduct createProduct(String shortName, DictDataProduct parent, OrgStructureSubdivision owner) {
         DictDataProduct product = dataManager.create(DictDataProduct.class);
         product.setCode("code-" + UUID.randomUUID());
         product.setShortName(shortName);
@@ -288,19 +288,19 @@ class DataStructureServiceTests {
         return track(dataManager.save(product));
     }
 
-    private void createDomainSteward(DictDataDomain domain, Employee employee, LocalDate begin, LocalDate end) {
+    private void createDomainSteward(DictDataDomain domain, OrgStructureEmployee orgStructureEmployee, LocalDate begin, LocalDate end) {
         DictDataDomainSteward steward = dataManager.create(DictDataDomainSteward.class);
         steward.setDomain(domain);
-        steward.setEmployee(employee);
+        steward.setEmployee(orgStructureEmployee);
         steward.setDateBegin(begin);
         steward.setDateEnd(end);
         track(dataManager.save(steward));
     }
 
-    private void createProductSteward(DictDataProduct product, Employee employee, LocalDate begin, LocalDate end) {
+    private void createProductSteward(DictDataProduct product, OrgStructureEmployee orgStructureEmployee, LocalDate begin, LocalDate end) {
         DictDataProductSteward steward = dataManager.create(DictDataProductSteward.class);
         steward.setProduct(product);
-        steward.setEmployee(employee);
+        steward.setEmployee(orgStructureEmployee);
         steward.setDateBegin(begin);
         steward.setDateEnd(end);
         track(dataManager.save(steward));
@@ -315,7 +315,7 @@ class DataStructureServiceTests {
     void tearDown() {
         // reverse creation order: stewards and positions before what they reference, child
         // domains before their parents. Domains and stewards are soft-deletable — a soft-deleted
-        // row would keep its foreign key to the department, so they are removed for real.
+        // row would keep its foreign key to the subdivision, so they are removed for real.
         List<Object> reversed = new ArrayList<>(cleanup);
         Collections.reverse(reversed);
         for (Object entity : reversed) {

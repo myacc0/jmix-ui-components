@@ -2,13 +2,13 @@ package uz.kapitalbank.umida.datastructure;
 
 import uz.kapitalbank.umida.UmidaApplication;
 import uz.kapitalbank.umida.component.d3orgchart.D3OrgChart;
-import uz.kapitalbank.umida.entity.orgstructure.Department;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.entity.dict.DictDataDomain;
 import uz.kapitalbank.umida.entity.dict.DictDataDomainSteward;
 import uz.kapitalbank.umida.entity.dict.DictDataProduct;
-import uz.kapitalbank.umida.entity.orgstructure.Employee;
-import uz.kapitalbank.umida.entity.orgstructure.JobTitle;
-import uz.kapitalbank.umida.entity.orgstructure.Position;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureJobTitle;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructurePosition;
 import uz.kapitalbank.umida.enums.orgstructure.OrgStructurePositionStatus;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
 import uz.kapitalbank.umida.view.orgstructure.DataAssetCardView;
@@ -77,18 +77,18 @@ public class DataStructureViewsUiTest {
     void setUp() {
         suffix = UUID.randomUUID().toString().substring(0, 8);
 
-        Department owner = create(Department.class, d -> d.setName("Owner " + suffix));
-        JobTitle title = create(JobTitle.class, t -> t.setName("Director " + suffix));
-        Employee head = create(Employee.class, e -> {
+        OrgStructureSubdivision owner = create(OrgStructureSubdivision.class, d -> d.setName("Owner " + suffix));
+        OrgStructureJobTitle title = create(OrgStructureJobTitle.class, t -> t.setName("Director " + suffix));
+        OrgStructureEmployee head = create(OrgStructureEmployee.class, e -> {
             e.setFullName("Head " + suffix);
             e.setEmail("head-" + suffix + "@test.com");
         });
-        Employee stewardEmployee = create(Employee.class, e -> e.setFullName("Steward " + suffix));
-        create(Position.class, p -> {
-            p.setDepartment(owner);
+        OrgStructureEmployee stewardOrgStructureEmployee = create(OrgStructureEmployee.class, e -> e.setFullName("Steward " + suffix));
+        create(OrgStructurePosition.class, p -> {
+            p.setSubdivision(owner);
             p.setJobTitle(title);
             p.setEmployee(head);
-            p.setIshead(1);
+            p.setIsheadofsubdivision(1);
             p.setStatus(OrgStructurePositionStatus.FILLED);
         });
 
@@ -96,7 +96,7 @@ public class DataStructureViewsUiTest {
         childDomain = create(DictDataDomain.class, d -> fillDomain(d, "Child domain " + suffix, rootDomain, owner));
         create(DictDataDomainSteward.class, s -> {
             s.setDomain(childDomain);
-            s.setEmployee(stewardEmployee);
+            s.setEmployee(stewardOrgStructureEmployee);
             s.setDateBegin(LocalDate.now().minusDays(1));
         });
 
@@ -122,7 +122,7 @@ public class DataStructureViewsUiTest {
         assertEquals("Child domain " + suffix, card.getPageTitle(), "the domain name is the dialog title");
         assertEquals("Head " + suffix, this.<H4>component(card, "headNameLabel").getText());
         assertEquals("Director " + suffix, this.<Span>component(card, "headJobTitleLabel").getText());
-        assertEquals("Owner " + suffix, this.<Span>component(card, "headDepartmentLabel").getText());
+        assertEquals("Owner " + suffix, this.<Span>component(card, "headSubdivisionLabel").getText());
         assertEquals("head-" + suffix + "@test.com", this.<Span>component(card, "headEmailLabel").getText());
         // the head has no photo, so the initials of the domain name stand in for it
         assertEquals("CD", this.<Span>component(card, "headPhotoPlaceholder").getText());
@@ -204,7 +204,7 @@ public class DataStructureViewsUiTest {
                 .findFirst();
     }
 
-    private void fillDomain(DictDataDomain domain, String shortName, DictDataDomain parent, Department owner) {
+    private void fillDomain(DictDataDomain domain, String shortName, DictDataDomain parent, OrgStructureSubdivision owner) {
         domain.setCode("code-" + UUID.randomUUID());
         domain.setShortName(shortName);
         domain.setLongName("Long " + shortName);
@@ -224,7 +224,7 @@ public class DataStructureViewsUiTest {
     @AfterEach
     void tearDown() {
         // reverse creation order; domains, products and stewards are soft-deletable, and a
-        // soft-deleted row would keep its foreign key to the department — remove them for real
+        // soft-deleted row would keep its foreign key to the subdivision — remove them for real
         List<Object> reversed = new ArrayList<>(cleanup);
         Collections.reverse(reversed);
         for (Object entity : reversed) {

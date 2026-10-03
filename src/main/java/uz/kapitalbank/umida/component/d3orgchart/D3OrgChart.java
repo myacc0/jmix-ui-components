@@ -21,7 +21,7 @@ public class D3OrgChart extends Component implements HasSize {
      * first {@link #setData(String)} call — the template is read when the chart is built.
      */
     public enum NodeTemplate {
-        /** Department title on top, then the employee photo, name and job title. */
+        /** OrgStructureSubdivision title on top, then the employee photo, name and job title. */
         POSITION("position"),
         /**
          * Head photo on the left; business owner, domain / product name and head name on the

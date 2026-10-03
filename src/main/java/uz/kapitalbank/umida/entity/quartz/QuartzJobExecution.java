@@ -19,7 +19,7 @@ import java.util.UUID;
  * A history record is never edited afterwards, so the entity carries no version or audit columns.
  */
 @JmixEntity
-@Table(name = "DEMO_QUARTZ_JOB_EXECUTION")
+@Table(name = "UMIDA_QUARTZ_JOB_EXECUTION")
 @Entity(name = "umida_QuartzJobExecution")
 public class QuartzJobExecution {
     @JmixGeneratedValue

@@ -1,34 +1,23 @@
 package uz.kapitalbank.umida.service.orgstructure;
 
-import uz.kapitalbank.umida.dto.orgstructure.DataAssetChartNode;
-import uz.kapitalbank.umida.entity.orgstructure.Department;
-import uz.kapitalbank.umida.entity.dict.DictDataDomain;
-import uz.kapitalbank.umida.entity.dict.DictDataDomainSteward;
-import uz.kapitalbank.umida.entity.dict.DictDataProduct;
-import uz.kapitalbank.umida.entity.dict.DictDataProductSteward;
-import uz.kapitalbank.umida.entity.orgstructure.Employee;
-import uz.kapitalbank.umida.entity.orgstructure.Position;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jmix.core.DataManager;
 import io.jmix.core.FetchPlan;
 import io.jmix.core.Sort;
 import org.springframework.stereotype.Service;
+import uz.kapitalbank.umida.dto.orgstructure.DataAssetChartNode;
+import uz.kapitalbank.umida.entity.dict.DictDataDomain;
+import uz.kapitalbank.umida.entity.dict.DictDataDomainSteward;
+import uz.kapitalbank.umida.entity.dict.DictDataProduct;
+import uz.kapitalbank.umida.entity.dict.DictDataProductSteward;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructurePosition;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Function;
 
 /**
@@ -36,8 +25,8 @@ import java.util.function.Function;
  * {@code DataDomainStructureView} and {@code DataProductStructureView}.
  * <p>
  * Both hierarchies are built the same way: every domain / product becomes one node hanging
- * under the node of its parent. A node shows the business owner department, the head of
- * that department — the employee of its {@code ishead = 1} position — with the photo of the
+ * under the node of its parent. A node shows the business owner subdivision, the head of
+ * that subdivision — the employee of its {@code ishead = 1} position — with the photo of the
  * head, and carries the details {@code DataAssetCardView} shows: the long name, the
  * description, the dates and the names of the stewards that are active today.
  */
@@ -151,20 +140,20 @@ public class DataStructureService {
         List<AssetRow> subtree = collectSubtree(root, rowsById.values());
         List<Integer> subtreeIds = subtree.stream().map(AssetRow::id).toList();
 
-        Set<UUID> businessOwnerIds = new LinkedHashSet<>();
+        Set<String> businessOwnerIds = new LinkedHashSet<>();
         subtree.stream()
                 .map(AssetRow::businessOwner)
                 .filter(Objects::nonNull)
                 .forEach(owner -> businessOwnerIds.add(owner.getId()));
-        Map<UUID, Position> headsByDepartment = loadHeadPositions(businessOwnerIds);
+        Map<String, OrgStructurePosition> headsBySubdivision = loadHeadPositions(businessOwnerIds);
         Map<Integer, List<String>> stewardNames = stewardNamesLoader.apply(subtreeIds);
 
         List<DataAssetChartNode> nodes = new ArrayList<>();
         for (AssetRow row : subtree) {
             // the selected element is the root of the chart even when it has a parent
             String parentId = Objects.equals(row.id(), root.id()) ? null : String.valueOf(row.parentId());
-            Department owner = row.businessOwner();
-            Position head = owner != null ? headsByDepartment.get(owner.getId()) : null;
+            OrgStructureSubdivision owner = row.businessOwner();
+            OrgStructurePosition head = owner != null ? headsBySubdivision.get(owner.getId()) : null;
             nodes.add(createNode(row, parentId, head, stewardNames.getOrDefault(row.id(), List.of())));
         }
         return nodes;
@@ -200,39 +189,39 @@ public class DataStructureService {
     }
 
     /**
-     * The head position of every given department. When a department has several head
+     * The head position of every given subdivision. When a subdivision has several head
      * positions, a filled one wins over a vacant one, then the most senior (higher lvl).
      */
-    private Map<UUID, Position> loadHeadPositions(Set<UUID> departmentIds) {
-        if (departmentIds.isEmpty()) {
+    private Map<String, OrgStructurePosition> loadHeadPositions(Set<String> subdivisionIds) {
+        if (subdivisionIds.isEmpty()) {
             return Map.of();
         }
 
-        List<Position> positions = dataManager.load(Position.class)
-                .query("select p from umida_Position p where p.department.id in :departmentIds and p.ishead = 1")
-                .parameter("departmentIds", departmentIds)
+        List<OrgStructurePosition> positions = dataManager.load(OrgStructurePosition.class)
+                .query("select p from umida_OrgStructurePosition p where p.subdivision.id in :subdivisionIds and p.isheadofsubdivision = 1")
+                .parameter("subdivisionIds", subdivisionIds)
                 .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE)
-                        .add("department", FetchPlan.INSTANCE_NAME)
+                        .add("subdivision", FetchPlan.INSTANCE_NAME)
                         .add("jobTitle", FetchPlan.INSTANCE_NAME)
                         // BASE, not INSTANCE_NAME: the card shows the e-mail too
                         .add("employee", FetchPlan.BASE))
                 .list();
 
-        Comparator<Position> order = Comparator
-                .comparing((Position p) -> p.getEmployee() != null ? 0 : 1)
-                .thenComparing(Position::getLvl, Comparator.nullsLast(Comparator.reverseOrder()))
+        Comparator<OrgStructurePosition> order = Comparator
+                .comparing((OrgStructurePosition p) -> p.getEmployee() != null ? 0 : 1)
+                .thenComparing(OrgStructurePosition::getLvl, Comparator.nullsLast(Comparator.reverseOrder()))
                 .thenComparing(p -> p.getEmployee() != null ? p.getEmployee().getFullName() : null,
                         Comparator.nullsLast(Comparator.naturalOrder()));
 
-        Map<UUID, Position> headsByDepartment = new HashMap<>();
-        for (Position position : positions) {
-            if (position.getDepartment() == null) {
+        Map<String, OrgStructurePosition> headsBySubdivision = new HashMap<>();
+        for (OrgStructurePosition position : positions) {
+            if (position.getSubdivision() == null) {
                 continue;
             }
-            headsByDepartment.merge(position.getDepartment().getId(), position,
+            headsBySubdivision.merge(position.getSubdivision().getId(), position,
                     (current, candidate) -> order.compare(candidate, current) < 0 ? candidate : current);
         }
-        return headsByDepartment;
+        return headsBySubdivision;
     }
 
     private Map<Integer, List<String>> loadActiveDomainStewardNames(List<Integer> domainIds) {
@@ -277,30 +266,30 @@ public class DataStructureService {
         return namesByProduct;
     }
 
-    private void addStewardName(Map<Integer, List<String>> namesByAsset, Integer assetId, Employee employee) {
-        if (assetId == null || employee == null || employee.getFullName() == null) {
+    private void addStewardName(Map<Integer, List<String>> namesByAsset, Integer assetId, OrgStructureEmployee orgStructureEmployee) {
+        if (assetId == null || orgStructureEmployee == null || orgStructureEmployee.getFullName() == null) {
             return;
         }
         List<String> names = namesByAsset.computeIfAbsent(assetId, key -> new ArrayList<>());
-        // the same employee may hold two overlapping steward periods — list the name once
-        if (!names.contains(employee.getFullName())) {
-            names.add(employee.getFullName());
+        // the same orgStructureEmployee may hold two overlapping steward periods — list the name once
+        if (!names.contains(orgStructureEmployee.getFullName())) {
+            names.add(orgStructureEmployee.getFullName());
         }
     }
 
-    private DataAssetChartNode createNode(AssetRow row, String parentId, Position head, List<String> stewardNames) {
+    private DataAssetChartNode createNode(AssetRow row, String parentId, OrgStructurePosition head, List<String> stewardNames) {
         DataAssetChartNode node = new DataAssetChartNode();
         node.setId(String.valueOf(row.id()));
         node.setParentId(parentId);
         node.setName(row.shortName());
         node.setBusinessOwnerName(row.businessOwner() != null ? row.businessOwner().getName() : "");
 
-        Employee headEmployee = head != null ? head.getEmployee() : null;
-        node.setHeadName(headEmployee != null && headEmployee.getFullName() != null ? headEmployee.getFullName() : "");
+        OrgStructureEmployee headOrgStructureEmployee = head != null ? head.getEmployee() : null;
+        node.setHeadName(headOrgStructureEmployee != null && headOrgStructureEmployee.getFullName() != null ? headOrgStructureEmployee.getFullName() : "");
         // null when the head has no photo in the file storage — the chart then renders the
         // initials of the domain / product name instead of an <img>
-        node.setImage(headEmployee != null ? employeePhotoService.getPhotoUrl(headEmployee.getId()) : null);
-        node.setHeadEmail(headEmployee != null ? headEmployee.getEmail() : null);
+        node.setImage(headOrgStructureEmployee != null ? employeePhotoService.getPhotoUrl(headOrgStructureEmployee.getId()) : null);
+        node.setHeadEmail(headOrgStructureEmployee != null ? headOrgStructureEmployee.getEmail() : null);
         node.setHeadJobTitle(head != null && head.getJobTitle() != null ? head.getJobTitle().getName() : null);
 
         node.setLongName(row.longName());
@@ -317,6 +306,6 @@ public class DataStructureService {
 
     /** The attributes a domain and a data product have in common, so that one builder serves both. */
     private record AssetRow(Integer id, Integer parentId, String shortName, String longName, String description,
-                            OffsetDateTime createdDate, LocalDate assignDate, Department businessOwner) {
+                            OffsetDateTime createdDate, LocalDate assignDate, OrgStructureSubdivision businessOwner) {
     }
 }

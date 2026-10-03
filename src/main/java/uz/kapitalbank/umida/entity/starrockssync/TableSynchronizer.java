@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @JmixEntity
-@Table(name = "DEMO_TABLE_SYNCHRONIZER")
+@Table(name = "UMIDA_TABLE_SYNCHRONIZER")
 @Entity(name = "umida_TableSynchronizer")
 public class TableSynchronizer {
 

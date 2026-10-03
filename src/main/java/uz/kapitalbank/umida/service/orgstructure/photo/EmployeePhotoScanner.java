@@ -5,7 +5,7 @@ import java.util.Map;
 /**
  * Finds the employee photos held by one kind of Jmix file storage.
  * <p>
- * A photo is not referenced by an attribute of {@code Employee} — it is a file named after the
+ * A photo is not referenced by an attribute of {@code OrgStructureEmployee} — it is a file named after the
  * employee id, so the only way to find it is to enumerate what the storage holds. Every storage
  * enumerates differently (a directory walk for the local one, a bucket listing for S3), hence one
  * implementation per storage; {@code EmployeePhotoService} picks the one whose

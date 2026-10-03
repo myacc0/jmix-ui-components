@@ -3,8 +3,8 @@ package uz.kapitalbank.umida.view.orgstructure;
 import uz.kapitalbank.umida.component.LoaderComponent;
 import uz.kapitalbank.umida.component.d3orgchart.D3OrgChart;
 import uz.kapitalbank.umida.dto.orgstructure.OrgChartNode;
-import uz.kapitalbank.umida.entity.orgstructure.Department;
-import uz.kapitalbank.umida.entity.orgstructure.Position;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructurePosition;
 import uz.kapitalbank.umida.service.orgstructure.OrgStructureService;
 import uz.kapitalbank.umida.view.main.MainView;
 import com.vaadin.flow.component.Component;
@@ -43,9 +43,9 @@ public class OrgStructureView extends StandardView {
     private D3OrgChart d3OrgChart;
 
     @ViewComponent
-    private CollectionContainer<Department> departmentsDc;
+    private CollectionContainer<OrgStructureSubdivision> subdivisionsDc;
     @ViewComponent
-    private TreeDataGrid<Department> departmentsTreeDataGrid;
+    private TreeDataGrid<OrgStructureSubdivision> subdivisionsTreeDataGrid;
 
     @Autowired
     private UiAsyncTasks uiAsyncTasks;
@@ -60,7 +60,7 @@ public class OrgStructureView extends StandardView {
 
     final Popover[] searchPopover = {null};
 
-    private List<Department> allDepartments;
+    private List<OrgStructureSubdivision> allSubdivisions;
     /** Nodes currently rendered in the chart, by node id — used to fill the card dialog. */
     private Map<String, OrgChartNode> chartNodesById = new HashMap<>();
 
@@ -69,43 +69,43 @@ public class OrgStructureView extends StandardView {
         d3OrgChart.addNodeClickListener(this::onChartNodeClick);
     }
 
-    @Subscribe(id = "departmentsDl", target = Target.DATA_LOADER)
-    public void onDepartmentsDlPostLoad(final CollectionLoader.PostLoadEvent<Department> e) {
-        allDepartments = new ArrayList<>(departmentsDc.getItems());
+    @Subscribe(id = "subdivisionsDl", target = Target.DATA_LOADER)
+    public void onSubdivisionsDlPostLoad(final CollectionLoader.PostLoadEvent<OrgStructureSubdivision> e) {
+        allSubdivisions = new ArrayList<>(subdivisionsDc.getItems());
     }
 
-    @Subscribe("departmentSearchField")
-    public void onDepartmentSearchFieldTypedValueChange(final SupportsTypedValue.TypedValueChangeEvent<TypedTextField<String>, String> e) {
-        List<Department> departments = departmentsDc.getMutableItems();
-        departments.clear();
+    @Subscribe("subdivisionSearchField")
+    public void onSubdivisionSearchFieldTypedValueChange(final SupportsTypedValue.TypedValueChangeEvent<TypedTextField<String>, String> e) {
+        List<OrgStructureSubdivision> subdivisions = subdivisionsDc.getMutableItems();
+        subdivisions.clear();
 
         String searchTerm = e.getValue();
         if (searchTerm == null || searchTerm.isBlank()) {
-            departments.addAll(allDepartments);
-            expandDepartmentTreeAllNodes();
+            subdivisions.addAll(allSubdivisions);
+            expandSubdivisionTreeAllNodes();
             return;
         }
 
-        Set<Department> result = allDepartments.stream()
+        Set<OrgStructureSubdivision> result = allSubdivisions.stream()
                 .filter(d ->
                         d.getName() != null && d.getName().toLowerCase().contains(searchTerm.toLowerCase()))
                 .flatMap(d -> collectWithParents(d).stream())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
-        departments.addAll(result);
-        expandDepartmentTreeAllNodes();
+        subdivisions.addAll(result);
+        expandSubdivisionTreeAllNodes();
     }
 
-    @Subscribe("departmentsTreeDataGrid")
-    public void onDepartmentsTreeDataGridSelection(final SelectionEvent<TreeDataGrid<Department>, Department> e) {
-        Department department = e.getFirstSelectedItem().orElse(null);
-        if (department == null) {
+    @Subscribe("subdivisionsTreeDataGrid")
+    public void onSubdivisionsTreeDataGridSelection(final SelectionEvent<TreeDataGrid<OrgStructureSubdivision>, OrgStructureSubdivision> e) {
+        OrgStructureSubdivision subdivision = e.getFirstSelectedItem().orElse(null);
+        if (subdivision == null) {
             chartNodesById = new HashMap<>();
             d3OrgChart.setData(null);
             return;
         }
 
-        List<OrgChartNode> nodes = orgStructureService.getOrgChartNodes(department.getId());
+        List<OrgChartNode> nodes = orgStructureService.getOrgChartNodes(subdivision.getId());
         chartNodesById = nodes.stream()
                 .collect(Collectors.toMap(OrgChartNode::getId, node -> node, (first, second) -> first));
 
@@ -114,8 +114,8 @@ public class OrgStructureView extends StandardView {
 
     private void onChartNodeClick(final D3OrgChart.NodeClickEvent event) {
         OrgChartNode node = chartNodesById.get(event.getNodeId());
-        // a synthetic department node carries no employee, so there is no card to show
-        if (node == null || node.isDepartmentNode()) {
+        // a synthetic subdivision node carries no employee, so there is no card to show
+        if (node == null || node.isSubdivisionNode()) {
             return;
         }
 
@@ -168,8 +168,8 @@ public class OrgStructureView extends StandardView {
         return popover;
     }
 
-    private void updateSearchPopover(List<Position> employees, Popover popover) {
-        JmixVirtualList<Position> virtualList = uiComponents.create(JmixVirtualList.class);
+    private void updateSearchPopover(List<OrgStructurePosition> employees, Popover popover) {
+        JmixVirtualList<OrgStructurePosition> virtualList = uiComponents.create(JmixVirtualList.class);
         virtualList.setItems(employees);
         virtualList.setRenderer(createClientsListRenderer(popover));
         virtualList.addClassNames(LumoUtility.Padding.MEDIUM, "popover-inner-list");
@@ -178,7 +178,7 @@ public class OrgStructureView extends StandardView {
         popover.add(virtualList);
     }
 
-    private ComponentRenderer<Component, Position> createClientsListRenderer(Popover popover) {
+    private ComponentRenderer<Component, OrgStructurePosition> createClientsListRenderer(Popover popover) {
         return new ComponentRenderer<>(employee -> {
             Div div = uiComponents.create(Div.class);
             div.setText(employee.getEmployee().getFullName());
@@ -187,23 +187,23 @@ public class OrgStructureView extends StandardView {
             div.addClickListener(click -> {
                 popover.close();
                 employeeSearchField.clear();
-                departmentsTreeDataGrid.select(employee.getDepartment());
+                subdivisionsTreeDataGrid.select(employee.getSubdivision());
             });
             return div;
         });
     }
 
-    private Set<Department> collectWithParents(Department d) {
-        Set<Department> result = new LinkedHashSet<>();
+    private Set<OrgStructureSubdivision> collectWithParents(OrgStructureSubdivision d) {
+        Set<OrgStructureSubdivision> result = new LinkedHashSet<>();
         while (d != null) {
             result.add(d);
-            d = d.getParentDepartment();
+            d = d.getParent();
         }
         return result;
     }
 
-    private void expandDepartmentTreeAllNodes() {
-        departmentsDc.getItems().forEach(departmentsTreeDataGrid::expand);
+    private void expandSubdivisionTreeAllNodes() {
+        subdivisionsDc.getItems().forEach(subdivisionsTreeDataGrid::expand);
     }
 
 }

@@ -12,8 +12,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @JmixEntity
-@Table(name = "DEMO_DQ_DATA_DOMAIN", indexes = {
-        @Index(name = "IDX_DEMO_DQ_DATA_DOMAIN_PARENT", columnList = "PARENT_ID")
+@Table(name = "UMIDA_DQ_DATA_DOMAIN", indexes = {
+        @Index(name = "IDX_UMIDA_DQ_DATA_DOMAIN_PARENT", columnList = "PARENT_ID")
 })
 @Entity(name = "umida_DqDataDomain")
 public class DqDataDomain {

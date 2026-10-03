@@ -1,8 +1,8 @@
 package uz.kapitalbank.umida.entity.hr;
 
-import uz.kapitalbank.umida.entity.orgstructure.Department;
-import uz.kapitalbank.umida.entity.orgstructure.Employee;
-import uz.kapitalbank.umida.entity.orgstructure.JobTitle;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureJobTitle;
 import io.jmix.core.DeletePolicy;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
 import io.jmix.core.entity.annotation.OnDeleteInverse;
@@ -14,10 +14,10 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @JmixEntity
-@Table(name = "DEMO_WORK_DISCIPLINE_EXCEPTIONS", indexes = {
-        @Index(name = "IDX_DEMO_WORK_DISCIPLINE_EXCEPTION_SUBDIVISION", columnList = "SUBDIVISION_ID"),
-        @Index(name = "IDX_DEMO_WORK_DISCIPLINE_EXCEPTION_EMPLOYEE", columnList = "EMPLOYEE_ID"),
-        @Index(name = "IDX_DEMO_WORK_DISCIPLINE_EXCEPTION_JOB_TITLE", columnList = "JOB_TITLE_ID")
+@Table(name = "UMIDA_WORK_DISCIPLINE_EXCEPTIONS", indexes = {
+        @Index(name = "IDX_UMIDA_WORK_DISCIPLINE_EXCEPTION_SUBDIVISION", columnList = "SUBDIVISION_ID"),
+        @Index(name = "IDX_UMIDA_WORK_DISCIPLINE_EXCEPTION_EMPLOYEE", columnList = "EMPLOYEE_ID"),
+        @Index(name = "IDX_UMIDA_WORK_DISCIPLINE_EXCEPTION_JOB_TITLE", columnList = "JOB_TITLE_ID")
 })
 @Entity(name = "umida_WorkDisciplineException")
 public class WorkDisciplineException {
@@ -29,17 +29,17 @@ public class WorkDisciplineException {
     @OnDeleteInverse(DeletePolicy.UNLINK)
     @JoinColumn(name = "SUBDIVISION_ID")
     @ManyToOne(fetch = FetchType.LAZY)
-    private Department subdivision;
+    private OrgStructureSubdivision subdivision;
 
     @OnDeleteInverse(DeletePolicy.UNLINK)
     @JoinColumn(name = "EMPLOYEE_ID")
     @ManyToOne(fetch = FetchType.LAZY)
-    private Employee employee;
+    private OrgStructureEmployee employee;
 
     @OnDeleteInverse(DeletePolicy.UNLINK)
     @JoinColumn(name = "JOB_TITLE_ID")
     @ManyToOne(fetch = FetchType.LAZY)
-    private JobTitle jobTitle;
+    private OrgStructureJobTitle jobTitle;
 
     @Column(name = "START_DATE")
     private LocalDate startDate;
@@ -75,27 +75,27 @@ public class WorkDisciplineException {
         this.description = description;
     }
 
-    public JobTitle getJobTitle() {
+    public OrgStructureJobTitle getJobTitle() {
         return jobTitle;
     }
 
-    public void setJobTitle(JobTitle jobTitle) {
+    public void setJobTitle(OrgStructureJobTitle jobTitle) {
         this.jobTitle = jobTitle;
     }
 
-    public Employee getEmployee() {
+    public OrgStructureEmployee getEmployee() {
         return employee;
     }
 
-    public void setEmployee(Employee employee) {
+    public void setEmployee(OrgStructureEmployee employee) {
         this.employee = employee;
     }
 
-    public Department getSubdivision() {
+    public OrgStructureSubdivision getSubdivision() {
         return subdivision;
     }
 
-    public void setSubdivision(Department subdivision) {
+    public void setSubdivision(OrgStructureSubdivision subdivision) {
         this.subdivision = subdivision;
     }
 

@@ -7,9 +7,9 @@
 
     <!-- DO NOT REMOVE. This changelog is required for user management. -->
 
-    <changeSet id="1" author="demo" context="!cuba">
+    <changeSet id="1" author="umida" context="!cuba">
 
-        <createTable tableName="DEMO_USER">
+        <createTable tableName="UMIDA_USER">
             <column name="ID" type="${uuid.type}">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
@@ -29,16 +29,16 @@
 
     </changeSet>
 
-    <changeSet id="2" author="demo" context="!cuba">
-        <createIndex indexName="IDX_DEMO_USER_ON_USERNAME"
-                     tableName="DEMO_USER" unique="true">
+    <changeSet id="2" author="umida" context="!cuba">
+        <createIndex indexName="IDX_UMIDA_USER_ON_USERNAME"
+                     tableName="UMIDA_USER" unique="true">
             <column name="USERNAME"/>
         </createIndex>
     </changeSet>
 
-    <changeSet id="3" author="demo" context="!cuba">
+    <changeSet id="3" author="umida" context="!cuba">
 
-        <insert tableName="DEMO_USER" dbms="postgresql, mssql, hsqldb">
+        <insert tableName="UMIDA_USER" dbms="postgresql, mssql, hsqldb">
             <column name="ID" value="60885987-1b61-4247-94c7-dff348347f93"/>
             <column name="VERSION" value="1"/>
             <column name="USERNAME" value="admin"/>
@@ -46,7 +46,7 @@
             <column name="ACTIVE" valueBoolean="true"/>
         </insert>
 
-        <insert tableName="DEMO_USER" dbms="oracle, mysql, mariadb">
+        <insert tableName="UMIDA_USER" dbms="oracle, mysql, mariadb">
             <column name="ID" value="608859871b61424794c7dff348347f93"/>
             <column name="VERSION" value="1"/>
             <column name="USERNAME" value="admin"/>
@@ -56,7 +56,7 @@
 
     </changeSet>
 
-    <changeSet id="4" author="demo" context="!cuba">
+    <changeSet id="4" author="umida" context="!cuba">
 
         <insert tableName="SEC_ROLE_ASSIGNMENT" dbms="postgresql, mssql, hsqldb">
             <column name="ID" value="6c9e420a-2b7a-4c42-8654-a9027ee14083"/>
@@ -75,7 +75,7 @@
         </insert>
 
     </changeSet>
-    <changeSet id="5" author="demo" context="!cuba" dbms="h2">
+    <changeSet id="5" author="umida" context="!cuba" dbms="h2">
         <!-- This changeset ensures compatibility with the H2 database for projects created using Jmix versions earlier than 2.8.  -->
 
         <insert tableName="USER_">

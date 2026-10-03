@@ -1,6 +1,5 @@
 package uz.kapitalbank.umida.service.orgstructure;
 
-import uz.kapitalbank.umida.service.orgstructure.photo.EmployeePhotoScanner;
 import io.jmix.core.FileRef;
 import io.jmix.core.FileStorage;
 import io.jmix.core.FileStorageException;
@@ -10,20 +9,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import uz.kapitalbank.umida.service.orgstructure.photo.EmployeePhotoScanner;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Resolves the photo of an employee in the Jmix file storage.
  * <p>
- * The photos are not referenced by a {@code FileRef} attribute of {@code Employee} — they are
+ * The photos are not referenced by a {@code FileRef} attribute of {@code OrgStructureEmployee} — they are
  * plain files whose name is the employee id, for example
  * {@code filestorage/2026/07/28/01a03df1-d6a1-7631-aa18-38f9bd589100.jpg} in the local storage or
  * {@code employee_photos/01a03df1-d6a1-7631-aa18-38f9bd589100.jpg} in the S3 bucket. Since the
@@ -78,7 +73,7 @@ public class EmployeePhotoService {
      * employee has no photo in the file storage. A {@code null} lets the org chart fall back to
      * the initials placeholder.
      */
-    public String getPhotoUrl(UUID employeeId) {
+    public String getPhotoUrl(String employeeId) {
         return findPhotoRef(employeeId)
                 .map(fileRef -> contextPath + PHOTO_URL_PREFIX + employeeId)
                 .orElse(null);
@@ -88,7 +83,7 @@ public class EmployeePhotoService {
      * Returns the file storage reference of the employee photo, or an empty optional when there
      * is no file named after the employee id in the storage.
      */
-    public Optional<FileRef> findPhotoRef(UUID employeeId) {
+    public Optional<FileRef> findPhotoRef(String employeeId) {
         if (employeeId == null) {
             return Optional.empty();
         }
@@ -109,7 +104,7 @@ public class EmployeePhotoService {
      * Reads the photo of the employee. Returns an empty optional when the employee has no photo
      * or the file cannot be read.
      */
-    public Optional<Photo> loadPhoto(UUID employeeId) {
+    public Optional<Photo> loadPhoto(String employeeId) {
         Optional<FileRef> fileRef = findPhotoRef(employeeId);
         if (fileRef.isEmpty()) {
             return Optional.empty();

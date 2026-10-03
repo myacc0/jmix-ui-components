@@ -1,7 +1,7 @@
 package uz.kapitalbank.umida.entity.dq;
 
-import uz.kapitalbank.umida.entity.orgstructure.Department;
-import uz.kapitalbank.umida.entity.orgstructure.Employee;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
 import uz.kapitalbank.umida.entity.User;
 import uz.kapitalbank.umida.enums.dq.DqDimension;
 import uz.kapitalbank.umida.enums.dq.DqRuleType;
@@ -21,13 +21,13 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @JmixEntity
-@Table(name = "DEMO_DQ_RULE", indexes = {
-        @Index(name = "IDX_DEMO_DQ_RULE_OWNER", columnList = "OWNER_ID"),
-        @Index(name = "IDX_DEMO_DQ_RULE_DOMAIN", columnList = "DOMAIN_ID"),
-        @Index(name = "IDX_DEMO_DQ_RULE_DATA_PRODUCT", columnList = "DATA_PRODUCT_ID"),
-        @Index(name = "IDX_DEMO_DQ_RULE_GROUP", columnList = "GROUP_ID"),
-        @Index(name = "IDX_DEMO_DQ_RULE_ASSIGNEE_SUBDIVISION", columnList = "ASSIGNEE_SUBDIVISION_ID"),
-        @Index(name = "IDX_DEMO_DQ_RULE_ASSIGNEE_EMPLOYEE", columnList = "ASSIGNEE_EMPLOYEE_ID")
+@Table(name = "UMIDA_DQ_RULE", indexes = {
+        @Index(name = "IDX_UMIDA_DQ_RULE_OWNER", columnList = "OWNER_ID"),
+        @Index(name = "IDX_UMIDA_DQ_RULE_DOMAIN", columnList = "DOMAIN_ID"),
+        @Index(name = "IDX_UMIDA_DQ_RULE_DATA_PRODUCT", columnList = "DATA_PRODUCT_ID"),
+        @Index(name = "IDX_UMIDA_DQ_RULE_GROUP", columnList = "GROUP_ID"),
+        @Index(name = "IDX_UMIDA_DQ_RULE_ASSIGNEE_SUBDIVISION", columnList = "ASSIGNEE_SUBDIVISION_ID"),
+        @Index(name = "IDX_UMIDA_DQ_RULE_ASSIGNEE_EMPLOYEE", columnList = "ASSIGNEE_EMPLOYEE_ID")
 })
 @Entity(name = "umida_DqRule")
 public class DqRule {
@@ -101,12 +101,12 @@ public class DqRule {
     @OnDeleteInverse(DeletePolicy.UNLINK)
     @JoinColumn(name = "ASSIGNEE_SUBDIVISION_ID")
     @ManyToOne(fetch = FetchType.LAZY)
-    private Department assigneeSubdivision;
+    private OrgStructureSubdivision assigneeSubdivision;
 
     @OnDeleteInverse(DeletePolicy.UNLINK)
     @JoinColumn(name = "ASSIGNEE_EMPLOYEE_ID")
     @ManyToOne(fetch = FetchType.LAZY)
-    private Employee assigneeEmployee;
+    private OrgStructureEmployee assigneeEmployee;
 
     @Column(name = "VERSION", nullable = false)
     @Version
@@ -119,19 +119,19 @@ public class DqRule {
     @Column(name = "UPDATED_AT", columnDefinition = "TIMESTAMP")
     private LocalDateTime updatedAt;
 
-    public Employee getAssigneeEmployee() {
+    public OrgStructureEmployee getAssigneeEmployee() {
         return assigneeEmployee;
     }
 
-    public void setAssigneeEmployee(Employee assigneeEmployee) {
+    public void setAssigneeEmployee(OrgStructureEmployee assigneeEmployee) {
         this.assigneeEmployee = assigneeEmployee;
     }
 
-    public Department getAssigneeSubdivision() {
+    public OrgStructureSubdivision getAssigneeSubdivision() {
         return assigneeSubdivision;
     }
 
-    public void setAssigneeSubdivision(Department subdivision) {
+    public void setAssigneeSubdivision(OrgStructureSubdivision subdivision) {
         this.assigneeSubdivision = subdivision;
     }
 

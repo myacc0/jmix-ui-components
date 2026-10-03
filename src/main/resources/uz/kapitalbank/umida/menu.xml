@@ -13,10 +13,10 @@
           title="msg://uz.kapitalbank.umida/menu_config.catalog.title">
         <item view="umida_DictDataDomain.list" title="msg://uz.kapitalbank.umida.view.dict/dictDataDomainListView.title"/>
         <item view="umida_DictDataProduct.list" title="msg://uz.kapitalbank.umida.view.dict/dictDataProductListView.title"/>
-        <item view="umida_JobTitle.list" title="msg://uz.kapitalbank.umida.view.dict/jobTitleListView.title"/>
-        <item view="umida_Department.list" title="msg://uz.kapitalbank.umida.view.dict/departmentListView.title"/>
-        <item view="umida_Employee.list" title="msg://uz.kapitalbank.umida.view.dict/employeeListView.title"/>
-        <item view="umida_Position.list" title="msg://uz.kapitalbank.umida.view.dict/positionListView.title"/>
+        <item view="umida_OrgStructureJobTitle.list" title="msg://uz.kapitalbank.umida.view.dict/jobTitleListView.title"/>
+        <item view="umida_OrgStructureSubdivision.list" title="msg://uz.kapitalbank.umida.view.dict/subdivisionListView.title"/>
+        <item view="umida_OrgStructureEmployee.list" title="msg://uz.kapitalbank.umida.view.dict/employeeListView.title"/>
+        <item view="umida_OrgStructurePosition.list" title="msg://uz.kapitalbank.umida.view.dict/positionListView.title"/>
     </menu>
     <menu id="dq" description="msg://uz.kapitalbank.umida/menu_config.dq.description"
           title="msg://uz.kapitalbank.umida/menu_config.dq.title">

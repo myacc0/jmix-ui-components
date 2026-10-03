@@ -13,7 +13,7 @@ import java.time.LocalTime;
 import java.util.UUID;
 
 @JmixEntity
-@Table(name = "DEMO_DQ_METRICS_HISTORY")
+@Table(name = "UMIDA_DQ_METRICS_HISTORY")
 @Entity(name = "umida_DqMetricsHistory")
 public class DqMetricsHistory {
     @JmixGeneratedValue
