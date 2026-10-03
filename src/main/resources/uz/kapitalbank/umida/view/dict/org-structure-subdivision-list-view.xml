@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <view xmlns="http://jmix.io/schema/flowui/view"
       xmlns:c="http://jmix.io/schema/flowui/jpql-condition"
-      title="msg://uz.kapitalbank.umida.view.dict/subdivisionListView.title"
-      focusComponent="subdivisionsDataGrid">
+      title="msg://orgStructureSubdivisionListView.title"
+      focusComponent="orgStructureSubdivisionsDataGrid">
     <data>
-        <collection id="subdivisionsDc"
+        <collection id="orgStructureSubdivisionsDc"
                     class="uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision">
             <fetchPlan extends="_base">
-                <property name="parent" fetchPlan="_base"/>
+                <property name="parent" fetchPlan="_instance_name"/>
             </fetchPlan>
-            <loader id="subdivisionsDl" readOnly="true">
+            <loader id="orgStructureSubdivisionsDl" readOnly="true">
                 <query>
                     <![CDATA[select e from umida_OrgStructureSubdivision e]]>
                 </query>
@@ -29,29 +29,22 @@
     <layout>
         <hbox id="buttonsPanel" classNames="buttons-panel">
             <startSlot>
-                <button id="createButton" action="subdivisionsDataGrid.createAction" text="" title="msg:///actions.Create"/>
-                <button id="editButton" action="subdivisionsDataGrid.editAction" text="" title="msg:///actions.Edit"/>
-                <button id="removeButton" action="subdivisionsDataGrid.removeAction" text="" title="msg:///actions.Remove"/>
             </startSlot>
             <endSlot>
-                <simplePagination id="pagination" dataLoader="subdivisionsDl"/>
+                <simplePagination id="pagination" dataLoader="orgStructureSubdivisionsDl"/>
             </endSlot>
         </hbox>
-        <treeDataGrid id="subdivisionsDataGrid"
-                  width="100%"
-                  minHeight="20em"
-                  dataContainer="subdivisionsDc"
-                  columnReorderingAllowed="true"
-                  hierarchyProperty="parent"
-                  showOrphans="true">
+        <treeDataGrid id="orgStructureSubdivisionsDataGrid"
+                      width="100%"
+                      minHeight="20em"
+                      dataContainer="orgStructureSubdivisionsDc"
+                      hierarchyProperty="parent"
+                      columnReorderingAllowed="true">
             <actions>
-                <action id="createAction" type="list_create"/>
-                <action id="editAction" type="list_edit"/>
-                <action id="removeAction" type="list_remove"/>
             </actions>
-            <columns resizable="true">
-                <column property="name" filterable="true"/>
-                <column property="parent" filterable="true"/>
+            <columns resizable="true" filterable="true">
+                <column property="name" autoWidth="true" flexGrow="0"/>
+                <column property="parent" autoWidth="true" flexGrow="0"/>
             </columns>
         </treeDataGrid>
         <hbox id="lookupActions" visible="false">

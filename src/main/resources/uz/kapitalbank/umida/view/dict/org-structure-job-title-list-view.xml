@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <view xmlns="http://jmix.io/schema/flowui/view"
       xmlns:c="http://jmix.io/schema/flowui/jpql-condition"
-      title="msg://jobTitleListView.title"
-      focusComponent="jobTitlesDataGrid">
+      title="msg://orgStructureJobTitleListView.title"
+      focusComponent="orgStructureJobTitlesDataGrid">
     <data>
-        <collection id="jobTitlesDc"
+        <collection id="orgStructureJobTitlesDc"
                     class="uz.kapitalbank.umida.entity.orgstructure.OrgStructureJobTitle">
             <fetchPlan extends="_base"/>
-            <loader id="jobTitlesDl" readOnly="true">
+            <loader id="orgStructureJobTitlesDl" readOnly="true">
                 <query>
                     <![CDATA[select e from umida_OrgStructureJobTitle e]]>
                 </query>
@@ -27,26 +27,20 @@
     <layout>
         <hbox id="buttonsPanel" classNames="buttons-panel">
             <startSlot>
-                <button id="createButton" action="jobTitlesDataGrid.createAction" text="" title="msg:///actions.Create"/>
-                <button id="editButton" action="jobTitlesDataGrid.editAction" text="" title="msg:///actions.Edit"/>
-                <button id="removeButton" action="jobTitlesDataGrid.removeAction" text="" title="msg:///actions.Remove"/>
             </startSlot>
             <endSlot>
-                <simplePagination id="pagination" dataLoader="jobTitlesDl"/>
+                <simplePagination id="pagination" dataLoader="orgStructureJobTitlesDl"/>
             </endSlot>
         </hbox>
-        <dataGrid id="jobTitlesDataGrid"
+        <dataGrid id="orgStructureJobTitlesDataGrid"
                   width="100%"
                   minHeight="20em"
-                  dataContainer="jobTitlesDc"
+                  dataContainer="orgStructureJobTitlesDc"
                   columnReorderingAllowed="true">
             <actions>
-                <action id="createAction" type="list_create"/>
-                <action id="editAction" type="list_edit"/>
-                <action id="removeAction" type="list_remove"/>
             </actions>
             <columns resizable="true" filterable="true">
-                <column property="name"/>
+                <column property="name" autoWidth="true" flexGrow="0"/>
             </columns>
         </dataGrid>
         <hbox id="lookupActions" visible="false">

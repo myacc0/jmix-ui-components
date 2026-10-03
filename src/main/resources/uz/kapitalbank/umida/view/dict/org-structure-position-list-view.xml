@@ -1,20 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <view xmlns="http://jmix.io/schema/flowui/view"
       xmlns:c="http://jmix.io/schema/flowui/jpql-condition"
-      title="msg://positionListView.title"
-      focusComponent="positionsDataGrid">
+      title="msg://orgStructurePositionListView.title"
+      focusComponent="orgStructurePositionsDataGrid">
     <data>
-        <collection id="positionsDc"
+        <collection id="orgStructurePositionsDc"
                     class="uz.kapitalbank.umida.entity.orgstructure.OrgStructurePosition">
-            <fetchPlan>
-                <property name="lvl"/>
-                <property name="isheadofsubdivision"/>
-                <property name="status"/>
+            <fetchPlan extends="_base">
                 <property name="subdivision" fetchPlan="_instance_name"/>
                 <property name="jobTitle" fetchPlan="_instance_name"/>
                 <property name="employee" fetchPlan="_instance_name"/>
             </fetchPlan>
-            <loader id="positionsDl" readOnly="true">
+            <loader id="orgStructurePositionsDl" readOnly="true">
                 <query>
                     <![CDATA[select e from umida_OrgStructurePosition e]]>
                 </query>
@@ -34,31 +31,27 @@
     <layout>
         <hbox id="buttonsPanel" classNames="buttons-panel">
             <startSlot>
-                <button id="createButton" action="positionsDataGrid.createAction" text="" title="msg:///actions.Create"/>
-                <button id="editButton" action="positionsDataGrid.editAction" text="" title="msg:///actions.Edit"/>
-                <button id="removeButton" action="positionsDataGrid.removeAction" text="" title="msg:///actions.Remove"/>
             </startSlot>
             <endSlot>
-                <simplePagination id="pagination" dataLoader="positionsDl"/>
+                <simplePagination id="pagination" dataLoader="orgStructurePositionsDl"/>
             </endSlot>
         </hbox>
-        <dataGrid id="positionsDataGrid"
+        <dataGrid id="orgStructurePositionsDataGrid"
                   width="100%"
                   minHeight="20em"
-                  dataContainer="positionsDc"
+                  dataContainer="orgStructurePositionsDc"
                   columnReorderingAllowed="true">
             <actions>
-                <action id="createAction" type="list_create"/>
-                <action id="editAction" type="list_edit"/>
-                <action id="removeAction" type="list_remove"/>
             </actions>
             <columns resizable="true" filterable="true">
-                <column property="subdivision"/>
-                <column property="jobTitle"/>
-                <column property="employee"/>
-                <column property="lvl"/>
-                <column property="isheadofsubdivision"/>
-                <column property="status"/>
+                <column property="subdivision" autoWidth="true" flexGrow="0"/>
+                <column property="jobTitle" autoWidth="true" flexGrow="0"/>
+                <column property="employee" autoWidth="true" flexGrow="0"/>
+                <column property="lvl" autoWidth="true" flexGrow="0"/>
+                <column property="isheadofsubdivision" autoWidth="true" flexGrow="0"/>
+                <column property="status" autoWidth="true" flexGrow="0"/>
+                <column property="recruitmentDate" autoWidth="true" flexGrow="0"/>
+                <column property="dismissalDate" autoWidth="true" flexGrow="0"/>
             </columns>
         </dataGrid>
         <hbox id="lookupActions" visible="false">

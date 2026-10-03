@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <view xmlns="http://jmix.io/schema/flowui/view"
       xmlns:c="http://jmix.io/schema/flowui/jpql-condition"
-      title="msg://employeeListView.title"
-      focusComponent="employeesDataGrid">
+      title="msg://orgStructureEmployeeListView.title"
+      focusComponent="orgStructureEmployeesDataGrid">
     <data>
-        <collection id="employeesDc"
+        <collection id="orgStructureEmployeesDc"
                     class="uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee">
-            <fetchPlan extends="_base">
-            </fetchPlan>
-            <loader id="employeesDl" readOnly="true">
+            <fetchPlan extends="_base"/>
+            <loader id="orgStructureEmployeesDl" readOnly="true">
                 <query>
                     <![CDATA[select e from umida_OrgStructureEmployee e]]>
                 </query>
@@ -28,26 +27,25 @@
     <layout>
         <hbox id="buttonsPanel" classNames="buttons-panel">
             <startSlot>
-                <button id="createButton" action="employeesDataGrid.createAction" text="" title="msg:///actions.Create"/>
-                <button id="editButton" action="employeesDataGrid.editAction" text="" title="msg:///actions.Edit"/>
-                <button id="removeButton" action="employeesDataGrid.removeAction" text="" title="msg:///actions.Remove"/>
             </startSlot>
             <endSlot>
-                <simplePagination id="pagination" dataLoader="employeesDl"/>
+                <simplePagination id="pagination" dataLoader="orgStructureEmployeesDl"/>
             </endSlot>
         </hbox>
-        <dataGrid id="employeesDataGrid"
+        <dataGrid id="orgStructureEmployeesDataGrid"
                   width="100%"
                   minHeight="20em"
-                  dataContainer="employeesDc"
+                  dataContainer="orgStructureEmployeesDc"
                   columnReorderingAllowed="true">
             <actions>
-                <action id="createAction" type="list_create"/>
-                <action id="editAction" type="list_edit"/>
-                <action id="removeAction" type="list_remove"/>
             </actions>
             <columns resizable="true" filterable="true">
-                <column property="fullName"/>
+                <column property="personnelNumber" autoWidth="true" flexGrow="0"/>
+                <column property="fullName" autoWidth="true" flexGrow="0"/>
+                <column property="fullNameLatin" autoWidth="true" flexGrow="0"/>
+                <column property="adAccount" autoWidth="true" flexGrow="0"/>
+                <column property="email" autoWidth="true" flexGrow="0"/>
+                <column property="gender" autoWidth="true" flexGrow="0"/>
             </columns>
         </dataGrid>
         <hbox id="lookupActions" visible="false">

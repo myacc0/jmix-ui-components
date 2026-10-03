@@ -1,15 +1,15 @@
 package uz.kapitalbank.umida.view.dict;
 
-import uz.kapitalbank.umida.entity.orgstructure.OrgStructureJobTitle;
-import uz.kapitalbank.umida.view.main.MainView;
 import com.vaadin.flow.router.Route;
 import io.jmix.flowui.view.*;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureJobTitle;
+import uz.kapitalbank.umida.view.main.MainView;
 
 
-@Route(value = "job-titles", layout = MainView.class)
+@Route(value = "org-structure-job-titles", layout = MainView.class)
 @ViewController(id = "umida_OrgStructureJobTitle.list")
 @ViewDescriptor(path = "org-structure-job-title-list-view.xml")
-@LookupComponent("jobTitlesDataGrid")
+@LookupComponent("orgStructureJobTitlesDataGrid")
 @DialogMode(width = "64em")
 public class OrgStructureJobTitleListView extends StandardListView<OrgStructureJobTitle> {
 }

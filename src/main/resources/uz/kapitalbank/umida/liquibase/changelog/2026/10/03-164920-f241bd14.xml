@@ -1,0 +1,742 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd"
+        objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+        logicalFilePath="uz/kapitalbank/umida/liquibase/changelog/2026/10/03-164920-f241bd14.xml">
+    <changeSet id="1" author="umida">
+        <createTable tableName="UMIDA_DICT_DATA_DOMAIN">
+            <column name="ID" type="INT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_UMIDA_DICT_DATA_DOMAIN"/>
+            </column>
+            <column name="PARENT_ID" type="INT"/>
+            <column name="CODE" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SHORT_NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="LONG_NAME" type="VARCHAR(1000)"/>
+            <column name="BUSINESS_OWNER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ASSIGN_DATE" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DESCRIPTION" type="VARCHAR(2000)"/>
+            <column name="VERSION" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DELETED_BY" type="VARCHAR(255)"/>
+            <column name="DELETED_DATE" type="${offsetDateTime.type}"/>
+            <column name="CREATED_BY" type="VARCHAR(255)"/>
+            <column name="CREATED_DATE" type="${offsetDateTime.type}"/>
+            <column name="LAST_MODIFIED_BY" type="VARCHAR(255)"/>
+            <column name="LAST_MODIFIED_DATE" type="${offsetDateTime.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="2" author="umida">
+        <createTable tableName="UMIDA_DICT_DATA_DOMAIN_STEWARD">
+            <column name="ID" type="INT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_UMIDA_DICT_DATA_DOMAIN_STEWARD"/>
+            </column>
+            <column name="DOMAIN_ID" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="EMPLOYEE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DATE_BEGIN" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DATE_END" type="DATE"/>
+            <column name="NOTES" type="VARCHAR(1000)"/>
+            <column name="VERSION" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CREATED_BY" type="VARCHAR(255)"/>
+            <column name="CREATED_DATE" type="${offsetDateTime.type}"/>
+            <column name="LAST_MODIFIED_BY" type="VARCHAR(255)"/>
+            <column name="LAST_MODIFIED_DATE" type="${offsetDateTime.type}"/>
+            <column name="DELETED_BY" type="VARCHAR(255)"/>
+            <column name="DELETED_DATE" type="${offsetDateTime.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="3" author="umida">
+        <createTable tableName="UMIDA_DICT_DATA_PRODUCT">
+            <column name="ID" type="INT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_UMIDA_DICT_DATA_PRODUCT"/>
+            </column>
+            <column name="PARENT_ID" type="INT"/>
+            <column name="CODE" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SHORT_NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="LONG_NAME" type="VARCHAR(1000)"/>
+            <column name="BUSINESS_OWNER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ASSIGN_DATE" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DESCRIPTION" type="VARCHAR(2000)"/>
+            <column name="VERSION" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DELETED_BY" type="VARCHAR(255)"/>
+            <column name="DELETED_DATE" type="${offsetDateTime.type}"/>
+            <column name="CREATED_BY" type="VARCHAR(255)"/>
+            <column name="CREATED_DATE" type="${offsetDateTime.type}"/>
+            <column name="LAST_MODIFIED_BY" type="VARCHAR(255)"/>
+            <column name="LAST_MODIFIED_DATE" type="${offsetDateTime.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="4" author="umida">
+        <createTable tableName="UMIDA_DICT_DATA_PRODUCT_STEWARD">
+            <column name="ID" type="INT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_UMIDA_DICT_DATA_PRODUCT_STEWARD"/>
+            </column>
+            <column name="PRODUCT_ID" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="EMPLOYEE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DATE_BEGIN" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DATE_END" type="DATE"/>
+            <column name="NOTES" type="VARCHAR(1000)"/>
+            <column name="VERSION" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CREATED_BY" type="VARCHAR(255)"/>
+            <column name="CREATED_DATE" type="${offsetDateTime.type}"/>
+            <column name="LAST_MODIFIED_BY" type="VARCHAR(255)"/>
+            <column name="LAST_MODIFIED_DATE" type="${offsetDateTime.type}"/>
+            <column name="DELETED_BY" type="VARCHAR(255)"/>
+            <column name="DELETED_DATE" type="${offsetDateTime.type}"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="5" author="umida">
+        <createTable tableName="UMIDA_DQ_AUDIT_LOG">
+            <column name="ID" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_UMIDA_DQ_AUDIT_LOG"/>
+            </column>
+            <column name="ENTITY_TYPE" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ENTITY_ID" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ACTION_" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USERNAME" type="VARCHAR(200)"/>
+            <column name="USER_IP" type="VARCHAR(64)"/>
+            <column name="CHANGES" type="jsonb"/>
+            <column name="CREATED_AT" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="6" author="umida">
+        <createTable tableName="UMIDA_DQ_CHECK_RUN">
+            <column name="ID" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_UMIDA_DQ_CHECK_RUN"/>
+            </column>
+            <column name="DATA_SOURCE" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="TRIGGERED_USERNAME" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="STARTED_AT" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="FINISHED_AT" type="TIMESTAMP"/>
+            <column name="STATUS" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="RULES_TOTAL" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="RULES_PASSED" type="INT"/>
+            <column name="RULES_FAILED" type="INT"/>
+            <column name="RULES_SKIPPED" type="INT"/>
+            <column name="DQ_SCORE" type="DECIMAL(5, 2)"/>
+            <column name="ERROR_MESSAGE" type="text"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="7" author="umida">
+        <createTable tableName="UMIDA_DQ_CHECK_RUN_RESULT">
+            <column name="ID" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_UMIDA_DQ_CHECK_RUN_RESULT"/>
+            </column>
+            <column name="CHECK_RUN_ID" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="RULE_ID" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="STATUS" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="TOTAL_RECORDS" type="DECIMAL(19)"/>
+            <column name="FAILED_RECORDS" type="DECIMAL(19)"/>
+            <column name="PASS_RATE" type="DECIMAL(5, 2)"/>
+            <column name="EXECUTION_MS" type="BIGINT"/>
+            <column name="SAMPLE_VIOLATIONS" type="jsonb"/>
+            <column name="ERROR_MESSAGE" type="text"/>
+            <column name="EXECUTED_QUERY" type="text"/>
+            <column name="CREATED_AT" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="8" author="umida">
+        <createTable tableName="UMIDA_DQ_DATA_DOMAIN">
+            <column name="ID" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_UMIDA_DQ_DATA_DOMAIN"/>
+            </column>
+            <column name="PARENT_ID" type="UUID"/>
+            <column name="CODE" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SHORT_NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CREATED_AT" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="UPDATED_AT" type="TIMESTAMP"/>
+            <column name="VERSION" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="9" author="umida">
+        <createTable tableName="UMIDA_DQ_DATA_PRODUCT">
+            <column name="ID" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_UMIDA_DQ_DATA_PRODUCT"/>
+            </column>
+            <column name="PARENT_ID" type="UUID"/>
+            <column name="CODE" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SHORT_NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CREATED_AT" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="UPDATED_AT" type="TIMESTAMP"/>
+            <column name="VERSION" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="10" author="umida">
+        <createTable tableName="UMIDA_DQ_ISSUE">
+            <column name="ID" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_UMIDA_DQ_ISSUE"/>
+            </column>
+            <column name="CHECK_RESULT_ID" type="UUID"/>
+            <column name="RULE_ID" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DATA_SOURCE" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="STATUS" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SEVERITY" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="TITLE" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DESCRIPTION" type="text"/>
+            <column name="ASSIGNE_NAME" type="VARCHAR(200)"/>
+            <column name="ASSIGNEE_EMAIL" type="VARCHAR(200)"/>
+            <column name="ASSIGNEE_PHONE" type="VARCHAR(200)"/>
+            <column name="DUE_DATE" type="DATE"/>
+            <column name="RESOLVED_AT" type="TIMESTAMP"/>
+            <column name="RESOLUTION_NOTES" type="text"/>
+            <column name="AFFECTED_ROWS" type="DECIMAL(19)"/>
+            <column name="CREATED_AT" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="UPDATED_AT" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="11" author="umida">
+        <createTable tableName="UMIDA_DQ_METRICS_HISTORY">
+            <column name="ID" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_UMIDA_DQ_METRICS_HISTORY"/>
+            </column>
+            <column name="DATA_SOURCE" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DIMENSION" type="VARCHAR(50)"/>
+            <column name="METRIC_DATE" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DQ_SCORE" type="DECIMAL(5, 2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="RULES_CHECKED" type="INT"/>
+            <column name="RULES_PASSED" type="INT"/>
+            <column name="ISSUES_OPEN" type="INT"/>
+            <column name="CREATED_AT" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="12" author="umida">
+        <createTable tableName="UMIDA_DQ_RULE">
+            <column name="ID" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_UMIDA_DQ_RULE"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DESCRIPTION" type="text"/>
+            <column name="GROUP_ID" type="UUID"/>
+            <column name="DATA_SOURCE" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DB_SCHEMA" type="VARCHAR(255)"/>
+            <column name="TABLE_NAME" type="VARCHAR(255)"/>
+            <column name="COLUMN_NAME" type="VARCHAR(255)"/>
+            <column name="DIMENSION" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="RULE_TYPE" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="RULE_CONFIG" type="jsonb">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SEVERITY" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueBoolean="true" name="ACTIVE" type="boolean"/>
+            <column name="OWNER_ID" type="UUID"/>
+            <column name="DOMAIN_ID" type="UUID"/>
+            <column name="DATA_PRODUCT_ID" type="UUID"/>
+            <column name="ASSIGNEE_SUBDIVISION_ID" type="VARCHAR(36)"/>
+            <column name="ASSIGNEE_EMPLOYEE_ID" type="VARCHAR(36)"/>
+            <column name="VERSION" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CREATED_AT" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="UPDATED_AT" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="13" author="umida">
+        <createTable tableName="UMIDA_DQ_RULE_GROUP">
+            <column name="ID" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_UMIDA_DQ_RULE_GROUP"/>
+            </column>
+            <column name="PARENT_ID" type="UUID"/>
+            <column name="NAME" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DESCRIPTION" type="text"/>
+            <column name="CREATED_AT" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="UPDATED_AT" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="14" author="umida">
+        <createTable tableName="UMIDA_ORG_STRUCTURE_EMPLOYEES">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_UMIDA_ORG_STRUCTURE_EMPLOYEES"/>
+            </column>
+            <column name="PERSONNEL_NUMBER" type="VARCHAR(100)"/>
+            <column name="FULL_NAME" type="VARCHAR(255)"/>
+            <column name="FULL_NAME_LATIN" type="VARCHAR(255)"/>
+            <column name="AD_ACCOUNT" type="VARCHAR(100)"/>
+            <column name="EMAIL" type="VARCHAR(100)"/>
+            <column name="GENDER" type="VARCHAR(100)"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="15" author="umida">
+        <createTable tableName="UMIDA_ORG_STRUCTURE_JOBTITLES">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_UMIDA_ORG_STRUCTURE_JOBTITLES"/>
+            </column>
+            <column name="NAME" type="VARCHAR(400)"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="16" author="umida">
+        <createTable tableName="UMIDA_ORG_STRUCTURE_POSITIONS">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_UMIDA_ORG_STRUCTURE_POSITIONS"/>
+            </column>
+            <column name="SUBDIVISION_ID" type="VARCHAR(36)"/>
+            <column name="JOBTITLE_ID" type="VARCHAR(36)"/>
+            <column name="EMPLOYEE_ID" type="VARCHAR(36)"/>
+            <column name="LVL" type="VARCHAR(50)"/>
+            <column name="ISHEADOFSUBDIVISION" type="INT"/>
+            <column name="STATUS" type="VARCHAR(50)"/>
+            <column name="RECRUITMENT_DATE" type="DATE"/>
+            <column name="DISMISSAL_DATE" type="DATE"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="17" author="umida">
+        <createTable tableName="UMIDA_ORG_STRUCTURE_SUBDIVISIONS">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_UMIDA_ORG_STRUCTURE_SUBDIVISIONS"/>
+            </column>
+            <column name="NAME" type="VARCHAR(300)"/>
+            <column name="PARENT_ID" type="VARCHAR(36)"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="18" author="umida">
+        <createTable tableName="UMIDA_QUARTZ_JOB_EXECUTION">
+            <column name="ID" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_UMIDA_QUARTZ_JOB_EXECUTION"/>
+            </column>
+            <column name="JOB_NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="JOB_GROUP" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="JOB_CLASS" type="VARCHAR(500)"/>
+            <column name="TRIGGER_NAME" type="VARCHAR(255)"/>
+            <column name="TRIGGER_GROUP" type="VARCHAR(255)"/>
+            <column name="FIRE_INSTANCE_ID" type="VARCHAR(100)"/>
+            <column name="STARTED_AT" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="FINISHED_AT" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DURATION_MS" type="BIGINT"/>
+            <column name="STATUS" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="JOB_PARAMS" type="text"/>
+            <column name="ERROR_MESSAGE" type="text"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="19" author="umida">
+        <createTable tableName="UMIDA_TABLE_SYNCHRONIZER">
+            <column name="ID" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_UMIDA_TABLE_SYNCHRONIZER"/>
+            </column>
+            <column name="DIRECTION" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="TARGET_TABLE_NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SOURCE_TABLE_NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="BATCH_SIZE" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="TABLE_COL_CONFIG" type="jsonb">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CREATED_AT" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="UPDATED_AT" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="20" author="umida">
+        <createTable tableName="UMIDA_WORK_DISCIPLINE_EXCEPTIONS">
+            <column name="ID" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_UMIDA_WORK_DISCIPLINE_EXCEPTIONS"/>
+            </column>
+            <column name="SUBDIVISION_ID" type="VARCHAR(36)"/>
+            <column name="EMPLOYEE_ID" type="VARCHAR(36)"/>
+            <column name="JOB_TITLE_ID" type="VARCHAR(36)"/>
+            <column name="START_DATE" type="DATE"/>
+            <column name="END_DATE" type="DATE"/>
+            <column name="DESCRIPTION" type="text"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="21" author="umida">
+        <addColumn tableName="UMIDA_USER">
+            <column name="PICTURE" type="VARCHAR(1024)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet id="22" author="umida">
+        <createIndex indexName="IDX_UMIDA_DICT_DATA_DOMAIN_BUSINESS_OWNER" tableName="UMIDA_DICT_DATA_DOMAIN">
+            <column name="BUSINESS_OWNER_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="BUSINESS_OWNER_ID" baseTableName="UMIDA_DICT_DATA_DOMAIN"
+                                 constraintName="FK_UMIDA_DICT_DATA_DOMAIN_ON_BUSINESS_OWNER" onDelete="SET NULL"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_ORG_STRUCTURE_SUBDIVISIONS"/>
+    </changeSet>
+    <changeSet id="23" author="umida">
+        <createIndex indexName="IDX_UMIDA_DICT_DATA_DOMAIN_PARENT" tableName="UMIDA_DICT_DATA_DOMAIN">
+            <column name="PARENT_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="PARENT_ID" baseTableName="UMIDA_DICT_DATA_DOMAIN"
+                                 constraintName="FK_UMIDA_DICT_DATA_DOMAIN_ON_PARENT" referencedColumnNames="ID"
+                                 referencedTableName="UMIDA_DICT_DATA_DOMAIN"/>
+    </changeSet>
+    <changeSet id="24" author="umida">
+        <createIndex indexName="IDX_UMIDA_DICT_DATA_DOMAIN_STEWARD_DOMAIN" tableName="UMIDA_DICT_DATA_DOMAIN_STEWARD">
+            <column name="DOMAIN_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="DOMAIN_ID" baseTableName="UMIDA_DICT_DATA_DOMAIN_STEWARD"
+                                 constraintName="FK_UMIDA_DICT_DATA_DOMAIN_STEWARD_ON_DOMAIN" referencedColumnNames="ID"
+                                 referencedTableName="UMIDA_DICT_DATA_DOMAIN"/>
+    </changeSet>
+    <changeSet id="25" author="umida">
+        <createIndex indexName="IDX_UMIDA_DICT_DATA_DOMAIN_STEWARD_EMPLOYEE" tableName="UMIDA_DICT_DATA_DOMAIN_STEWARD">
+            <column name="EMPLOYEE_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="EMPLOYEE_ID" baseTableName="UMIDA_DICT_DATA_DOMAIN_STEWARD"
+                                 constraintName="FK_UMIDA_DICT_DATA_DOMAIN_STEWARD_ON_EMPLOYEE" onDelete="SET NULL"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_ORG_STRUCTURE_EMPLOYEES"/>
+    </changeSet>
+    <changeSet id="26" author="umida">
+        <createIndex indexName="IDX_UMIDA_DICT_DATA_PRODUCT_BUSINESS_OWNER" tableName="UMIDA_DICT_DATA_PRODUCT">
+            <column name="BUSINESS_OWNER_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="BUSINESS_OWNER_ID" baseTableName="UMIDA_DICT_DATA_PRODUCT"
+                                 constraintName="FK_UMIDA_DICT_DATA_PRODUCT_ON_BUSINESS_OWNER" onDelete="SET NULL"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_ORG_STRUCTURE_SUBDIVISIONS"/>
+    </changeSet>
+    <changeSet id="27" author="umida">
+        <createIndex indexName="IDX_UMIDA_DICT_DATA_PRODUCT_PARENT" tableName="UMIDA_DICT_DATA_PRODUCT">
+            <column name="PARENT_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="PARENT_ID" baseTableName="UMIDA_DICT_DATA_PRODUCT"
+                                 constraintName="FK_UMIDA_DICT_DATA_PRODUCT_ON_PARENT" referencedColumnNames="ID"
+                                 referencedTableName="UMIDA_DICT_DATA_PRODUCT"/>
+    </changeSet>
+    <changeSet id="28" author="umida">
+        <createIndex indexName="IDX_UMIDA_DICT_DATA_PRODUCT_STEWARD_EMPLOYEE"
+                     tableName="UMIDA_DICT_DATA_PRODUCT_STEWARD">
+            <column name="EMPLOYEE_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="EMPLOYEE_ID" baseTableName="UMIDA_DICT_DATA_PRODUCT_STEWARD"
+                                 constraintName="FK_UMIDA_DICT_DATA_PRODUCT_STEWARD_ON_EMPLOYEE" onDelete="SET NULL"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_ORG_STRUCTURE_EMPLOYEES"/>
+    </changeSet>
+    <changeSet id="29" author="umida">
+        <createIndex indexName="IDX_UMIDA_DICT_DATA_PRODUCT_STEWARD_PRODUCT"
+                     tableName="UMIDA_DICT_DATA_PRODUCT_STEWARD">
+            <column name="PRODUCT_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="PRODUCT_ID" baseTableName="UMIDA_DICT_DATA_PRODUCT_STEWARD"
+                                 constraintName="FK_UMIDA_DICT_DATA_PRODUCT_STEWARD_ON_PRODUCT"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_DICT_DATA_PRODUCT"/>
+    </changeSet>
+    <changeSet id="30" author="umida">
+        <createIndex indexName="IDX_UMIDA_DQ_CHECK_RUN_RESULT_CHECK_RUN" tableName="UMIDA_DQ_CHECK_RUN_RESULT">
+            <column name="CHECK_RUN_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="CHECK_RUN_ID" baseTableName="UMIDA_DQ_CHECK_RUN_RESULT"
+                                 constraintName="FK_UMIDA_DQ_CHECK_RUN_RESULT_ON_CHECK_RUN" onDelete="CASCADE"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_DQ_CHECK_RUN"/>
+    </changeSet>
+    <changeSet id="31" author="umida">
+        <createIndex indexName="IDX_UMIDA_DQ_CHECK_RUN_RESULT_RULE" tableName="UMIDA_DQ_CHECK_RUN_RESULT">
+            <column name="RULE_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="RULE_ID" baseTableName="UMIDA_DQ_CHECK_RUN_RESULT"
+                                 constraintName="FK_UMIDA_DQ_CHECK_RUN_RESULT_ON_RULE" onDelete="CASCADE"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_DQ_RULE"/>
+    </changeSet>
+    <changeSet id="32" author="umida">
+        <createIndex indexName="IDX_UMIDA_DQ_DATA_DOMAIN_PARENT" tableName="UMIDA_DQ_DATA_DOMAIN">
+            <column name="PARENT_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="PARENT_ID" baseTableName="UMIDA_DQ_DATA_DOMAIN"
+                                 constraintName="FK_UMIDA_DQ_DATA_DOMAIN_ON_PARENT" onDelete="SET NULL"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_DQ_DATA_DOMAIN"/>
+    </changeSet>
+    <changeSet id="33" author="umida">
+        <createIndex indexName="IDX_UMIDA_DQ_DATA_PRODUCT_PARENT" tableName="UMIDA_DQ_DATA_PRODUCT">
+            <column name="PARENT_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="PARENT_ID" baseTableName="UMIDA_DQ_DATA_PRODUCT"
+                                 constraintName="FK_UMIDA_DQ_DATA_PRODUCT_ON_PARENT" onDelete="SET NULL"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_DQ_DATA_PRODUCT"/>
+    </changeSet>
+    <changeSet id="34" author="umida">
+        <createIndex indexName="IDX_UMIDA_DQ_ISSUE_CHECK_RESULT" tableName="UMIDA_DQ_ISSUE">
+            <column name="CHECK_RESULT_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="CHECK_RESULT_ID" baseTableName="UMIDA_DQ_ISSUE"
+                                 constraintName="FK_UMIDA_DQ_ISSUE_ON_CHECK_RESULT" onDelete="SET NULL"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_DQ_CHECK_RUN_RESULT"/>
+    </changeSet>
+    <changeSet id="35" author="umida">
+        <createIndex indexName="IDX_UMIDA_DQ_ISSUE_RULE" tableName="UMIDA_DQ_ISSUE">
+            <column name="RULE_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="RULE_ID" baseTableName="UMIDA_DQ_ISSUE"
+                                 constraintName="FK_UMIDA_DQ_ISSUE_ON_RULE" onDelete="CASCADE"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_DQ_RULE"/>
+    </changeSet>
+    <changeSet id="36" author="umida">
+        <createIndex indexName="IDX_UMIDA_DQ_RULE_ASSIGNEE_EMPLOYEE" tableName="UMIDA_DQ_RULE">
+            <column name="ASSIGNEE_EMPLOYEE_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="ASSIGNEE_EMPLOYEE_ID" baseTableName="UMIDA_DQ_RULE"
+                                 constraintName="FK_UMIDA_DQ_RULE_ON_ASSIGNEE_EMPLOYEE" onDelete="SET NULL"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_ORG_STRUCTURE_EMPLOYEES"/>
+    </changeSet>
+    <changeSet id="37" author="umida">
+        <createIndex indexName="IDX_UMIDA_DQ_RULE_ASSIGNEE_SUBDIVISION" tableName="UMIDA_DQ_RULE">
+            <column name="ASSIGNEE_SUBDIVISION_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="ASSIGNEE_SUBDIVISION_ID" baseTableName="UMIDA_DQ_RULE"
+                                 constraintName="FK_UMIDA_DQ_RULE_ON_ASSIGNEE_SUBDIVISION" onDelete="SET NULL"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_ORG_STRUCTURE_SUBDIVISIONS"/>
+    </changeSet>
+    <changeSet id="38" author="umida">
+        <createIndex indexName="IDX_UMIDA_DQ_RULE_DATA_PRODUCT" tableName="UMIDA_DQ_RULE">
+            <column name="DATA_PRODUCT_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="DATA_PRODUCT_ID" baseTableName="UMIDA_DQ_RULE"
+                                 constraintName="FK_UMIDA_DQ_RULE_ON_DATA_PRODUCT" onDelete="SET NULL"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_DQ_DATA_PRODUCT"/>
+    </changeSet>
+    <changeSet id="39" author="umida">
+        <createIndex indexName="IDX_UMIDA_DQ_RULE_DOMAIN" tableName="UMIDA_DQ_RULE">
+            <column name="DOMAIN_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="DOMAIN_ID" baseTableName="UMIDA_DQ_RULE"
+                                 constraintName="FK_UMIDA_DQ_RULE_ON_DOMAIN" onDelete="SET NULL"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_DQ_DATA_DOMAIN"/>
+    </changeSet>
+    <changeSet id="40" author="umida">
+        <createIndex indexName="IDX_UMIDA_DQ_RULE_GROUP" tableName="UMIDA_DQ_RULE">
+            <column name="GROUP_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="GROUP_ID" baseTableName="UMIDA_DQ_RULE"
+                                 constraintName="FK_UMIDA_DQ_RULE_ON_GROUP" onDelete="SET NULL"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_DQ_RULE_GROUP"/>
+    </changeSet>
+    <changeSet id="41" author="umida">
+        <createIndex indexName="IDX_UMIDA_DQ_RULE_GROUP_PARENT" tableName="UMIDA_DQ_RULE_GROUP">
+            <column name="PARENT_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="PARENT_ID" baseTableName="UMIDA_DQ_RULE_GROUP"
+                                 constraintName="FK_UMIDA_DQ_RULE_GROUP_ON_PARENT" onDelete="SET NULL"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_DQ_RULE_GROUP"/>
+    </changeSet>
+    <changeSet id="42" author="umida">
+        <createIndex indexName="IDX_UMIDA_DQ_RULE_OWNER" tableName="UMIDA_DQ_RULE">
+            <column name="OWNER_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="OWNER_ID" baseTableName="UMIDA_DQ_RULE"
+                                 constraintName="FK_UMIDA_DQ_RULE_ON_OWNER" onDelete="SET NULL"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_USER"/>
+    </changeSet>
+    <changeSet id="43" author="umida">
+        <createIndex indexName="IDX_UMIDA_ORG_STRUCTURE_POSITION_EMPLOYEE" tableName="UMIDA_ORG_STRUCTURE_POSITIONS">
+            <column name="EMPLOYEE_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="EMPLOYEE_ID" baseTableName="UMIDA_ORG_STRUCTURE_POSITIONS"
+                                 constraintName="FK_UMIDA_ORG_STRUCTURE_POSITIONS_ON_EMPLOYEE" onDelete="SET NULL"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_ORG_STRUCTURE_EMPLOYEES"/>
+    </changeSet>
+    <changeSet id="44" author="umida">
+        <createIndex indexName="IDX_UMIDA_ORG_STRUCTURE_POSITION_JOB_TITLE" tableName="UMIDA_ORG_STRUCTURE_POSITIONS">
+            <column name="JOBTITLE_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="JOBTITLE_ID" baseTableName="UMIDA_ORG_STRUCTURE_POSITIONS"
+                                 constraintName="FK_UMIDA_ORG_STRUCTURE_POSITIONS_ON_JOBTITLE" onDelete="SET NULL"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_ORG_STRUCTURE_JOBTITLES"/>
+    </changeSet>
+    <changeSet id="45" author="umida">
+        <createIndex indexName="IDX_UMIDA_ORG_STRUCTURE_POSITION_SUBDIVISION" tableName="UMIDA_ORG_STRUCTURE_POSITIONS">
+            <column name="SUBDIVISION_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="SUBDIVISION_ID" baseTableName="UMIDA_ORG_STRUCTURE_POSITIONS"
+                                 constraintName="FK_UMIDA_ORG_STRUCTURE_POSITIONS_ON_SUBDIVISION" onDelete="SET NULL"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_ORG_STRUCTURE_SUBDIVISIONS"/>
+    </changeSet>
+    <changeSet id="46" author="umida">
+        <createIndex indexName="IDX_UMIDA_ORG_STRUCTURE_SUBDIVISION_PARENT"
+                     tableName="UMIDA_ORG_STRUCTURE_SUBDIVISIONS">
+            <column name="PARENT_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="PARENT_ID" baseTableName="UMIDA_ORG_STRUCTURE_SUBDIVISIONS"
+                                 constraintName="FK_UMIDA_ORG_STRUCTURE_SUBDIVISIONS_ON_PARENT"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_ORG_STRUCTURE_SUBDIVISIONS"/>
+    </changeSet>
+    <changeSet id="47" author="umida">
+        <createIndex indexName="IDX_UMIDA_WORK_DISCIPLINE_EXCEPTION_EMPLOYEE"
+                     tableName="UMIDA_WORK_DISCIPLINE_EXCEPTIONS">
+            <column name="EMPLOYEE_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="EMPLOYEE_ID" baseTableName="UMIDA_WORK_DISCIPLINE_EXCEPTIONS"
+                                 constraintName="FK_UMIDA_WORK_DISCIPLINE_EXCEPTIONS_ON_EMPLOYEE" onDelete="SET NULL"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_ORG_STRUCTURE_EMPLOYEES"/>
+    </changeSet>
+    <changeSet id="48" author="umida">
+        <createIndex indexName="IDX_UMIDA_WORK_DISCIPLINE_EXCEPTION_JOB_TITLE"
+                     tableName="UMIDA_WORK_DISCIPLINE_EXCEPTIONS">
+            <column name="JOB_TITLE_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="JOB_TITLE_ID" baseTableName="UMIDA_WORK_DISCIPLINE_EXCEPTIONS"
+                                 constraintName="FK_UMIDA_WORK_DISCIPLINE_EXCEPTIONS_ON_JOB_TITLE" onDelete="SET NULL"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_ORG_STRUCTURE_JOBTITLES"/>
+    </changeSet>
+    <changeSet id="49" author="umida">
+        <createIndex indexName="IDX_UMIDA_WORK_DISCIPLINE_EXCEPTION_SUBDIVISION"
+                     tableName="UMIDA_WORK_DISCIPLINE_EXCEPTIONS">
+            <column name="SUBDIVISION_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="SUBDIVISION_ID" baseTableName="UMIDA_WORK_DISCIPLINE_EXCEPTIONS"
+                                 constraintName="FK_UMIDA_WORK_DISCIPLINE_EXCEPTIONS_ON_SUBDIVISION" onDelete="SET NULL"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_ORG_STRUCTURE_SUBDIVISIONS"/>
+    </changeSet>
+</databaseChangeLog>
