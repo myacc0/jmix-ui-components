@@ -12,8 +12,7 @@ import uz.kapitalbank.umida.service.orgstructure.EmployeeUserLinkService;
 
 /**
  * Deactivates the users of the employees HR has dismissed ({@code OrgStructureEmployee.dismissalDate}), linking
- * first the users that have not logged in since the user-employee link appeared. Scheduled by
- * {@link DismissedEmployeeUsersJobConfiguration}.
+ * first the users that have not logged in since the user-employee link appeared.
  */
 @DisallowConcurrentExecution
 public class DismissedEmployeeUsersJob implements Job {

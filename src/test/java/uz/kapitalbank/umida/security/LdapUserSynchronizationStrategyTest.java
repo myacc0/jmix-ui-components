@@ -18,6 +18,7 @@ import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -56,6 +57,16 @@ class LdapUserSynchronizationStrategyTest {
         assertThat(user.getEmployee()).isEqualTo(employee);
         assertThat(user.getLastName()).isEqualTo("Тестов");
         assertThat(user.getActive()).isTrue();
+    }
+
+    @Test
+    void firstLoginStoresTheUsernameInLowerCase() {
+        String username = uniqueUsername();
+        OrgStructureEmployee employee = createEmployee(username, null);
+
+        strategy.synchronizeUserDetails(ldapEntry(), username.toUpperCase(Locale.ROOT), List.of());
+
+        assertThat(findUser(username).orElseThrow().getEmployee()).isEqualTo(employee);
     }
 
     @Test

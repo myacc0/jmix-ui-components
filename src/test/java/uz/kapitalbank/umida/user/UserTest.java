@@ -12,7 +12,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Locale;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Sample integration test for the User entity.
@@ -47,6 +50,28 @@ public class UserTest {
         // Check the new user is available through UserRepository
         UserDetails userDetails = userRepository.loadUserByUsername(user.getUsername());
         assertThat(userDetails).isEqualTo(user);
+    }
+
+    @Test
+    void userIsFoundByUsernameInAnyCase() {
+        User user = dataManager.create(User.class);
+        user.setUsername("test-user-" + System.currentTimeMillis());
+        savedUser = dataManager.save(user);
+
+        UserDetails userDetails = userRepository.loadUserByUsername(user.getUsername().toUpperCase(Locale.ROOT));
+        assertThat(userDetails).isEqualTo(user);
+    }
+
+    @Test
+    void usernameDifferingOnlyInCaseIsRejected() {
+        User user = dataManager.create(User.class);
+        user.setUsername("test-user-" + System.currentTimeMillis());
+        savedUser = dataManager.save(user);
+
+        User duplicate = dataManager.create(User.class);
+        duplicate.setUsername(user.getUsername().toUpperCase(Locale.ROOT));
+        assertThatThrownBy(() -> dataManager.save(duplicate))
+                .hasStackTraceContaining("idx_umida_user_on_lower_username");
     }
 
     @AfterEach

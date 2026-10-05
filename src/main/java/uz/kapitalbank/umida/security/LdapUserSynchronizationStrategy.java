@@ -20,6 +20,9 @@ import java.util.Collection;
  * without this a user deactivated in the application, e.g. after the employee's dismissal, would still get in
  * for as long as the LDAP account lives.
  * <p>
+ * The username typed at login is normalized ({@link DatabaseUserRepository#normalizeUsername}): the LDAP bind
+ * accepts the AD account in any case, and the user must come out the same whatever the case typed.
+ * <p>
  * Role assignments are not synchronized ({@code jmix.ldap.synchronize-role-assignments=false}):
  * they stay managed in the application.
  */
@@ -38,8 +41,9 @@ public class LdapUserSynchronizationStrategy extends AbstractLdapUserDetailsSync
             final String username,
             final Collection<? extends GrantedAuthority> authorities
     ) {
-        UserDetails synchronizedUser = super.synchronizeUserDetails(ctx, username, authorities);
-        User user = employeeUserLinkService.linkByAdAccount(username);
+        UserDetails synchronizedUser = super.synchronizeUserDetails(
+                ctx, DatabaseUserRepository.normalizeUsername(username), authorities);
+        User user = employeeUserLinkService.linkByAdAccount(synchronizedUser.getUsername());
         if (user != null && !user.isEnabled()) {
             throw new DisabledException("User " + username + " is inactive");
         }

@@ -105,6 +105,26 @@ class LdapAuthenticationTest {
     }
 
     @Test
+    void usernameCaseDoesNotCreateAnotherUser() {
+        String username = "yuliya.kim";
+        boolean existedBefore = findUser(username).isPresent();
+
+        for (String typed : List.of("YULIYA.KIM", "Yuliya.Kim", " yuliya.kim ", username)) {
+            User principal = (User) authenticate(typed, LDAP_PASSWORD).getPrincipal();
+            assertThat(principal.getUsername()).isEqualTo(username);
+        }
+
+        List<User> users = dataManager.load(User.class)
+                .query("select u from umida_User u where lower(u.username) = :username")
+                .parameter("username", username)
+                .list();
+        if (!existedBefore) {
+            cleanup.addAll(users);
+        }
+        assertThat(users).hasSize(1);
+    }
+
+    @Test
     void ldapUserWithWrongPasswordIsRejected() {
         assertThatThrownBy(() -> authenticate("yuliya.kim", "wrong-password"))
                 .isInstanceOf(BadCredentialsException.class);
