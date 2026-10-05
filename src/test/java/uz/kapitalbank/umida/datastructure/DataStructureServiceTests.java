@@ -237,31 +237,35 @@ class DataStructureServiceTests {
 
     private OrgStructureSubdivision createSubdivision(String name) {
         OrgStructureSubdivision subdivision = dataManager.create(OrgStructureSubdivision.class);
+        subdivision.setId(UUID.randomUUID().toString());
         subdivision.setName(name);
         return track(dataManager.save(subdivision));
     }
 
     private OrgStructureJobTitle createJobTitle(String name) {
         OrgStructureJobTitle jobTitle = dataManager.create(OrgStructureJobTitle.class);
+        jobTitle.setId(UUID.randomUUID().toString());
         jobTitle.setName(name);
         return track(dataManager.save(jobTitle));
     }
 
     private OrgStructureEmployee createEmployee(String fullName, String email) {
-        OrgStructureEmployee orgStructureEmployee = dataManager.create(OrgStructureEmployee.class);
-        orgStructureEmployee.setFullName(fullName);
-        orgStructureEmployee.setEmail(email);
-        return track(dataManager.save(orgStructureEmployee));
+        OrgStructureEmployee employee = dataManager.create(OrgStructureEmployee.class);
+        employee.setId(UUID.randomUUID().toString());
+        employee.setFullName(fullName);
+        employee.setEmail(email);
+        return track(dataManager.save(employee));
     }
 
-    private void createPosition(OrgStructureSubdivision subdivision, OrgStructureJobTitle jobTitle, OrgStructureEmployee orgStructureEmployee, String lvl, Integer ishead) {
+    private void createPosition(OrgStructureSubdivision subdivision, OrgStructureJobTitle jobTitle, OrgStructureEmployee employee, String lvl, Integer ishead) {
         OrgStructurePosition position = dataManager.create(OrgStructurePosition.class);
+        position.setId(UUID.randomUUID().toString());
         position.setSubdivision(subdivision);
         position.setJobTitle(jobTitle);
-        position.setEmployee(orgStructureEmployee);
+        position.setEmployee(employee);
         position.setLvl(lvl);
         position.setIsheadofsubdivision(ishead);
-        position.setStatus(orgStructureEmployee != null ? OrgStructurePositionStatus.FILLED : OrgStructurePositionStatus.VACANT);
+        position.setStatus(employee != null ? OrgStructurePositionStatus.FILLED : OrgStructurePositionStatus.VACANT);
         track(dataManager.save(position));
     }
 
@@ -288,19 +292,19 @@ class DataStructureServiceTests {
         return track(dataManager.save(product));
     }
 
-    private void createDomainSteward(DictDataDomain domain, OrgStructureEmployee orgStructureEmployee, LocalDate begin, LocalDate end) {
+    private void createDomainSteward(DictDataDomain domain, OrgStructureEmployee employee, LocalDate begin, LocalDate end) {
         DictDataDomainSteward steward = dataManager.create(DictDataDomainSteward.class);
         steward.setDomain(domain);
-        steward.setEmployee(orgStructureEmployee);
+        steward.setEmployee(employee);
         steward.setDateBegin(begin);
         steward.setDateEnd(end);
         track(dataManager.save(steward));
     }
 
-    private void createProductSteward(DictDataProduct product, OrgStructureEmployee orgStructureEmployee, LocalDate begin, LocalDate end) {
+    private void createProductSteward(DictDataProduct product, OrgStructureEmployee employee, LocalDate begin, LocalDate end) {
         DictDataProductSteward steward = dataManager.create(DictDataProductSteward.class);
         steward.setProduct(product);
-        steward.setEmployee(orgStructureEmployee);
+        steward.setEmployee(employee);
         steward.setDateBegin(begin);
         steward.setDateEnd(end);
         track(dataManager.save(steward));

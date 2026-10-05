@@ -114,6 +114,7 @@ class OrgStructureEmployeePhotoServiceTests {
 
     private OrgStructureEmployee createEmployee() {
         OrgStructureEmployee employee = dataManager.create(OrgStructureEmployee.class);
+        employee.setId(UUID.randomUUID().toString());
         employee.setFullName("Photo Test " + UUID.randomUUID());
         OrgStructureEmployee saved = dataManager.save(employee);
         cleanup.add(saved);

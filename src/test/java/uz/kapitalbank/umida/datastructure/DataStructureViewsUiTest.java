@@ -16,9 +16,7 @@ import uz.kapitalbank.umida.view.orgstructure.DataDomainStructureView;
 import uz.kapitalbank.umida.view.orgstructure.DataProductStructureView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
-import com.vaadin.flow.component.HasText;
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.Span;
 import io.jmix.core.DataManager;
@@ -77,14 +75,25 @@ public class DataStructureViewsUiTest {
     void setUp() {
         suffix = UUID.randomUUID().toString().substring(0, 8);
 
-        OrgStructureSubdivision owner = create(OrgStructureSubdivision.class, d -> d.setName("Owner " + suffix));
-        OrgStructureJobTitle title = create(OrgStructureJobTitle.class, t -> t.setName("Director " + suffix));
+        OrgStructureSubdivision owner = create(OrgStructureSubdivision.class, d -> {
+            d.setId(UUID.randomUUID().toString());
+            d.setName("Owner " + suffix);
+        });
+        OrgStructureJobTitle title = create(OrgStructureJobTitle.class, t -> {
+            t.setId(UUID.randomUUID().toString());
+            t.setName("Director " + suffix);
+        });
         OrgStructureEmployee head = create(OrgStructureEmployee.class, e -> {
+            e.setId(UUID.randomUUID().toString());
             e.setFullName("Head " + suffix);
             e.setEmail("head-" + suffix + "@test.com");
         });
-        OrgStructureEmployee stewardOrgStructureEmployee = create(OrgStructureEmployee.class, e -> e.setFullName("Steward " + suffix));
+        OrgStructureEmployee stewardOrgStructureEmployee = create(OrgStructureEmployee.class, e -> {
+            e.setId(UUID.randomUUID().toString());
+            e.setFullName("Steward " + suffix);
+        });
         create(OrgStructurePosition.class, p -> {
+            p.setId(UUID.randomUUID().toString());
             p.setSubdivision(owner);
             p.setJobTitle(title);
             p.setEmployee(head);
@@ -132,9 +141,7 @@ public class DataStructureViewsUiTest {
         assertFalse(this.<Span>component(card, "assignDateValue").getText().isBlank());
         assertFalse(this.<Span>component(card, "createdDateValue").getText().isBlank());
 
-        Div stewards = component(card, "stewardsValue");
-        assertEquals(List.of("Steward " + suffix),
-                stewards.getChildren().map(child -> ((HasText) child).getText()).toList());
+        assertEquals("Steward " + suffix, this.<Span>component(card, "stewardsValue").getText());
     }
 
     @Test
@@ -153,8 +160,7 @@ public class DataStructureViewsUiTest {
         // no long name, no description and no stewards — every empty value shows a dash
         assertEquals("—", this.<Span>component(card, "longNameValue").getText());
         assertEquals("—", this.<Span>component(card, "descriptionValue").getText());
-        Div stewards = component(card, "stewardsValue");
-        assertEquals(List.of("—"), stewards.getChildren().map(child -> ((HasText) child).getText()).toList());
+        assertEquals("—", this.<Span>component(card, "stewardsValue").getText());
     }
 
     @Test

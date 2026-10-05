@@ -243,6 +243,7 @@ class OrgStructureServiceTests {
 
     private OrgStructureSubdivision createSubdivision(String name, OrgStructureSubdivision parent, int ordNo) {
         OrgStructureSubdivision subdivision = dataManager.create(OrgStructureSubdivision.class);
+        subdivision.setId(UUID.randomUUID().toString());
         subdivision.setName(name);
         subdivision.setParent(parent);
         OrgStructureSubdivision saved = dataManager.save(subdivision);
@@ -252,6 +253,7 @@ class OrgStructureServiceTests {
 
     private OrgStructureJobTitle createJobTitle(String name) {
         OrgStructureJobTitle jobTitle = dataManager.create(OrgStructureJobTitle.class);
+        jobTitle.setId(UUID.randomUUID().toString());
         jobTitle.setName(name);
         OrgStructureJobTitle saved = dataManager.save(jobTitle);
         cleanup.add(saved);
@@ -260,6 +262,7 @@ class OrgStructureServiceTests {
 
     private OrgStructureEmployee createEmployee(String fullName) {
         OrgStructureEmployee orgStructureEmployee = dataManager.create(OrgStructureEmployee.class);
+        orgStructureEmployee.setId(UUID.randomUUID().toString());
         orgStructureEmployee.setFullName(fullName);
         OrgStructureEmployee saved = dataManager.save(orgStructureEmployee);
         cleanup.add(saved);
@@ -269,6 +272,7 @@ class OrgStructureServiceTests {
     private OrgStructurePosition createPosition(OrgStructureSubdivision subdivision, OrgStructureJobTitle jobTitle, OrgStructureEmployee orgStructureEmployee,
                                                 String lvl, Integer ishead) {
         OrgStructurePosition position = dataManager.create(OrgStructurePosition.class);
+        position.setId(UUID.randomUUID().toString());
         position.setSubdivision(subdivision);
         position.setJobTitle(jobTitle);
         position.setEmployee(orgStructureEmployee);

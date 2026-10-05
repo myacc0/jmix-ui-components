@@ -215,6 +215,7 @@ class OrgStructureEmployeePhotoS3StorageTests {
 
     private OrgStructureSubdivision createSubdivision(String name) {
         OrgStructureSubdivision subdivision = dataManager.create(OrgStructureSubdivision.class);
+        subdivision.setId(UUID.randomUUID().toString());
         subdivision.setName(name);
         OrgStructureSubdivision saved = dataManager.save(subdivision);
         cleanup.add(saved);
@@ -223,6 +224,7 @@ class OrgStructureEmployeePhotoS3StorageTests {
 
     private OrgStructureJobTitle createJobTitle(String name) {
         OrgStructureJobTitle jobTitle = dataManager.create(OrgStructureJobTitle.class);
+        jobTitle.setId(UUID.randomUUID().toString());
         jobTitle.setName(name);
         OrgStructureJobTitle saved = dataManager.save(jobTitle);
         cleanup.add(saved);
@@ -232,6 +234,7 @@ class OrgStructureEmployeePhotoS3StorageTests {
     private OrgStructurePosition createPosition(OrgStructureSubdivision subdivision, OrgStructureJobTitle jobTitle, OrgStructureEmployee employee,
                                                 String lvl, Integer ishead) {
         OrgStructurePosition position = dataManager.create(OrgStructurePosition.class);
+        position.setId(UUID.randomUUID().toString());
         position.setSubdivision(subdivision);
         position.setJobTitle(jobTitle);
         position.setEmployee(employee);
@@ -245,6 +248,7 @@ class OrgStructureEmployeePhotoS3StorageTests {
 
     private OrgStructureEmployee createEmployee() {
         OrgStructureEmployee employee = dataManager.create(OrgStructureEmployee.class);
+        employee.setId(UUID.randomUUID().toString());
         employee.setFullName("S3 Photo Test " + UUID.randomUUID());
         OrgStructureEmployee saved = dataManager.save(employee);
         cleanup.add(saved);
