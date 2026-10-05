@@ -1,6 +1,7 @@
 package uz.kapitalbank.umida.view.user;
 
 import uz.kapitalbank.umida.entity.User;
+import uz.kapitalbank.umida.service.orgstructure.EmployeeUserLinkService;
 import uz.kapitalbank.umida.view.main.MainView;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.notification.Notification;
@@ -41,6 +42,8 @@ public class UserDetailView extends StandardDetailView<User> {
     private EntityStates entityStates;
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private EmployeeUserLinkService employeeUserLinkService;
 
     private boolean newEntity;
 
@@ -68,6 +71,13 @@ public class UserDetailView extends StandardDetailView<User> {
         if (entityStates.isNew(getEditedEntity())
                 && !Objects.equals(passwordField.getValue(), confirmPasswordField.getValue())) {
             event.getErrors().add(messageBundle.getMessage("passwordsDoNotMatch"));
+        }
+        // one employee belongs to one user at most (unique index on EMPLOYEE_ID)
+        User user = getEditedEntity();
+        if (user.getEmployee() != null
+                && employeeUserLinkService.isLinkedToOtherUser(user.getEmployee(),
+                entityStates.isNew(user) ? null : user)) {
+            event.getErrors().add(messageBundle.getMessage("employeeLinkedToOtherUser"));
         }
     }
 

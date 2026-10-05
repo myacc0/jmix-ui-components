@@ -1,6 +1,7 @@
 package uz.kapitalbank.umida.security;
 
 import io.jmix.core.DataManager;
+import io.jmix.core.FetchPlan;
 import io.jmix.core.security.AuthenticationManagerSupplier;
 import io.jmix.security.role.RoleGrantedAuthorityUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -15,11 +16,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import uz.kapitalbank.umida.entity.User;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
+import uz.kapitalbank.umida.service.orgstructure.EmployeeUserLinkService;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -46,7 +50,10 @@ class LdapAuthenticationTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    private final List<User> cleanup = new ArrayList<>();
+    @Autowired
+    private EmployeeUserLinkService employeeUserLinkService;
+
+    private final List<Object> cleanup = new ArrayList<>();
 
     @Test
     void ldapUserLogsInWithLdapPassword() {
@@ -78,6 +85,23 @@ class LdapAuthenticationTest {
         assertThat(user.getLastName()).isEqualTo("Бурунов");
         assertThat(user.getFirstName()).isEqualTo("Сергей");
         assertThat(user.getEmail()).isEqualTo("sergey.burunov@gmail.com");
+    }
+
+    @Test
+    void ldapLoginLinksUserToTheEmployeeOfTheAdAccount() {
+        String username = "madinakhon.vakhobova";
+        boolean existedBefore = findUser(username).isPresent();
+        // the HR data may be absent in a fresh database: then the test brings its own employee
+        OrgStructureEmployee employee = employeeUserLinkService.findEmployeeByAdAccount(username)
+                .orElseGet(() -> createEmployee(username));
+
+        authenticate(username, LDAP_PASSWORD);
+
+        User user = findUser(username).orElseThrow();
+        if (!existedBefore) {
+            cleanup.add(0, user);
+        }
+        assertThat(user.getEmployee()).isEqualTo(employee);
     }
 
     @Test
@@ -125,6 +149,17 @@ class LdapAuthenticationTest {
         return dataManager.load(User.class)
                 .query("select u from umida_User u where u.username = :username")
                 .parameter("username", username)
+                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE).add("employee", FetchPlan.BASE))
                 .optional();
+    }
+
+    private OrgStructureEmployee createEmployee(String adAccount) {
+        OrgStructureEmployee employee = dataManager.create(OrgStructureEmployee.class);
+        employee.setId(UUID.randomUUID().toString());
+        employee.setFullName("Ldap Test " + adAccount);
+        employee.setAdAccount(adAccount);
+        OrgStructureEmployee saved = dataManager.save(employee);
+        cleanup.add(saved);
+        return saved;
     }
 }

@@ -1,14 +1,19 @@
 package uz.kapitalbank.umida.service.orgstructure;
 
+import io.jmix.core.FetchPlan;
 import io.jmix.core.FileRef;
 import io.jmix.core.FileStorage;
 import io.jmix.core.FileStorageException;
 import io.jmix.core.FileStorageLocator;
+import io.jmix.core.UnconstrainedDataManager;
+import io.jmix.core.event.EntityChangedEvent;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.event.TransactionalEventListener;
+import uz.kapitalbank.umida.entity.User;
 import uz.kapitalbank.umida.service.orgstructure.photo.EmployeePhotoScanner;
 
 import java.io.IOException;
@@ -34,6 +39,12 @@ import java.util.*;
  * <p>
  * The index is rebuilt at most once per {@link #INDEX_TTL_MS}, which means a photo put into the
  * storage outside the application becomes visible within that interval without a restart.
+ * <p>
+ * The profile photo a user uploads ({@code User.picture}) takes precedence over the employee photo of the
+ * employee the user is linked to ({@code User.employee}). Those are looked up in a second short-lived index,
+ * {@code employee id -> User.picture}, dropped whenever a user's picture or employee link changes. The URL of a
+ * profile photo carries a version of the file, so a browser that cached the previous picture fetches the new one
+ * right away.
  */
 @Service
 public class EmployeePhotoService {
@@ -50,15 +61,19 @@ public class EmployeePhotoService {
 
     private final FileStorageLocator fileStorageLocator;
     private final List<EmployeePhotoScanner> photoScanners;
+    private final UnconstrainedDataManager dataManager;
     private final String contextPath;
 
     private volatile PhotoIndex photoIndex;
+    private volatile UserPictureIndex userPictureIndex;
 
     public EmployeePhotoService(FileStorageLocator fileStorageLocator,
                                 List<EmployeePhotoScanner> photoScanners,
+                                UnconstrainedDataManager dataManager,
                                 @Value("${server.servlet.context-path:}") String contextPath) {
         this.fileStorageLocator = fileStorageLocator;
         this.photoScanners = photoScanners;
+        this.dataManager = dataManager;
         this.contextPath = normalizeContextPath(contextPath);
     }
 
@@ -69,14 +84,31 @@ public class EmployeePhotoService {
     }
 
     /**
-     * Returns the URL the photo of the employee is served under, or {@code null} when the
-     * employee has no photo in the file storage. A {@code null} lets the org chart fall back to
-     * the initials placeholder.
+     * Returns the URL the photo of the employee is served under, or {@code null} when neither the
+     * user linked to the employee has a profile photo nor the employee has a photo in the file
+     * storage. A {@code null} lets the org chart fall back to the initials placeholder.
      */
     public String getPhotoUrl(String employeeId) {
+        Optional<FileRef> userPicture = findUserPictureRef(employeeId);
+        if (userPicture.isPresent()) {
+            // the version changes with the file, so a cached previous picture is not reused
+            return contextPath + PHOTO_URL_PREFIX + employeeId
+                    + "?v=" + Integer.toHexString(userPicture.get().toString().hashCode());
+        }
         return findPhotoRef(employeeId)
                 .map(fileRef -> contextPath + PHOTO_URL_PREFIX + employeeId)
                 .orElse(null);
+    }
+
+    /**
+     * Returns the profile photo ({@code User.picture}) of the user linked to the employee, or an
+     * empty optional when no linked user has one.
+     */
+    public Optional<FileRef> findUserPictureRef(String employeeId) {
+        if (employeeId == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(getUserPictureIndex().get(employeeId.toLowerCase(Locale.ROOT)));
     }
 
     /**
@@ -101,20 +133,27 @@ public class EmployeePhotoService {
     }
 
     /**
-     * Reads the photo of the employee. Returns an empty optional when the employee has no photo
-     * or the file cannot be read.
+     * Reads the photo of the employee: the profile photo of the linked user if there is one,
+     * otherwise the employee photo. Returns an empty optional when there is neither or the file
+     * cannot be read.
      */
     public Optional<Photo> loadPhoto(String employeeId) {
-        Optional<FileRef> fileRef = findPhotoRef(employeeId);
-        if (fileRef.isEmpty()) {
-            return Optional.empty();
+        Optional<Photo> userPicture = findUserPictureRef(employeeId)
+                .flatMap(fileRef -> readPhoto(employeeId, fileRef));
+        if (userPicture.isPresent()) {
+            return userPicture;
         }
+        // a profile photo that cannot be read falls back to the employee photo
+        return findPhotoRef(employeeId).flatMap(fileRef -> readPhoto(employeeId, fileRef));
+    }
 
-        FileRef reference = fileRef.get();
-        try (InputStream inputStream = getFileStorage().openStream(reference)) {
+    private Optional<Photo> readPhoto(String employeeId, FileRef reference) {
+        try (InputStream inputStream = fileStorageLocator.getByName(reference.getStorageName())
+                .openStream(reference)) {
             return Optional.of(new Photo(reference.getFileName(), reference.getContentType(),
                     inputStream.readAllBytes()));
-        } catch (IOException | FileStorageException e) {
+        } catch (IOException | FileStorageException | IllegalArgumentException | IllegalStateException e) {
+            // IllegalArgument/IllegalState: the storage the reference names is not registered (any more)
             log.warn("Cannot read the photo of employee {} from {}", employeeId, reference, e);
             return Optional.empty();
         }
@@ -127,6 +166,45 @@ public class EmployeePhotoService {
      */
     public void invalidateIndex() {
         photoIndex = null;
+        userPictureIndex = null;
+    }
+
+    /**
+     * Drops the profile photo index once a change of a user's picture or employee link is
+     * committed, so that the org chart shows the new photo right away.
+     */
+    @TransactionalEventListener(fallbackExecution = true)
+    public void onUserChanged(EntityChangedEvent<User> event) {
+        if (event.getType() != EntityChangedEvent.Type.UPDATED
+                || event.getChanges().isChanged("picture")
+                || event.getChanges().isChanged("employee")) {
+            userPictureIndex = null;
+        }
+    }
+
+    private Map<String, FileRef> getUserPictureIndex() {
+        UserPictureIndex current = userPictureIndex;
+        if (current != null && System.currentTimeMillis() - current.builtAt() < INDEX_TTL_MS) {
+            return current.picturesByEmployeeId();
+        }
+
+        UserPictureIndex rebuilt = new UserPictureIndex(loadUserPictures(), System.currentTimeMillis());
+        userPictureIndex = rebuilt;
+        return rebuilt.picturesByEmployeeId();
+    }
+
+    private Map<String, FileRef> loadUserPictures() {
+        List<User> users = dataManager.load(User.class)
+                .query("select u from umida_User u where u.employee is not null and u.picture is not null")
+                .fetchPlan(fp -> fp.add("picture")
+                        .add("employee", FetchPlan.INSTANCE_NAME))
+                .list();
+
+        Map<String, FileRef> picturesByEmployeeId = new HashMap<>();
+        for (User user : users) {
+            picturesByEmployeeId.put(user.getEmployee().getId().toLowerCase(Locale.ROOT), user.getPicture());
+        }
+        return picturesByEmployeeId;
     }
 
     private FileStorage getFileStorage() {
@@ -171,6 +249,9 @@ public class EmployeePhotoService {
 
     /** Photo content together with what is needed to serve it. */
     public record Photo(String fileName, String contentType, byte[] content) {
+    }
+
+    private record UserPictureIndex(Map<String, FileRef> picturesByEmployeeId, long builtAt) {
     }
 
     /** The index is tied to the storage it was built from, so a storage switch cannot reuse it. */

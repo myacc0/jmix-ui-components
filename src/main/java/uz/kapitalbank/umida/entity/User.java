@@ -1,9 +1,11 @@
 package uz.kapitalbank.umida.entity;
 
+import io.jmix.core.DeletePolicy;
 import io.jmix.core.FileRef;
 import io.jmix.core.HasTimeZone;
 import io.jmix.core.annotation.Secret;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
+import io.jmix.core.entity.annotation.OnDeleteInverse;
 import io.jmix.core.entity.annotation.SystemLevel;
 import io.jmix.core.metamodel.annotation.DependsOnProperties;
 import io.jmix.core.metamodel.annotation.InstanceName;
@@ -12,6 +14,7 @@ import io.jmix.security.authentication.JmixUserDetails;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import org.springframework.security.core.GrantedAuthority;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -20,7 +23,8 @@ import java.util.UUID;
 @JmixEntity
 @Entity(name = "umida_User")
 @Table(name = "UMIDA_USER", indexes = {
-        @Index(name = "IDX_UMIDA_USER_ON_USERNAME", columnList = "USERNAME", unique = true)
+        @Index(name = "IDX_UMIDA_USER_ON_USERNAME", columnList = "USERNAME", unique = true),
+        @Index(name = "IDX_UMIDA_USER_ON_EMPLOYEE", columnList = "EMPLOYEE_ID", unique = true)
 })
 public class User implements JmixUserDetails, HasTimeZone {
 
@@ -60,8 +64,26 @@ public class User implements JmixUserDetails, HasTimeZone {
     @Column(name = "PICTURE", length = 1024)
     private FileRef picture;
 
+    /**
+     * The HR employee record of the user, linked by {@code OrgStructureEmployee.adAccount} on LDAP login
+     * ({@code EmployeeUserLinkService}). One employee belongs to one user at most. Unlinked when the HR
+     * synchronization deletes the employee row.
+     */
+    @OnDeleteInverse(DeletePolicy.UNLINK)
+    @JoinColumn(name = "EMPLOYEE_ID")
+    @ManyToOne(fetch = FetchType.LAZY)
+    private OrgStructureEmployee employee;
+
     @Transient
     private Collection<? extends GrantedAuthority> authorities;
+
+    public OrgStructureEmployee getEmployee() {
+        return employee;
+    }
+
+    public void setEmployee(OrgStructureEmployee employee) {
+        this.employee = employee;
+    }
 
     public FileRef getPicture() {
         return picture;

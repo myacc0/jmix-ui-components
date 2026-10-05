@@ -14,6 +14,10 @@ public interface UiMinimalRole extends UiMinimalPolicies {
     @ViewPolicy(viewIds = "umida_MainView")
     void main();
 
+    /** Every user may see their own profile and change the profile photo. */
+    @ViewPolicy(viewIds = "umida_UserProfileView")
+    void profile();
+
     @ViewPolicy(viewIds = "umida_LoginView")
     @SpecificPolicy(resources = "ui.loginToUi")
     void login();

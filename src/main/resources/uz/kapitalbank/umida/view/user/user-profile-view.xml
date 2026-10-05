@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://userProfileView.title">
+    <layout>
+        <hbox id="profileHeader" alignItems="CENTER" padding="false">
+            <avatar id="photoAvatar" themeNames="xlarge"/>
+            <vbox padding="false" spacing="false">
+                <h3 id="displayNameLabel"/>
+                <span id="usernameLabel"/>
+            </vbox>
+        </hbox>
+
+        <hbox id="photoActions" alignItems="BASELINE" padding="false">
+            <fileStorageUploadField id="photoUploadField"
+                                    acceptedFileTypes="image/*"
+                                    uploadText="msg://photoUploadField.uploadText"
+                                    fileNameVisible="false"
+                                    clearButtonVisible="false"/>
+            <button id="removePhotoButton" text="msg://removePhotoButton.text" icon="vaadin:trash"
+                    themeNames="tertiary error"/>
+        </hbox>
+        <span id="photoHint" text="msg://photoHint.text"/>
+
+        <formLayout id="employeeForm" visible="false">
+            <textField id="employeeNameField" label="msg://employeeNameField.label" readOnly="true"/>
+            <textField id="personnelNumberField" label="msg://personnelNumberField.label" readOnly="true"/>
+            <textField id="jobTitleField" label="msg://jobTitleField.label" readOnly="true"/>
+            <textField id="subdivisionField" label="msg://subdivisionField.label" readOnly="true"/>
+            <textField id="emailField" label="msg://emailField.label" readOnly="true"/>
+        </formLayout>
+        <span id="noEmployeeLabel" text="msg://noEmployeeLabel.text" visible="false"/>
+    </layout>
+</view>

@@ -5,6 +5,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
@@ -45,5 +48,33 @@ public class UmidaSecurityConfiguration {
                 );
 
         return http.build();
+    }
+
+    /**
+     * The Jmix default encoder ({@code sec_PasswordEncoder}, replaced through its {@code @ConditionalOnMissingBean}),
+     * except that a stored password without an <code>{id}</code> prefix simply does not match.
+     * <p>
+     * An LDAP user has no password in the database ({@code null}). Its login passes the database provider first,
+     * which rejects it — but Spring Security then still compares the password to keep the timing even, and the
+     * stock encoder throws {@code IllegalArgumentException} on a password with no <code>{id}</code>. That exception is
+     * not an authentication failure, so it aborted the whole login before the LDAP provider was tried: every LDAP
+     * user could log in only once, while not yet in the database.
+     */
+    @Bean("umida_PasswordEncoder")
+    PasswordEncoder passwordEncoder() {
+        DelegatingPasswordEncoder encoder =
+                (DelegatingPasswordEncoder) PasswordEncoderFactories.createDelegatingPasswordEncoder();
+        encoder.setDefaultPasswordEncoderForMatches(new PasswordEncoder() {
+            @Override
+            public String encode(CharSequence rawPassword) {
+                throw new UnsupportedOperationException("Encodes nothing, only rejects an unprefixed password");
+            }
+
+            @Override
+            public boolean matches(CharSequence rawPassword, String encodedPassword) {
+                return false;
+            }
+        });
+        return encoder;
     }
 }

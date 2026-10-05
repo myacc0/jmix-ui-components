@@ -17,6 +17,14 @@
                           themeNames="tertiary" classNames="ms-auto me-m">
                     <items>
                         <separator/>
+                        <viewItem id="profileMenuItem"
+                                  viewId="umida_UserProfileView"
+                                  text="msg://profileMenuItem.text"
+                                  themeNames="non-checkable">
+                            <icon>
+                                <icon icon="vaadin:user"/>
+                            </icon>
+                        </viewItem>
                         <actionItem id="substituteUserMenuItem"
                                     themeNames="non-checkable">
                             <action id="substituteUserAction" type="sec_userMenuSubstituteUser"/>

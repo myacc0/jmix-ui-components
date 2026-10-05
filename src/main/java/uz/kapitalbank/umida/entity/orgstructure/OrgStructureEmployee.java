@@ -9,6 +9,8 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import uz.kapitalbank.umida.enums.orgstructure.OrgStructureEmployeeGender;
 
+import java.time.LocalDate;
+
 @JmixEntity
 @Table(name = "UMIDA_ORG_STRUCTURE_EMPLOYEES")
 @Entity(name = "umida_OrgStructureEmployee")
@@ -36,6 +38,28 @@ public class OrgStructureEmployee {
 
     @Column(name = "GENDER", length = 100)
     private String gender;
+
+    @Column(name = "HIRE_DATE")
+    private LocalDate hireDate;
+
+    @Column(name = "DISMISSAL_DATE")
+    private LocalDate dismissalDate;
+
+    public LocalDate getDismissalDate() {
+        return dismissalDate;
+    }
+
+    public void setDismissalDate(LocalDate dismissalDate) {
+        this.dismissalDate = dismissalDate;
+    }
+
+    public LocalDate getHireDate() {
+        return hireDate;
+    }
+
+    public void setHireDate(LocalDate hireDate) {
+        this.hireDate = hireDate;
+    }
 
     public OrgStructureEmployeeGender getGender() {
         return gender == null ? null : OrgStructureEmployeeGender.fromId(gender);

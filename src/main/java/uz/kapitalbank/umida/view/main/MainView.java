@@ -1,6 +1,8 @@
 package uz.kapitalbank.umida.view.main;
 
 import uz.kapitalbank.umida.entity.User;
+import uz.kapitalbank.umida.service.user.UserProfileService;
+import uz.kapitalbank.umida.service.user.UserAvatars;
 import com.google.common.base.Strings;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.avatar.Avatar;
@@ -29,6 +31,10 @@ public class MainView extends StandardMainView {
     private UiComponents uiComponents;
     @Autowired
     private CurrentUserSubstitution currentUserSubstitution;
+    @Autowired
+    private UserProfileService userProfileService;
+    @Autowired
+    private UserAvatars userAvatars;
 
     @Install(to = "userMenu", subject = "buttonRenderer")
     private Component userMenuButtonRenderer(final UserDetails userDetails) {
@@ -41,7 +47,7 @@ public class MainView extends StandardMainView {
         Div content = uiComponents.create(Div.class);
         content.setClassName("user-menu-button-content");
 
-        Avatar avatar = createAvatar(userName);
+        Avatar avatar = createAvatar(user);
 
         Span name = uiComponents.create(Span.class);
         name.setText(userName);
@@ -71,7 +77,7 @@ public class MainView extends StandardMainView {
 
         String name = generateUserName(user);
 
-        Avatar avatar = createAvatar(name);
+        Avatar avatar = createAvatar(user);
         avatar.addThemeVariants(AvatarVariant.LUMO_LARGE);
 
         Span text = uiComponents.create(Span.class);
@@ -93,9 +99,10 @@ public class MainView extends StandardMainView {
         return content;
     }
 
-    private Avatar createAvatar(String fullName) {
+    private Avatar createAvatar(User user) {
         Avatar avatar = uiComponents.create(Avatar.class);
-        avatar.setName(fullName);
+        // the profile photo, else the employee photo, else the initials
+        userAvatars.showPhoto(avatar, userProfileService.getProfile(user.getUsername()));
         avatar.getElement().setAttribute("tabindex", "-1");
         avatar.setClassName("user-menu-avatar");
 
