@@ -1,0 +1,130 @@
+package uz.kapitalbank.umida.security;
+
+import io.jmix.core.DataManager;
+import io.jmix.core.security.AuthenticationManagerSupplier;
+import io.jmix.security.role.RoleGrantedAuthorityUtils;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import uz.kapitalbank.umida.entity.User;
+import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+/**
+ * Login through the embedded LDAP server started from {@code ldap/umida-users.ldif}.
+ */
+@SpringBootTest
+@ExtendWith(AuthenticatedAsAdmin.class)
+class LdapAuthenticationTest {
+
+    /** Password of every user in the test LDIF. */
+    private static final String LDAP_PASSWORD = "password";
+
+    @Autowired
+    private AuthenticationManagerSupplier authenticationManagerSupplier;
+
+    @Autowired
+    private RoleGrantedAuthorityUtils roleGrantedAuthorityUtils;
+
+    @Autowired
+    private DataManager dataManager;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    private final List<User> cleanup = new ArrayList<>();
+
+    @Test
+    void ldapUserLogsInWithLdapPassword() {
+        Authentication authentication = authenticate("yuliya.kim", LDAP_PASSWORD);
+
+        assertThat(authentication.isAuthenticated()).isTrue();
+        assertThat(authentication.getPrincipal()).isInstanceOf(User.class);
+        User user = (User) authentication.getPrincipal();
+        assertThat(user.getUsername()).isEqualTo("yuliya.kim");
+        assertThat(user.getLastName()).isEqualTo("Ким");
+        assertThat(user.getFirstName()).isEqualTo("Юлия");
+        assertThat(user.getEmail()).isEqualTo("yuliya.kim@gmail.com");
+        assertThat(authentication.getAuthorities())
+                .extracting(GrantedAuthority::getAuthority)
+                .contains(roleGrantedAuthorityUtils.getDefaultRolePrefix() + UiMinimalRole.CODE);
+    }
+
+    @Test
+    void ldapUserMissingInDatabaseIsCreatedOnFirstLogin() {
+        String username = "sergey.burunov";
+        boolean existedBefore = findUser(username).isPresent();
+
+        authenticate(username, LDAP_PASSWORD);
+
+        User user = findUser(username).orElseThrow();
+        if (!existedBefore) {
+            cleanup.add(user);
+        }
+        assertThat(user.getLastName()).isEqualTo("Бурунов");
+        assertThat(user.getFirstName()).isEqualTo("Сергей");
+        assertThat(user.getEmail()).isEqualTo("sergey.burunov@gmail.com");
+    }
+
+    @Test
+    void ldapUserWithWrongPasswordIsRejected() {
+        assertThatThrownBy(() -> authenticate("yuliya.kim", "wrong-password"))
+                .isInstanceOf(BadCredentialsException.class);
+    }
+
+    @Test
+    void unknownUserIsRejected() {
+        assertThatThrownBy(() -> authenticate("no.such.user", LDAP_PASSWORD))
+                .isInstanceOf(BadCredentialsException.class);
+    }
+
+    @Test
+    void databasePasswordIsRejectedForNonStandardUser() {
+        User user = dataManager.create(User.class);
+        user.setUsername("ldap-test-user-" + System.currentTimeMillis());
+        user.setPassword(passwordEncoder.encode("db-password"));
+        cleanup.add(dataManager.save(user));
+
+        assertThatThrownBy(() -> authenticate(user.getUsername(), "db-password"))
+                .isInstanceOf(BadCredentialsException.class);
+    }
+
+    @Test
+    void adminLogsInWithDatabasePassword() {
+        Authentication authentication = authenticate("admin", "admin");
+
+        assertThat(authentication.isAuthenticated()).isTrue();
+        assertThat(((User) authentication.getPrincipal()).getUsername()).isEqualTo("admin");
+    }
+
+    @AfterEach
+    void tearDown() {
+        cleanup.forEach(dataManager::remove);
+    }
+
+    private Authentication authenticate(String username, String password) {
+        AuthenticationManager authenticationManager = authenticationManagerSupplier.getAuthenticationManager();
+        return authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+    }
+
+    private Optional<User> findUser(String username) {
+        return dataManager.load(User.class)
+                .query("select u from umida_User u where u.username = :username")
+                .parameter("username", username)
+                .optional();
+    }
+}

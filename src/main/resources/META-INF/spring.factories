@@ -1,0 +1,2 @@
+org.springframework.boot.env.EnvironmentPostProcessor=\
+uz.kapitalbank.umida.security.EmbeddedLdapPortEnvironmentPostProcessor

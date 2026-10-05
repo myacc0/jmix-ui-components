@@ -1,0 +1,416 @@
+# Test directory for the embedded LDAP server of the Dev profile (spring.ldap.embedded.*).
+# Users mirror the UMIDA_ORG_STRUCTURE_EMPLOYEES rows that have an AD_ACCOUNT: uid = AD account.
+# Every user has the password: password
+
+dn: dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: domain
+dc: kapitalbank
+
+dn: ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: organizationalUnit
+ou: users
+
+dn: uid=sergey.burunov,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: sergey.burunov
+cn: Бурунов Сергей Александрович
+sn: Бурунов
+givenName: Сергей
+mail: sergey.burunov@gmail.com
+employeeNumber: 0001
+userPassword: password
+
+dn: uid=sultan.dyusupov,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: sultan.dyusupov
+cn: Дюсупов Султан
+sn: Дюсупов
+givenName: Султан
+mail: sultan.dyusupov@gmail.com
+employeeNumber: 0002
+userPassword: password
+
+dn: uid=yuliya.kim,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: yuliya.kim
+cn: Ким Юлия
+sn: Ким
+givenName: Юлия
+mail: yuliya.kim@gmail.com
+employeeNumber: 0003
+userPassword: password
+
+dn: uid=madinakhon.vakhobova,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: madinakhon.vakhobova
+cn: Вахобова Мадинахон
+sn: Вахобова
+givenName: Мадинахон
+mail: madinakhon.vakhobova@gmail.com
+employeeNumber: 0004
+userPassword: password
+
+dn: uid=alua.sadirbekova,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: alua.sadirbekova
+cn: Садырбекова Алуа
+sn: Садырбекова
+givenName: Алуа
+mail: alua.sadirbekova@gmail.com
+employeeNumber: 0005
+userPassword: password
+
+dn: uid=bakhrom.toshboyev,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: bakhrom.toshboyev
+cn: Тошбоев Бахром
+sn: Тошбоев
+givenName: Бахром
+mail: bakhrom.toshboyev@gmail.com
+employeeNumber: 0006
+userPassword: password
+
+dn: uid=laziz.khudayberganov,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: laziz.khudayberganov
+cn: Худайбердиев Лазиз
+sn: Худайбердиев
+givenName: Лазиз
+mail: laziz.khudayberganov@gmail.com
+employeeNumber: 0007
+userPassword: password
+
+dn: uid=bositkhon.nosirov,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: bositkhon.nosirov
+cn: Носиров Боситхон
+sn: Носиров
+givenName: Боситхон
+mail: bositkhon.nosirov@gmail.com
+employeeNumber: 0008
+userPassword: password
+
+dn: uid=sevinch.sayfiyev,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: sevinch.sayfiyev
+cn: Сайфиев Севинч
+sn: Сайфиев
+givenName: Севинч
+mail: sevinch.sayfiyev@gmail.com
+employeeNumber: 0009
+userPassword: password
+
+dn: uid=doston.yusupov,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: doston.yusupov
+cn: Юсупов Достон
+sn: Юсупов
+givenName: Достон
+mail: doston.yusupov@gmail.com
+employeeNumber: 0010
+userPassword: password
+
+dn: uid=karim.kurbanov,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: karim.kurbanov
+cn: Курбанов Карим
+sn: Курбанов
+givenName: Карим
+mail: karim.kurbanov@gmail.com
+employeeNumber: 0011
+userPassword: password
+
+dn: uid=marat.rashitov,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: marat.rashitov
+cn: Рашитов Марат
+sn: Рашитов
+givenName: Марат
+mail: marat.rashitov@gmail.com
+employeeNumber: 0012
+userPassword: password
+
+dn: uid=mariya.churakova,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: mariya.churakova
+cn: Чуракова Мария
+sn: Чуракова
+givenName: Мария
+mail: mariya.churakova@gmail.com
+employeeNumber: 0013
+userPassword: password
+
+dn: uid=asliddin.aslanov,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: asliddin.aslanov
+cn: Асланов Аслиддин
+sn: Асланов
+givenName: Аслиддин
+mail: asliddin.aslanov@gmail.com
+employeeNumber: 0014
+userPassword: password
+
+dn: uid=ravshan.ismoilov,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: ravshan.ismoilov
+cn: Исмоилов Равшан
+sn: Исмоилов
+givenName: Равшан
+mail: ravshan.ismoilov@gmail.com
+employeeNumber: 0015
+userPassword: password
+
+dn: uid=anastasiya.rukosuyeva,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: anastasiya.rukosuyeva
+cn: Рукосуева Анастасия
+sn: Рукосуева
+givenName: Анастасия
+mail: anastasiya.rukosuyeva@gmail.com
+employeeNumber: 0016
+userPassword: password
+
+dn: uid=gulmira.elubayeva,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: gulmira.elubayeva
+cn: Елубаева Гулмира
+sn: Елубаева
+givenName: Гулмира
+mail: gulmira.elubayeva@gmail.com
+employeeNumber: 0017
+userPassword: password
+
+dn: uid=fyodor.duranidis,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: fyodor.duranidis
+cn: Дуранидис Фёдор
+sn: Дуранидис
+givenName: Фёдор
+mail: fyodor.duranidis@gmail.com
+employeeNumber: 0018
+userPassword: password
+
+dn: uid=timur.saygafarov,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: timur.saygafarov
+cn: Сайгафаров Тимур
+sn: Сайгафаров
+givenName: Тимур
+mail: timur.saygafarov@gmail.com
+employeeNumber: 0019
+userPassword: password
+
+dn: uid=darkhan.amireyev,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: darkhan.amireyev
+cn: Амиреев Дархан
+sn: Амиреев
+givenName: Дархан
+mail: darkhan.amireyev@gmail.com
+employeeNumber: 0020
+userPassword: password
+
+dn: uid=rinat.omarov,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: rinat.omarov
+cn: Омаров Ринат
+sn: Омаров
+givenName: Ринат
+mail: rinat.omarov@gmail.com
+employeeNumber: 0021
+userPassword: password
+
+dn: uid=igor.rustamov,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: igor.rustamov
+cn: Рустамов Игорь Матвиенко
+sn: Рустамов
+givenName: Игорь
+mail: igor.rustamov@gmail.com
+employeeNumber: 0022
+userPassword: password
+
+dn: uid=ilkhom.khasanov,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: ilkhom.khasanov
+cn: Хасанов Илхом Уктамович
+sn: Хасанов
+givenName: Илхом
+mail: ilkhom.khasanov@gmail.com
+employeeNumber: 0023
+userPassword: password
+
+dn: uid=timur.ravshanov,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: timur.ravshanov
+cn: Равшанов Тимур Уктамович
+sn: Равшанов
+givenName: Тимур
+mail: timur.ravshanov@gmail.com
+employeeNumber: 0024
+userPassword: password
+
+dn: uid=sergey.tixonov,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: sergey.tixonov
+cn: Тихонов Сергей Александрович
+sn: Тихонов
+givenName: Сергей
+mail: sergey.tixonov@gmail.com
+employeeNumber: 0025
+userPassword: password
+
+dn: uid=farrukh.radjabov,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: farrukh.radjabov
+cn: Ражабов Фаррух Ахмедович
+sn: Ражабов
+givenName: Фаррух
+mail: farrukh.radjabov@gmail.com
+employeeNumber: 0026
+userPassword: password
+
+dn: uid=uktam.ikromov,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: uktam.ikromov
+cn: Икромов Уктам Муратович
+sn: Икромов
+givenName: Уктам
+mail: uktam.ikromov@gmail.com
+employeeNumber: 0027
+userPassword: password
+
+dn: uid=nilufar.saidova,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: nilufar.saidova
+cn: Саидова Нилуфар Курбановна
+sn: Саидова
+givenName: Нилуфар
+mail: nilufar.saidova@gmail.com
+employeeNumber: 0028
+userPassword: password
+
+dn: uid=abbos.abidov,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: abbos.abidov
+cn: Абидов Аббос Рустамович
+sn: Абидов
+givenName: Аббос
+mail: abbos.abidov@gmail.com
+employeeNumber: 0029
+userPassword: password
+
+dn: uid=akhmad.tursunov,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: akhmad.tursunov
+cn: Турсунов Ахмад Алишерович
+sn: Турсунов
+givenName: Ахмад
+mail: akhmad.tursunov@gmail.com
+employeeNumber: 0030
+userPassword: password
+
+dn: uid=dilshat.makhripov,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: dilshat.makhripov
+cn: Махрипов Дилшат Пархатович
+sn: Махрипов
+givenName: Дилшат
+mail: dilshat.makhripov@gmail.com
+employeeNumber: 0031
+userPassword: password

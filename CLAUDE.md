@@ -23,6 +23,11 @@ docker-compose up -d
 
 The app runs at http://localhost:8080. Default credentials: `admin` / `admin`.
 
+Authentication goes through LDAP (Jmix LDAP add-on) for everyone except `admin` and `system`
+(`jmix.ldap.standard-authentication-users`), who keep the database password. An embedded UnboundID
+LDAP server imitates the corporate directory: its users are in `resources/ldap/umida-users.ldif`
+(the employees with an `adAccount`, username = AD account, password `password`).
+
 PostgreSQL is required (no HSQLDB fallback configured). The Docker Compose file starts:
 - `postgres` on port `15432` (main app DB, password: `psql1234`)
 - `postgres-dwh` on port `16432` (DWH, credentials: `dwh_reporting` / `qweasd123`)
