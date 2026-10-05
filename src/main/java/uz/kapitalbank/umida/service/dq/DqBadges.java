@@ -1,4 +1,4 @@
-package uz.kapitalbank.umida.component;
+package uz.kapitalbank.umida.service.dq;
 
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.data.renderer.ComponentRenderer;

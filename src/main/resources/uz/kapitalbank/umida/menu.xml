@@ -14,17 +14,17 @@
     <menu id="catalog" description="msg://uz.kapitalbank.umida/menu_config.catalog.description"
           title="msg://uz.kapitalbank.umida/menu_config.catalog.title">
         <item view="umida_DictDataDomain.list"
-              title="msg://uz.kapitalbank.umida.view.dict/dictDataDomainListView.title"/>
+              title="msg://uz.kapitalbank.umida.view.catalog/dictDataDomainListView.title"/>
         <item view="umida_DictDataProduct.list"
-              title="msg://uz.kapitalbank.umida.view.dict/dictDataProductListView.title"/>
+              title="msg://uz.kapitalbank.umida.view.catalog/dictDataProductListView.title"/>
         <item view="umida_OrgStructureJobTitle.list"
-              title="msg://uz.kapitalbank.umida.view.dict/orgStructureJobTitleListView.title"/>
+              title="msg://uz.kapitalbank.umida.view.catalog/orgStructureJobTitleListView.title"/>
         <item view="umida_OrgStructureSubdivision.list"
-              title="msg://uz.kapitalbank.umida.view.dict/orgStructureSubdivisionListView.title"/>
+              title="msg://uz.kapitalbank.umida.view.catalog/orgStructureSubdivisionListView.title"/>
         <item view="umida_OrgStructureEmployee.list"
-              title="msg://uz.kapitalbank.umida.view.dict/orgStructureEmployeeListView.title"/>
+              title="msg://uz.kapitalbank.umida.view.catalog/orgStructureEmployeeListView.title"/>
         <item view="umida_OrgStructurePosition.list"
-              title="msg://uz.kapitalbank.umida.view.dict/orgStructurePositionListView.title"/>
+              title="msg://uz.kapitalbank.umida.view.catalog/orgStructurePositionListView.title"/>
     </menu>
     <menu id="dq" description="msg://uz.kapitalbank.umida/menu_config.dq.description"
           title="msg://uz.kapitalbank.umida/menu_config.dq.title">

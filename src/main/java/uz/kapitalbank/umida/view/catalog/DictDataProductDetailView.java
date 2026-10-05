@@ -1,4 +1,4 @@
-package uz.kapitalbank.umida.view.dict;
+package uz.kapitalbank.umida.view.catalog;
 
 import uz.kapitalbank.umida.entity.dict.DictDataProduct;
 import uz.kapitalbank.umida.view.main.MainView;

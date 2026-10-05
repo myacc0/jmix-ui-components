@@ -1,6 +1,6 @@
 package uz.kapitalbank.umida.view.dq;
 
-import uz.kapitalbank.umida.component.DqBadges;
+import uz.kapitalbank.umida.service.dq.DqBadges;
 import uz.kapitalbank.umida.dto.SelectDto;
 import uz.kapitalbank.umida.entity.dq.DqRule;
 import uz.kapitalbank.umida.repository.DqRuleRepository;

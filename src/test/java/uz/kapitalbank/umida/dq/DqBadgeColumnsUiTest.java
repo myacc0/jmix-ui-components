@@ -1,7 +1,7 @@
 package uz.kapitalbank.umida.dq;
 
 import uz.kapitalbank.umida.UmidaApplication;
-import uz.kapitalbank.umida.component.DqBadges;
+import uz.kapitalbank.umida.service.dq.DqBadges;
 import uz.kapitalbank.umida.entity.dq.DqCheckRun;
 import uz.kapitalbank.umida.entity.dq.DqDataDomain;
 import uz.kapitalbank.umida.entity.dq.DqIssue;

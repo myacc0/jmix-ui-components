@@ -1,6 +1,6 @@
 package uz.kapitalbank.umida.view.dq;
 
-import uz.kapitalbank.umida.component.DqBadges;
+import uz.kapitalbank.umida.service.dq.DqBadges;
 import uz.kapitalbank.umida.entity.dq.DqCheckRun;
 import uz.kapitalbank.umida.entity.dq.DqCheckRunResult;
 import uz.kapitalbank.umida.enums.dq.DqCheckResultStatus;

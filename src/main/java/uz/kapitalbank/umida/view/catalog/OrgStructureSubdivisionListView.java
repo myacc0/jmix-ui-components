@@ -1,4 +1,4 @@
-package uz.kapitalbank.umida.view.dict;
+package uz.kapitalbank.umida.view.catalog;
 
 import com.vaadin.flow.router.Route;
 import io.jmix.flowui.view.*;
