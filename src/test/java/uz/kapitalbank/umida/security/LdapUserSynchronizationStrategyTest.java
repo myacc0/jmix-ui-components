@@ -2,6 +2,7 @@ package uz.kapitalbank.umida.security;
 
 import io.jmix.core.DataManager;
 import io.jmix.core.FetchPlan;
+import io.jmix.ldap.LdapProperties;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,6 +42,8 @@ class LdapUserSynchronizationStrategyTest {
     private DataManager dataManager;
     @Autowired
     private SessionRegistry sessionRegistry;
+    @Autowired
+    private LdapProperties ldapProperties;
 
     private final List<String> usernames = new ArrayList<>();
     private final List<OrgStructureEmployee> employees = new ArrayList<>();
@@ -67,6 +70,48 @@ class LdapUserSynchronizationStrategyTest {
         strategy.synchronizeUserDetails(ldapEntry(), username.toUpperCase(Locale.ROOT), List.of());
 
         assertThat(findUser(username).orElseThrow().getEmployee()).isEqualTo(employee);
+    }
+
+    @Test
+    void existingUserIsLinkedOnTheFirstLoginAfterTheEmployeeAppears() {
+        String username = uniqueUsername();
+        strategy.synchronizeUserDetails(ldapEntry(), username, List.of());
+        assertThat(findUser(username).orElseThrow().getEmployee()).isNull();
+
+        OrgStructureEmployee employee = createEmployee(username, null);
+        strategy.synchronizeUserDetails(ldapEntry(), username, List.of());
+
+        assertThat(findUser(username).orElseThrow().getEmployee()).isEqualTo(employee);
+    }
+
+    /**
+     * Active Directory: the user logs in with its userPrincipalName, the employee carries the sAMAccountName,
+     * found in the LDAP entry under jmix.ldap.username-attribute.
+     */
+    @Test
+    void userPrincipalNameLoginIsLinkedByTheAccountOfTheLdapEntry() {
+        String account = "ldap.sync." + UUID.randomUUID();
+        String userPrincipalName = account + "@kapitalbank.uz";
+        usernames.add(userPrincipalName);
+        OrgStructureEmployee employee = createEmployee(account, null);
+        DirContextAdapter entry = ldapEntry();
+        entry.setAttributeValue(ldapProperties.getUsernameAttribute(), account);
+
+        strategy.synchronizeUserDetails(entry, userPrincipalName.toUpperCase(Locale.ROOT), List.of());
+
+        assertThat(findUser(userPrincipalName).orElseThrow().getEmployee()).isEqualTo(employee);
+    }
+
+    @Test
+    void userPrincipalNameLoginWithoutAccountInTheLdapEntryIsLinkedByTheNameBeforeTheAt() {
+        String account = "ldap.sync." + UUID.randomUUID();
+        String userPrincipalName = account + "@kapitalbank.uz";
+        usernames.add(userPrincipalName);
+        OrgStructureEmployee employee = createEmployee(account, null);
+
+        strategy.synchronizeUserDetails(ldapEntry(), userPrincipalName, List.of());
+
+        assertThat(findUser(userPrincipalName).orElseThrow().getEmployee()).isEqualTo(employee);
     }
 
     @Test

@@ -20,9 +20,12 @@ import java.util.*;
  * Links a {@link User} to its HR record, {@link OrgStructureEmployee}, and keeps the user's {@code active}
  * flag in line with the employee's dismissal.
  * <p>
- * An LDAP username is the employee's AD account, so the link is found by
- * {@code OrgStructureEmployee.adAccount}, compared case-insensitively. Once made, the link points at the
- * employee id, which never changes, so it survives a later change of the AD account.
+ * The link is found by {@code OrgStructureEmployee.adAccount}, compared case-insensitively, against the AD account
+ * of the user: the LDAP username attribute of its entry when known (on login), else the username itself up to the
+ * {@code @}. The username is whatever the user logs in with, the bare AD account ({@code ivan.petrov}) or the
+ * userPrincipalName ({@code ivan.petrov@kapitalbank.uz}), whose part before the {@code @} is the AD account.
+ * Once made, the link points at the employee id, which never changes, so it survives a later change of the AD
+ * account.
  * <p>
  * A dismissed employee ({@code dismissalDate} today or earlier) turns the linked user inactive. The reverse
  * never happens automatically: a user deactivated here is activated again only by an administrator, so that a
@@ -49,16 +52,26 @@ public class EmployeeUserLinkService {
     }
 
     /**
-     * Links the user to the employee whose AD account equals the username, and deactivates the user when the
-     * linked employee is dismissed. Called on every LDAP login.
+     * Same as {@link #linkByAdAccount(String, String)} with the AD account taken from the username.
+     */
+    @Nullable
+    public User linkByAdAccount(String username) {
+        return linkByAdAccount(username, null);
+    }
+
+    /**
+     * Links the user to the employee of the AD account, and deactivates the user when the linked employee is
+     * dismissed. Called on every LDAP login.
      * <p>
      * An employee already linked to another user is left alone (logged), as is the current link when no
      * employee carries the AD account any more.
      *
+     * @param adAccount the AD account of the user; {@code null} or blank takes it from the username
+     *                  ({@link #adAccountOf})
      * @return the user as saved, or {@code null} when there is no user with this username
      */
     @Nullable
-    public User linkByAdAccount(String username) {
+    public User linkByAdAccount(String username, @Nullable String adAccount) {
         User user = dataManager.load(User.class)
                 .query("select u from umida_User u where u.username = :username")
                 .parameter("username", username)
@@ -69,7 +82,8 @@ public class EmployeeUserLinkService {
             return null;
         }
 
-        boolean changed = linkEmployee(user, findEmployeeByAdAccount(username).orElse(null));
+        String account = adAccount == null || adAccount.isBlank() ? adAccountOf(username) : adAccount;
+        boolean changed = linkEmployee(user, findEmployeeByAdAccount(account).orElse(null));
         changed |= deactivateIfDismissed(user, today());
 
         return changed ? dataManager.save(user) : user;
@@ -86,6 +100,15 @@ public class EmployeeUserLinkService {
                 .query("select e from umida_OrgStructureEmployee e where lower(trim(e.adAccount)) = :adAccount")
                 .parameter("adAccount", normalizeAccount(adAccount))
                 .list());
+    }
+
+    /**
+     * The AD account a username stands for: the username up to the {@code @} of a userPrincipalName
+     * ({@code ivan.petrov@kapitalbank.uz} → {@code ivan.petrov}), the username itself otherwise.
+     */
+    public static String adAccountOf(String username) {
+        int at = username.indexOf('@');
+        return at < 0 ? username : username.substring(0, at);
     }
 
     /**
@@ -113,7 +136,7 @@ public class EmployeeUserLinkService {
     }
 
     /**
-     * Links the users without an employee to the employee of the same AD account. The users that log in with
+     * Links the users without an employee to the employee of their AD account ({@link #adAccountOf}). The users that log in with
      * the database password ({@code jmix.ldap.standard-authentication-users}: admin, system) are not LDAP
      * accounts and are skipped; an administrator may still link them by hand.
      *
@@ -145,7 +168,8 @@ public class EmployeeUserLinkService {
 
         SaveContext saveContext = new SaveContext();
         for (User user : unlinked) {
-            pickEmployee(employeesByAccount.getOrDefault(normalizeAccount(user.getUsername()), List.of()))
+            pickEmployee(employeesByAccount.getOrDefault(normalizeAccount(adAccountOf(user.getUsername())),
+                            List.of()))
                     .ifPresent(employee -> link(user, employee, linkedEmployeeIds, saveContext));
         }
         return save(saveContext);

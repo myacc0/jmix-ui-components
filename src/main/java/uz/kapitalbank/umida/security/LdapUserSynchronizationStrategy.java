@@ -15,6 +15,11 @@ import java.util.Collection;
  * Copies the LDAP attributes of a user into {@link User} on every LDAP login, creating the user on the first one,
  * and links the user to its employee record by the AD account ({@link EmployeeUserLinkService}).
  * <p>
+ * The AD account is read from the LDAP entry, attribute {@code jmix.ldap.username-attribute}
+ * ({@code sAMAccountName} in Active Directory, {@code uid} in the embedded server), not from the username: in
+ * Active Directory the user logs in with its userPrincipalName ({@code ivan.petrov@kapitalbank.uz}), which
+ * stays the username, while the employee carries the bare AD account ({@code ivan.petrov}).
+ * <p>
  * Also rejects the login of an inactive user. Unlike the database login, the LDAP one never checks
  * {@code User.active} by itself — Spring's LDAP authentication provider skips the account status checks — so
  * without this a user deactivated in the application, e.g. after the employee's dismissal, would still get in
@@ -43,7 +48,8 @@ public class LdapUserSynchronizationStrategy extends AbstractLdapUserDetailsSync
     ) {
         UserDetails synchronizedUser = super.synchronizeUserDetails(
                 ctx, DatabaseUserRepository.normalizeUsername(username), authorities);
-        User user = employeeUserLinkService.linkByAdAccount(synchronizedUser.getUsername());
+        User user = employeeUserLinkService.linkByAdAccount(synchronizedUser.getUsername(),
+                ctx.getStringAttribute(ldapProperties.getUsernameAttribute()));
         if (user != null && !user.isEnabled()) {
             throw new DisabledException("User " + username + " is inactive");
         }

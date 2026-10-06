@@ -50,6 +50,47 @@ class EmployeeUserLinkServiceTests {
     }
 
     @Test
+    void linksUserPrincipalNameToEmployeeOfTheAccountBeforeTheAt() {
+        String account = uniqueAccount();
+        OrgStructureEmployee employee = createEmployee(account, null);
+        User user = createUser(account + "@kapitalbank.uz", null);
+
+        employeeUserLinkService.linkByAdAccount(user.getUsername());
+
+        assertThat(reload(user).getEmployee()).isEqualTo(employee);
+    }
+
+    @Test
+    void linksByTheGivenAdAccountRatherThanTheUsername() {
+        String account = uniqueAccount();
+        OrgStructureEmployee employee = createEmployee(account, null);
+        String usernameAccount = uniqueAccount();
+        createEmployee(usernameAccount, null);
+        User user = createUser(usernameAccount + "@kapitalbank.uz", null);
+
+        employeeUserLinkService.linkByAdAccount(user.getUsername(), account);
+
+        assertThat(reload(user).getEmployee()).isEqualTo(employee);
+    }
+
+    @Test
+    void syncLinksUserPrincipalNameUsers() {
+        String account = uniqueAccount();
+        OrgStructureEmployee employee = createEmployee(account, null);
+        User user = createUser(account + "@kapitalbank.uz", null);
+
+        employeeUserLinkService.syncUsersWithEmployees();
+
+        assertThat(reload(user).getEmployee()).isEqualTo(employee);
+    }
+
+    @Test
+    void adAccountOfUserPrincipalNameIsThePartBeforeTheAt() {
+        assertThat(EmployeeUserLinkService.adAccountOf("ivan.petrov@kapitalbank.uz")).isEqualTo("ivan.petrov");
+        assertThat(EmployeeUserLinkService.adAccountOf("ivan.petrov")).isEqualTo("ivan.petrov");
+    }
+
+    @Test
     void leavesEmployeeLinkedToAnotherUserAlone() {
         String account = uniqueAccount();
         OrgStructureEmployee employee = createEmployee(account, null);
