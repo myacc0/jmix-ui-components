@@ -24,8 +24,8 @@ public class UserAvatars {
 
         // the profile photo is streamed straight from the storage: a user not linked to an employee
         // has no photo URL to point at
-        if (profile.picture() != null
-                && UiComponentUtils.createResource(profile.picture(), fileStorageLocator)
+        if (profile.profilePhoto() != null
+                && UiComponentUtils.createResource(profile.profilePhoto(), fileStorageLocator)
                 instanceof DownloadHandler downloadHandler) {
             avatar.setImageHandler(downloadHandler);
         } else if (profile.employee() != null && profile.employee().photoUrl() != null) {

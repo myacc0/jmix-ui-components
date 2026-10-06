@@ -56,21 +56,21 @@ public class UserProfileService {
         }
         OrgStructureEmployee employee = user.getEmployee();
         return new UserProfile(user.getUsername(), user.getDisplayNameWithoutUsername(), user.getEmail(),
-                user.getPicture(), employee != null ? toEmployeeInfo(employee) : null);
+                user.getProfilePhoto(), employee != null ? toEmployeeInfo(employee) : null);
     }
 
     /**
      * Replaces the profile photo of the logged-in user; {@code null} removes it, and the org chart falls back to
      * the employee photo.
      *
-     * @param picture a file already put into the file storage, e.g. by an upload field
+     * @param profilePhoto a file already put into the file storage, e.g. by an upload field
      */
-    public UserProfile updateCurrentUserPicture(@Nullable FileRef picture) {
+    public UserProfile updateCurrentUserProfilePhoto(@Nullable FileRef profilePhoto) {
         String username = currentUsername();
         User user = findUser(username)
                 .orElseThrow(() -> new IllegalStateException("User " + username + " is not stored in the database"));
-        if (!Objects.equals(user.getPicture(), picture)) {
-            user.setPicture(picture);
+        if (!Objects.equals(user.getProfilePhoto(), profilePhoto)) {
+            user.setProfilePhoto(profilePhoto);
             dataManager.save(user);
         }
         return getCurrentUserProfile();
@@ -116,11 +116,11 @@ public class UserProfileService {
     }
 
     /**
-     * @param picture  the profile photo uploaded by the user, {@code null} when there is none
+     * @param profilePhoto  the profile photo uploaded by the user, {@code null} when there is none
      * @param employee the HR record the user is linked to, {@code null} when not linked
      */
     public record UserProfile(String username, String displayName, @Nullable String email,
-                              @Nullable FileRef picture, @Nullable EmployeeInfo employee) {
+                              @Nullable FileRef profilePhoto, @Nullable EmployeeInfo employee) {
     }
 
     /**

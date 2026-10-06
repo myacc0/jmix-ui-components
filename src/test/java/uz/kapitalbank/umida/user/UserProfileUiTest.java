@@ -31,10 +31,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * The profile view of the logged-in user: it opens, shows the user, and uploading or removing the photo changes
- * {@code User.picture}.
+ * {@code User.profilePhoto}.
  * <p>
  * Runs as {@code admin}: the default {@code @UiTest} user, {@code system}, is not stored in the database and so
- * has no picture to change.
+ * has no profilePhoto to change.
  */
 @UiTest(authenticator = UserProfileUiTest.AdminAuthenticator.class)
 @SpringBootTest(classes = {UmidaApplication.class, FlowuiTestAssistConfiguration.class})
@@ -47,12 +47,12 @@ class UserProfileUiTest {
     @Autowired
     private FileStorageLocator fileStorageLocator;
 
-    private FileRef originalPicture;
+    private FileRef originalProfilePhoto;
     private FileRef uploaded;
 
     @BeforeEach
     void setUp() {
-        originalPicture = loadAdmin().getPicture();
+        originalProfilePhoto = loadAdmin().getProfilePhoto();
     }
 
     @Test
@@ -79,12 +79,12 @@ class UserProfileUiTest {
         photoUploadField.setValue(uploaded);
 
         JmixButton removePhotoButton = UiTestUtils.getComponent(view, "removePhotoButton");
-        assertThat(loadAdmin().getPicture()).isEqualTo(uploaded);
+        assertThat(loadAdmin().getProfilePhoto()).isEqualTo(uploaded);
         assertThat(removePhotoButton.isEnabled()).isTrue();
 
         removePhotoButton.click();
 
-        assertThat(loadAdmin().getPicture()).isNull();
+        assertThat(loadAdmin().getProfilePhoto()).isNull();
         assertThat(removePhotoButton.isEnabled()).isFalse();
     }
 
@@ -111,7 +111,7 @@ class UserProfileUiTest {
     @AfterEach
     void tearDown() {
         User admin = loadAdmin();
-        admin.setPicture(originalPicture);
+        admin.setProfilePhoto(originalProfilePhoto);
         dataManager.save(admin);
         if (uploaded != null) {
             fileStorageLocator.getDefault().removeFile(uploaded);

@@ -137,7 +137,7 @@ class OrgStructureEmployeePhotoS3StorageTests {
 
     /**
      * The photos live in one folder by business rule, so the scan is bound to it: an image
-     * elsewhere in the bucket — a user picture, a report output — is none of its business even
+     * elsewhere in the bucket — a user profilePhoto, a report output — is none of its business even
      * when its name happens to be an employee id.
      */
     @Test

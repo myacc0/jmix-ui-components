@@ -29,7 +29,7 @@ import java.util.Objects;
  * <p>
  * Listing only that folder is what keeps the scan proportional to the number of photos rather than
  * to the size of the bucket, which also holds what the rest of the application stores — a user
- * picture, a report output. It also rules out a file elsewhere in the bucket that happens to be
+ * profilePhoto, a report output. It also rules out a file elsewhere in the bucket that happens to be
  * named after an employee id being taken for their photo.
  * <p>
  * Set {@code umida.employee-photos.s3-folder} to another folder to move the photos, or to an empty

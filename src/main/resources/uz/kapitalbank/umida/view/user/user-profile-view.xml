@@ -19,7 +19,6 @@
             <button id="removePhotoButton" text="msg://removePhotoButton.text" icon="vaadin:trash"
                     themeNames="tertiary error"/>
         </hbox>
-        <span id="photoHint" text="msg://photoHint.text"/>
 
         <formLayout id="employeeForm" visible="false">
             <textField id="employeeNameField" label="msg://employeeNameField.label" readOnly="true"/>

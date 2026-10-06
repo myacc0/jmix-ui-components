@@ -12,7 +12,7 @@ import java.time.Duration;
 
 /**
  * Serves employee photos stored in the Jmix file storage under the employee id, so that an
- * org chart node can reference its picture by URL instead of carrying the image bytes in the
+ * org chart node can reference its profilePhoto by URL instead of carrying the image bytes in the
  * chart JSON.
  * <p>
  * The endpoint is covered by the standard Jmix Flow UI security filter chain, so only an

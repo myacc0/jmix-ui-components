@@ -63,8 +63,8 @@ class UserProfilePhotoTests {
         assertThat(employeePhotoService.getPhotoUrl(employee.getId()))
                 .isEqualTo("/employee-photos/" + employee.getId());
 
-        FileRef picture = storeFile("me.png", PROFILE_PHOTO);
-        user.setPicture(picture);
+        FileRef profilePhoto = storeFile("me.png", PROFILE_PHOTO);
+        user.setProfilePhoto(profilePhoto);
         user = dataManager.save(user);
 
         String profileUrl = employeePhotoService.getPhotoUrl(employee.getId());
@@ -72,12 +72,12 @@ class UserProfilePhotoTests {
         assertThat(employeePhotoService.loadPhoto(employee.getId()).orElseThrow().content())
                 .isEqualTo(PROFILE_PHOTO);
 
-        // a new picture gets a new URL, so the browser does not keep showing the cached one
-        user.setPicture(storeFile("me-again.png", PROFILE_PHOTO));
+        // a new profilePhoto gets a new URL, so the browser does not keep showing the cached one
+        user.setProfilePhoto(storeFile("me-again.png", PROFILE_PHOTO));
         user = dataManager.save(user);
         assertThat(employeePhotoService.getPhotoUrl(employee.getId())).isNotEqualTo(profileUrl);
 
-        user.setPicture(null);
+        user.setProfilePhoto(null);
         dataManager.save(user);
 
         assertThat(employeePhotoService.getPhotoUrl(employee.getId()))
@@ -92,7 +92,7 @@ class UserProfilePhotoTests {
         User user = createUser(employee);
         assertThat(employeePhotoService.getPhotoUrl(employee.getId())).isNull();
 
-        user.setPicture(storeFile("me.png", PROFILE_PHOTO));
+        user.setProfilePhoto(storeFile("me.png", PROFILE_PHOTO));
         dataManager.save(user);
 
         assertThat(employeePhotoService.getPhotoUrl(employee.getId())).isNotNull();

@@ -64,20 +64,20 @@ public class UserProfileView extends StandardView {
             final AbstractField.ComponentValueChangeEvent<FileStorageUploadField, FileRef> event) {
         // the field only uploads: a file put into the storage becomes the profile photo
         if (event.getValue() != null) {
-            showProfile(userProfileService.updateCurrentUserPicture(event.getValue()));
+            showProfile(userProfileService.updateCurrentUserProfilePhoto(event.getValue()));
         }
     }
 
     @Subscribe(id = "removePhotoButton", subject = "clickListener")
     public void onRemovePhotoButtonClick(final ClickEvent<JmixButton> event) {
-        showProfile(userProfileService.updateCurrentUserPicture(null));
+        showProfile(userProfileService.updateCurrentUserProfilePhoto(null));
     }
 
     private void showProfile(UserProfileService.UserProfile profile) {
         displayNameLabel.setText(profile.displayName().isEmpty() ? profile.username() : profile.displayName());
         usernameLabel.setText(profile.username());
         userAvatars.showPhoto(photoAvatar, profile);
-        removePhotoButton.setEnabled(profile.picture() != null);
+        removePhotoButton.setEnabled(profile.profilePhoto() != null);
 
         UserProfileService.EmployeeInfo employee = profile.employee();
         employeeForm.setVisible(employee != null);

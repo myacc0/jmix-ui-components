@@ -40,11 +40,11 @@
                     <action id="entityClearAction" type="entity_clear"/>
                 </actions>
             </entityPicker>
-            <details summaryText="Picture">
+            <details summaryText="Profile photo">
                 <hbox>
-                    <fileStorageUploadField id="pictureField" property="picture" dataContainer="userDc"/>
-                    <image id="image" dataContainer="userDc" property="picture" height="10em" maxHeight="10em"
-                           classNames="user-picture"/>
+                    <fileStorageUploadField id="profilePhotoField" property="profilePhoto" dataContainer="userDc"/>
+                    <image id="image" dataContainer="userDc" property="profilePhoto" height="10em" maxHeight="10em"
+                           classNames="user-profile-photo"/>
                 </hbox>
             </details>
         </formLayout>

@@ -40,10 +40,10 @@ import java.util.*;
  * The index is rebuilt at most once per {@link #INDEX_TTL_MS}, which means a photo put into the
  * storage outside the application becomes visible within that interval without a restart.
  * <p>
- * The profile photo a user uploads ({@code User.picture}) takes precedence over the employee photo of the
+ * The profile photo a user uploads ({@code User.profilePhoto}) takes precedence over the employee photo of the
  * employee the user is linked to ({@code User.employee}). Those are looked up in a second short-lived index,
- * {@code employee id -> User.picture}, dropped whenever a user's picture or employee link changes. The URL of a
- * profile photo carries a version of the file, so a browser that cached the previous picture fetches the new one
+ * {@code employee id -> User.profilePhoto}, dropped whenever a user's profilePhoto or employee link changes. The URL of a
+ * profile photo carries a version of the file, so a browser that cached the previous profilePhoto fetches the new one
  * right away.
  */
 @Service
@@ -65,7 +65,7 @@ public class EmployeePhotoService {
     private final String contextPath;
 
     private volatile PhotoIndex photoIndex;
-    private volatile UserPictureIndex userPictureIndex;
+    private volatile UserProfilePhotoIndex userProfilePhotoIndex;
 
     public EmployeePhotoService(FileStorageLocator fileStorageLocator,
                                 List<EmployeePhotoScanner> photoScanners,
@@ -89,11 +89,11 @@ public class EmployeePhotoService {
      * storage. A {@code null} lets the org chart fall back to the initials placeholder.
      */
     public String getPhotoUrl(String employeeId) {
-        Optional<FileRef> userPicture = findUserPictureRef(employeeId);
-        if (userPicture.isPresent()) {
-            // the version changes with the file, so a cached previous picture is not reused
+        Optional<FileRef> userProfilePhoto = findUserProfilePhotoRef(employeeId);
+        if (userProfilePhoto.isPresent()) {
+            // the version changes with the file, so a cached previous profilePhoto is not reused
             return contextPath + PHOTO_URL_PREFIX + employeeId
-                    + "?v=" + Integer.toHexString(userPicture.get().toString().hashCode());
+                    + "?v=" + Integer.toHexString(userProfilePhoto.get().toString().hashCode());
         }
         return findPhotoRef(employeeId)
                 .map(fileRef -> contextPath + PHOTO_URL_PREFIX + employeeId)
@@ -101,14 +101,14 @@ public class EmployeePhotoService {
     }
 
     /**
-     * Returns the profile photo ({@code User.picture}) of the user linked to the employee, or an
+     * Returns the profile photo ({@code User.profilePhoto}) of the user linked to the employee, or an
      * empty optional when no linked user has one.
      */
-    public Optional<FileRef> findUserPictureRef(String employeeId) {
+    public Optional<FileRef> findUserProfilePhotoRef(String employeeId) {
         if (employeeId == null) {
             return Optional.empty();
         }
-        return Optional.ofNullable(getUserPictureIndex().get(employeeId.toLowerCase(Locale.ROOT)));
+        return Optional.ofNullable(getUserProfilePhotoIndex().get(employeeId.toLowerCase(Locale.ROOT)));
     }
 
     /**
@@ -138,10 +138,10 @@ public class EmployeePhotoService {
      * cannot be read.
      */
     public Optional<Photo> loadPhoto(String employeeId) {
-        Optional<Photo> userPicture = findUserPictureRef(employeeId)
+        Optional<Photo> userProfilePhoto = findUserProfilePhotoRef(employeeId)
                 .flatMap(fileRef -> readPhoto(employeeId, fileRef));
-        if (userPicture.isPresent()) {
-            return userPicture;
+        if (userProfilePhoto.isPresent()) {
+            return userProfilePhoto;
         }
         // a profile photo that cannot be read falls back to the employee photo
         return findPhotoRef(employeeId).flatMap(fileRef -> readPhoto(employeeId, fileRef));
@@ -166,45 +166,45 @@ public class EmployeePhotoService {
      */
     public void invalidateIndex() {
         photoIndex = null;
-        userPictureIndex = null;
+        userProfilePhotoIndex = null;
     }
 
     /**
-     * Drops the profile photo index once a change of a user's picture or employee link is
+     * Drops the profile photo index once a change of a user's profilePhoto or employee link is
      * committed, so that the org chart shows the new photo right away.
      */
     @TransactionalEventListener(fallbackExecution = true)
     public void onUserChanged(EntityChangedEvent<User> event) {
         if (event.getType() != EntityChangedEvent.Type.UPDATED
-                || event.getChanges().isChanged("picture")
+                || event.getChanges().isChanged("profilePhoto")
                 || event.getChanges().isChanged("employee")) {
-            userPictureIndex = null;
+            userProfilePhotoIndex = null;
         }
     }
 
-    private Map<String, FileRef> getUserPictureIndex() {
-        UserPictureIndex current = userPictureIndex;
+    private Map<String, FileRef> getUserProfilePhotoIndex() {
+        UserProfilePhotoIndex current = userProfilePhotoIndex;
         if (current != null && System.currentTimeMillis() - current.builtAt() < INDEX_TTL_MS) {
-            return current.picturesByEmployeeId();
+            return current.profilePhotoByEmployeeId();
         }
 
-        UserPictureIndex rebuilt = new UserPictureIndex(loadUserPictures(), System.currentTimeMillis());
-        userPictureIndex = rebuilt;
-        return rebuilt.picturesByEmployeeId();
+        UserProfilePhotoIndex rebuilt = new UserProfilePhotoIndex(loadUserProfilePhoto(), System.currentTimeMillis());
+        userProfilePhotoIndex = rebuilt;
+        return rebuilt.profilePhotoByEmployeeId();
     }
 
-    private Map<String, FileRef> loadUserPictures() {
+    private Map<String, FileRef> loadUserProfilePhoto() {
         List<User> users = dataManager.load(User.class)
-                .query("select u from umida_User u where u.employee is not null and u.picture is not null")
-                .fetchPlan(fp -> fp.add("picture")
+                .query("select u from umida_User u where u.employee is not null and u.profilePhoto is not null")
+                .fetchPlan(fp -> fp.add("profilePhoto")
                         .add("employee", FetchPlan.INSTANCE_NAME))
                 .list();
 
-        Map<String, FileRef> picturesByEmployeeId = new HashMap<>();
+        Map<String, FileRef> profilePhotoByEmployeeId = new HashMap<>();
         for (User user : users) {
-            picturesByEmployeeId.put(user.getEmployee().getId().toLowerCase(Locale.ROOT), user.getPicture());
+            profilePhotoByEmployeeId.put(user.getEmployee().getId().toLowerCase(Locale.ROOT), user.getProfilePhoto());
         }
-        return picturesByEmployeeId;
+        return profilePhotoByEmployeeId;
     }
 
     private FileStorage getFileStorage() {
@@ -251,7 +251,7 @@ public class EmployeePhotoService {
     public record Photo(String fileName, String contentType, byte[] content) {
     }
 
-    private record UserPictureIndex(Map<String, FileRef> picturesByEmployeeId, long builtAt) {
+    private record UserProfilePhotoIndex(Map<String, FileRef> profilePhotoByEmployeeId, long builtAt) {
     }
 
     /** The index is tied to the storage it was built from, so a storage switch cannot reuse it. */

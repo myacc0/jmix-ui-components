@@ -61,8 +61,8 @@ public class User implements JmixUserDetails, HasTimeZone {
     @Column(name = "TIME_ZONE_ID")
     private String timeZoneId;
 
-    @Column(name = "PICTURE", length = 1024)
-    private FileRef picture;
+    @Column(name = "PROFILE_PHOTO", length = 1024)
+    private FileRef profilePhoto;
 
     /**
      * The HR employee record of the user, linked by {@code OrgStructureEmployee.adAccount} on LDAP login
@@ -85,12 +85,12 @@ public class User implements JmixUserDetails, HasTimeZone {
         this.employee = employee;
     }
 
-    public FileRef getPicture() {
-        return picture;
+    public FileRef getProfilePhoto() {
+        return profilePhoto;
     }
 
-    public void setPicture(FileRef picture) {
-        this.picture = picture;
+    public void setProfilePhoto(FileRef profilePhoto) {
+        this.profilePhoto = profilePhoto;
     }
 
     public UUID getId() {

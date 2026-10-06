@@ -28,10 +28,10 @@ public class UserListView extends StandardListView<User> {
     @Autowired
     private FileStorageLocator fileStorageLocator;
 
-    @Supply(to = "usersDataGrid.picture", subject = "renderer")
-    private Renderer<User> usersDataGridPictureRenderer() {
+    @Supply(to = "usersDataGrid.profilePhoto", subject = "renderer")
+    private Renderer<User> usersDataGridProfilePhotoRenderer() {
         return new ComponentRenderer<>(user -> {
-            FileRef fileRef = user.getPicture();
+            FileRef fileRef = user.getProfilePhoto();
             if (fileRef != null) {
                 Image image = uiComponents.create(Image.class);
                 image.setWidth("32px");
@@ -42,7 +42,7 @@ public class UserListView extends StandardListView<User> {
                             return new DownloadResponse(is, fileRef.getFileName(), fileRef.getContentType(), -1);
                         });
                 image.setSrc(handler);
-                image.setClassName("user-picture");
+                image.setClassName("user-profile-photo");
                 return image;
             } else {
                 return null;
