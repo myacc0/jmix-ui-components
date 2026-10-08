@@ -8,6 +8,7 @@
             <fetchPlan extends="_base">
                 <property name="group" fetchPlan="_instance_name"/>
                 <property name="owner" fetchPlan="_instance_name"/>
+                <property name="assignee" fetchPlan="_instance_name"/>
                 <property name="domain" fetchPlan="_instance_name"/>
                 <property name="dataProduct" fetchPlan="_instance_name"/>
             </fetchPlan>
@@ -33,6 +34,9 @@
             <hbox classNames="form-block">
                 <span classNames="form-block-title" text="Общая информация"/>
 
+                <formItem id="codeFormItem" label="msg://uz.kapitalbank.umida.entity.dq/DqRule.code">
+                    <textField id="codeField" property="code" readOnly="true"/>
+                </formItem>
                 <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.name">
                     <textField id="nameField" property="name"/>
                 </formItem>
@@ -63,27 +67,25 @@
                         </actions>
                     </entityPicker>
                 </formItem>
+                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.owner">
+                    <select id="ownerField"/>
+                </formItem>
                 <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.dimension">
                     <select id="dimensionField" property="dimension"/>
                 </formItem>
                 <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.severity">
                     <select id="severityField" property="severity"/>
                 </formItem>
+                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.dueDays">
+                    <integerField id="dueDaysField" property="dueDays" required="true" stepButtonsVisible="true"/>
+                </formItem>
             </hbox>
 
             <hbox classNames="form-block">
                 <span classNames="form-block-title" text="Ответственное подразделение (за исправление ошибок, при обнаружении данным правилом)"/>
 
-                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.assigneeSubdivision">
-                    <entityPicker id="assigneeSubdivisionField" property="assigneeSubdivision" required="true">
-                        <actions>
-                            <action id="entityLookupAction" type="entity_lookup"/>
-                            <action id="entityClearAction" type="entity_clear"/>
-                        </actions>
-                    </entityPicker>
-                </formItem>
-                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.assigneeEmployee">
-                    <entityPicker id="assigneeEmployeeField" property="assigneeEmployee">
+                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.assignee">
+                    <entityPicker id="assigneeField" property="assignee" required="true">
                         <actions>
                             <action id="entityLookupAction" type="entity_lookup"/>
                             <action id="entityClearAction" type="entity_clear"/>

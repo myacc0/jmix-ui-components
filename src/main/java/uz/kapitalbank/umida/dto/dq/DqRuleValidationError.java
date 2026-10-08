@@ -22,6 +22,7 @@ public record DqRuleValidationError(@Nullable String field, String message) {
     public static final String FIELD_MIN = "min";
     public static final String FIELD_MAX = "max";
     public static final String FIELD_REGEXP = "regexp";
+    public static final String FIELD_DUE_DAYS = "dueDays";
 
     public static DqRuleValidationError of(String message) {
         return new DqRuleValidationError(null, message);

@@ -37,6 +37,10 @@ public class DqRuleValidator {
     public static final int MAX_SAMPLE_SIZE = 100;
     public static final int DEFAULT_SAMPLE_SIZE = 10;
 
+    /** The accepted issue resolution period, in days, also used by the editor to bound its input. */
+    public static final int MIN_DUE_DAYS = 1;
+    public static final int MAX_DUE_DAYS = 365;
+
     private final Messages messages;
     private final ObjectMapper objectMapper;
 
@@ -52,6 +56,12 @@ public class DqRuleValidator {
      */
     public List<DqRuleValidationError> validate(DqRule rule) {
         List<DqRuleValidationError> errors = new ArrayList<>();
+
+        Integer dueDays = rule.getDueDays();
+        if (dueDays != null && (dueDays < MIN_DUE_DAYS || dueDays > MAX_DUE_DAYS)) {
+            errors.add(formatError(FIELD_DUE_DAYS, "dqRuleValidation.dueDaysOutOfRange",
+                    MIN_DUE_DAYS, MAX_DUE_DAYS));
+        }
 
         DqRuleType type = rule.getRuleType();
         if (type == null) {

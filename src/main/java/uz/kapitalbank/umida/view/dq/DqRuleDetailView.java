@@ -5,7 +5,9 @@ import uz.kapitalbank.umida.dto.dq.DqRuleConfig;
 import uz.kapitalbank.umida.dto.dq.DqRuleValidationError;
 import uz.kapitalbank.umida.dto.SelectDto;
 import uz.kapitalbank.umida.entity.dq.DqRule;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.enums.dq.DqRuleType;
+import uz.kapitalbank.umida.enums.dq.DqSeverity;
 import uz.kapitalbank.umida.repository.DqRuleRepository;
 import uz.kapitalbank.umida.service.dq.DqDataSourceProvider;
 import uz.kapitalbank.umida.service.dq.DqRuleService;
@@ -19,19 +21,25 @@ import uz.kapitalbank.umida.view.main.MainView;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
+import io.jmix.core.EntityStates;
 import io.jmix.core.FetchPlan;
+import io.jmix.core.Messages;
+import io.jmix.core.MetadataTools;
 import io.jmix.core.SaveContext;
 import io.jmix.flowui.component.checkbox.JmixCheckbox;
 import io.jmix.flowui.component.combobox.JmixComboBox;
 import io.jmix.flowui.component.datepicker.TypedDatePicker;
 import io.jmix.flowui.component.multiselectcombobox.JmixMultiSelectComboBox;
 import io.jmix.flowui.component.select.JmixSelect;
+import io.jmix.flowui.component.textfield.JmixIntegerField;
 import io.jmix.flowui.component.textfield.JmixNumberField;
 import io.jmix.flowui.component.textfield.TypedTextField;
 import io.jmix.flowui.component.validation.ValidationErrors;
+import io.jmix.flowui.model.InstanceContainer;
 import io.jmix.flowui.view.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,6 +70,33 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
 
     @Autowired
     private DqRuleService ruleService;
+
+    @Autowired
+    private EntityStates entityStates;
+
+    @Autowired
+    private Messages messages;
+
+    @Autowired
+    private MetadataTools metadataTools;
+
+    @ViewComponent
+    private MessageBundle messageBundle;
+
+    @ViewComponent
+    private FormLayout.FormItem codeFormItem;
+
+    @ViewComponent
+    private TypedTextField<String> codeField;
+
+    @ViewComponent
+    private JmixSelect<OrgStructureSubdivision> ownerField;
+
+    @ViewComponent
+    private JmixSelect<DqSeverity> severityField;
+
+    @ViewComponent
+    private JmixIntegerField dueDaysField;
 
     @ViewComponent
     private JmixSelect<String> dataSourceField;
@@ -109,6 +144,9 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
     @ViewComponent
     private JmixMultiSelectComboBox<String> samplesQueryColumnsField;
 
+    /** The subdivisions a new rule may belong to: those of the employee of the current user. */
+    private List<OrgStructureSubdivision> ownerOptions = List.of();
+
     /** Columns of the currently selected table — the item set of {@link #samplesQueryColumnsField}. */
     private List<String> availableColumns = List.of();
 
@@ -132,6 +170,15 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
 
     @Subscribe
     public void onInit(final InitEvent event) {
+        ownerField.setItemLabelGenerator(subdivision -> subdivision == null ? ""
+                : metadataTools.getInstanceName(subdivision));
+        severityField.setItemLabelGenerator(severity -> severity == null ? ""
+                : messageBundle.formatMessage("severityItemLabel", messages.getMessage(severity), severity.getDayCost()));
+
+        // the same bounds the validator enforces
+        dueDaysField.setMin(DqRuleValidator.MIN_DUE_DAYS);
+        dueDaysField.setMax(DqRuleValidator.MAX_DUE_DAYS);
+
         // the same bounds the validator enforces, so the field cannot offer a value it would reject
         sampleSizeField.setMin(DqRuleValidator.MIN_SAMPLE_SIZE);
         sampleSizeField.setMax(DqRuleValidator.MAX_SAMPLE_SIZE);
@@ -210,9 +257,37 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         samplesQueryColumnsField.addValueChangeListener(e -> onDynamicFieldChange());
     }
 
+    /** A new rule belongs to the first subdivision of its author, who may pick another one of theirs. */
+    @Subscribe
+    public void onInitEntity(final InitEntityEvent<DqRule> event) {
+        ownerOptions = ruleService.getCurrentUserSubdivisions();
+        if (event.getEntity().getOwner() == null && !ownerOptions.isEmpty()) {
+            event.getEntity().setOwner(ownerOptions.get(0));
+        }
+    }
+
     @Subscribe
     public void onReady(final ReadyEvent event) {
         DqRule rule = getEditedEntity();
+
+        // The code is generated on the first save, so a new rule has none to show yet. The owner is
+        // chosen once, on creation: editing a rule does not move it to another subdivision.
+        boolean isNew = entityStates.isNew(rule);
+        codeFormItem.setVisible(!isNew);
+        // generated, never entered: the required marker the binding puts on it would only mislead
+        codeField.setRequired(false);
+        // The owner field is not bound to the property: replacing the items of a select clears its
+        // value, which a binding would write to the rule. It is synced by hand once the items are set.
+        OrgStructureSubdivision owner = rule.getOwner();
+        if (isNew) {
+            ownerField.setItems(ownerOptions);
+        } else {
+            ownerField.setItems(owner != null ? List.of(owner) : List.of());
+            ownerField.setReadOnly(true);
+        }
+        ownerField.setValue(owner);
+        ownerField.addValueChangeListener(e -> getEditedEntity().setOwner(e.getValue()));
+
         if (rule.getRuleConfig() == null) {
             rule.setRuleConfig("{}");
         }
@@ -223,6 +298,14 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
             populateFieldsFromConfig(type);
         } finally {
             populating = false;
+        }
+    }
+
+    /** Picking a severity proposes its resolution period, which the user may still correct. */
+    @Subscribe(id = "dqRuleDc", target = Target.DATA_CONTAINER)
+    public void onDqRuleDcItemPropertyChange(final InstanceContainer.ItemPropertyChangeEvent<DqRule> event) {
+        if ("severity".equals(event.getProperty()) && event.getValue() instanceof DqSeverity severity) {
+            event.getItem().setDueDays(severity.getDayCost());
         }
     }
 
@@ -388,12 +471,6 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         event.addErrors(errors);
     }
 
-    /** The owner is not asked for: a new rule belongs to whoever is creating it. */
-    @Subscribe
-    public void onBeforeSave(final BeforeSaveEvent event) {
-        ruleService.assignOwner(getEditedEntity());
-    }
-
     /**
      * Maps a logical config field name to the input that edits it, so the error is attached to it.
      * Returns null when no single input owns the value — the error is then shown unattached.
@@ -405,6 +482,7 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         }
         boolean rangeDate = ruleTypeField.getValue() == DqRuleType.RANGE_DATE;
         return switch (field) {
+            case DqRuleValidationError.FIELD_DUE_DAYS -> dueDaysField;
             case DqRuleValidationError.FIELD_TABLE_NAME -> tableNameField;
             case DqRuleValidationError.FIELD_COLUMN_NAME -> columnNameField;
             case DqRuleValidationError.FIELD_RULE_TYPE -> ruleTypeField;
