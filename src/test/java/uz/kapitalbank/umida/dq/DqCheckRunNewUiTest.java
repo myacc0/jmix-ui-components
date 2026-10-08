@@ -1,18 +1,5 @@
 package uz.kapitalbank.umida.dq;
 
-import uz.kapitalbank.umida.UmidaApplication;
-import uz.kapitalbank.umida.entity.dq.DqCheckRun;
-import uz.kapitalbank.umida.entity.dq.DqCheckRunResult;
-import uz.kapitalbank.umida.entity.dq.DqDataDomain;
-import uz.kapitalbank.umida.entity.dq.DqIssue;
-import uz.kapitalbank.umida.entity.dq.DqRule;
-import uz.kapitalbank.umida.enums.dq.DqCheckRunStatus;
-import uz.kapitalbank.umida.enums.dq.DqDimension;
-import uz.kapitalbank.umida.enums.dq.DqRuleType;
-import uz.kapitalbank.umida.enums.dq.DqSeverity;
-import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
-import uz.kapitalbank.umida.view.dq.DqCheckRunListView;
-import uz.kapitalbank.umida.view.dq.DqCheckRunNewView;
 import io.jmix.core.DataManager;
 import io.jmix.core.FetchPlan;
 import io.jmix.flowui.ViewNavigators;
@@ -29,17 +16,25 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import uz.kapitalbank.umida.UmidaApplication;
+import uz.kapitalbank.umida.entity.dict.DictDataDomain;
+import uz.kapitalbank.umida.entity.dq.DqCheckRun;
+import uz.kapitalbank.umida.entity.dq.DqCheckRunResult;
+import uz.kapitalbank.umida.entity.dq.DqIssue;
+import uz.kapitalbank.umida.entity.dq.DqRule;
+import uz.kapitalbank.umida.enums.dq.DqCheckRunStatus;
+import uz.kapitalbank.umida.enums.dq.DqDimension;
+import uz.kapitalbank.umida.enums.dq.DqRuleType;
+import uz.kapitalbank.umida.enums.dq.DqSeverity;
+import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
+import uz.kapitalbank.umida.view.dq.DqCheckRunListView;
+import uz.kapitalbank.umida.view.dq.DqCheckRunNewView;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Walks the "run check" page the way a user does — open it from the run list, pick a data source and
@@ -65,17 +60,16 @@ public class DqCheckRunNewUiTest {
 
     private final List<DqCheckRun> checkRuns = new ArrayList<>();
 
-    private DqDataDomain domain;
+    private DictDataDomain domain;
     private DqRule rule;
 
     @BeforeEach
     void setUp() {
-        domain = dataManager.create(DqDataDomain.class);
+        domain = dataManager.create(DictDataDomain.class);
         String suffix = UUID.randomUUID().toString().substring(0, 8);
         domain.setCode("dq-ui-" + suffix);
         domain.setShortName("DQ UI " + suffix);
-        domain.setName("DQ check run UI test domain " + suffix);
-        domain.setCreatedAt(LocalDateTime.now());
+        domain.setShortName("DQ check run UI test domain " + suffix);
         domain = dataManager.save(domain);
 
         rule = dataManager.create(DqRule.class);
@@ -108,7 +102,7 @@ public class DqCheckRunNewUiTest {
         JmixSelect<String> dataSourceField = UiTestUtils.getComponent(newView, "dataSourceField");
         dataSourceField.setValue("main");
 
-        EntityPicker<DqDataDomain> domainField = UiTestUtils.getComponent(newView, "domainField");
+        EntityPicker<DictDataDomain> domainField = UiTestUtils.getComponent(newView, "domainField");
         domainField.setValue(domain);
 
         DataGrid<DqRule> rulesDataGrid = UiTestUtils.getComponent(newView, "dqRulesDataGrid");

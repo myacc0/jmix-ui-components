@@ -1,17 +1,5 @@
 package uz.kapitalbank.umida.dq;
 
-import uz.kapitalbank.umida.UmidaApplication;
-import uz.kapitalbank.umida.entity.dq.DqCheckRun;
-import uz.kapitalbank.umida.entity.dq.DqCheckRunResult;
-import uz.kapitalbank.umida.entity.dq.DqDataDomain;
-import uz.kapitalbank.umida.entity.dq.DqRule;
-import uz.kapitalbank.umida.enums.dq.DqCheckResultStatus;
-import uz.kapitalbank.umida.enums.dq.DqCheckRunStatus;
-import uz.kapitalbank.umida.enums.dq.DqDimension;
-import uz.kapitalbank.umida.enums.dq.DqRuleType;
-import uz.kapitalbank.umida.enums.dq.DqSeverity;
-import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
-import uz.kapitalbank.umida.view.dq.DqCheckRunDetailView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -31,6 +19,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import uz.kapitalbank.umida.UmidaApplication;
+import uz.kapitalbank.umida.entity.dict.DictDataDomain;
+import uz.kapitalbank.umida.entity.dq.DqCheckRun;
+import uz.kapitalbank.umida.entity.dq.DqCheckRunResult;
+import uz.kapitalbank.umida.entity.dq.DqRule;
+import uz.kapitalbank.umida.enums.dq.*;
+import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
+import uz.kapitalbank.umida.view.dq.DqCheckRunDetailView;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -40,11 +36,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * The results of a check run are listed on the run's own page. Sample violations are only collected
@@ -64,7 +56,7 @@ public class DqCheckRunDetailUiTest {
     @Autowired
     ViewNavigators viewNavigators;
 
-    private DqDataDomain domain;
+    private DictDataDomain domain;
     private DqRule rule;
     private DqCheckRun checkRun;
     private final List<DqCheckRunResult> results = new ArrayList<>();
@@ -73,11 +65,10 @@ public class DqCheckRunDetailUiTest {
     void setUp() {
         String suffix = UUID.randomUUID().toString().substring(0, 8);
 
-        domain = dataManager.create(DqDataDomain.class);
+        domain = dataManager.create(DictDataDomain.class);
         domain.setCode("dq-run-detail-" + suffix);
         domain.setShortName("DQ RUN " + suffix);
-        domain.setName("DQ check run detail UI test domain " + suffix);
-        domain.setCreatedAt(LocalDateTime.now());
+        domain.setShortName("DQ check run detail UI test domain " + suffix);
         domain = dataManager.save(domain);
 
         rule = dataManager.create(DqRule.class);

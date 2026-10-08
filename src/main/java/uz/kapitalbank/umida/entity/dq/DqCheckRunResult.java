@@ -1,7 +1,5 @@
 package uz.kapitalbank.umida.entity.dq;
 
-import uz.kapitalbank.umida.enums.dq.DqCheckResultStatus;
-import uz.kapitalbank.umida.utils.JsonbStringConverter;
 import io.jmix.core.DeletePolicy;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
 import io.jmix.core.entity.annotation.OnDeleteInverse;
@@ -9,8 +7,7 @@ import io.jmix.core.metamodel.annotation.JmixEntity;
 import io.jmix.core.metamodel.annotation.NumberFormat;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import org.eclipse.persistence.annotations.Convert;
-import org.eclipse.persistence.annotations.Converter;
+import uz.kapitalbank.umida.enums.dq.DqCheckResultStatus;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -35,10 +32,9 @@ public class DqCheckRunResult {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private DqCheckRun checkRun;
 
-    @OnDeleteInverse(DeletePolicy.CASCADE)
-    @JoinColumn(name = "RULE_ID", nullable = false)
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDeleteInverse(DeletePolicy.UNLINK)
+    @JoinColumn(name = "RULE_ID")
+    @ManyToOne(fetch = FetchType.LAZY)
     private DqRule rule;
 
     @Column(name = "STATUS", nullable = false, length = 20)
@@ -60,16 +56,14 @@ public class DqCheckRunResult {
     @Column(name = "EXECUTION_MS")
     private Long executionMs;
 
-    @Column(name = "SAMPLE_VIOLATIONS", columnDefinition = "jsonb")
-    @Converter(name = "sampleViolationsJsonbConverter", converterClass = JsonbStringConverter.class)
-    @Convert("sampleViolationsJsonbConverter")
-    private String sampleViolations;
-
     @Column(name = "ERROR_MESSAGE", columnDefinition = "text")
     private String errorMessage;
 
     @Column(name = "EXECUTED_QUERY", columnDefinition = "text")
     private String executedQuery;
+
+    @Column(name = "VIOLATIONS_QUERY", columnDefinition = "text")
+    private String violationsQuery;
 
     @Column(name = "CREATED_AT", nullable = false, columnDefinition = "TIMESTAMP")
     @NotNull
@@ -97,14 +91,6 @@ public class DqCheckRunResult {
 
     public void setErrorMessage(String errorMessage) {
         this.errorMessage = errorMessage;
-    }
-
-    public String getSampleViolations() {
-        return sampleViolations;
-    }
-
-    public void setSampleViolations(String sampleViolations) {
-        this.sampleViolations = sampleViolations;
     }
 
     public Long getExecutionMs() {

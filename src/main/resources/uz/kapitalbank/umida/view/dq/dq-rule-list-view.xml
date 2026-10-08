@@ -15,8 +15,6 @@
                 <property name="ruleType"/>
                 <property name="severity"/>
                 <property name="active"/>
-                <property name="createdAt"/>
-                <property name="updatedAt"/>
                 <property name="group" fetchPlan="_instance_name"/>
                 <property name="owner" fetchPlan="_instance_name"/>
                 <property name="domain" fetchPlan="_instance_name"/>
@@ -71,8 +69,6 @@
                 <column property="owner" autoWidth="true" flexGrow="0" filterable="true"/>
                 <column property="domain" autoWidth="true" flexGrow="0" filterable="true"/>
                 <column property="dataProduct" autoWidth="true" flexGrow="0" filterable="true"/>
-                <column property="createdAt" autoWidth="true" flexGrow="0"/>
-                <column property="updatedAt" autoWidth="true" flexGrow="0"/>
             </columns>
         </dataGrid>
         <hbox id="lookupActions" visible="false">

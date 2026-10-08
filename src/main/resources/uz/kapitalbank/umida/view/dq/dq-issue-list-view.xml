@@ -61,16 +61,9 @@
             </actions>
             <columns resizable="true">
                 <column property="rule" autoWidth="true" flexGrow="0"/>
-                <column property="dataSource" autoWidth="true" flexGrow="0"/>
                 <column property="status" autoWidth="true" flexGrow="0"/>
-                <column property="severity" autoWidth="true" flexGrow="0"/>
-                <column property="title" autoWidth="true" flexGrow="0"/>
-                <column property="assigneName" autoWidth="true" flexGrow="0"/>
-                <column property="assigneeEmail" autoWidth="true" flexGrow="0"/>
-                <column property="assigneePhone" autoWidth="true" flexGrow="0"/>
                 <column property="dueDate" autoWidth="true" flexGrow="0"/>
                 <column property="resolvedAt" autoWidth="true" flexGrow="0"/>
-                <column property="affectedRows" autoWidth="true" flexGrow="0"/>
                 <column property="createdAt" autoWidth="true" flexGrow="0"/>
                 <column property="updatedAt" autoWidth="true" flexGrow="0"/>
             </columns>

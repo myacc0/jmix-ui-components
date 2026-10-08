@@ -53,8 +53,6 @@
                 <column property="parent" filterable="true"/>
                 <column property="name" filterable="true"/>
                 <column property="description"/>
-                <column property="createdAt"/>
-                <column property="updatedAt"/>
             </columns>
         </treeDataGrid>
         <hbox id="lookupActions" visible="false">

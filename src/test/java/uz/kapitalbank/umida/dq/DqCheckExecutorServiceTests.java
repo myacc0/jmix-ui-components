@@ -1,19 +1,5 @@
 package uz.kapitalbank.umida.dq;
 
-import uz.kapitalbank.umida.dto.dq.DqRuleFilter;
-import uz.kapitalbank.umida.entity.dq.DqCheckRun;
-import uz.kapitalbank.umida.entity.dq.DqCheckRunResult;
-import uz.kapitalbank.umida.entity.dq.DqDataDomain;
-import uz.kapitalbank.umida.entity.dq.DqIssue;
-import uz.kapitalbank.umida.entity.dq.DqRule;
-import uz.kapitalbank.umida.enums.dq.DqCheckResultStatus;
-import uz.kapitalbank.umida.enums.dq.DqCheckRunStatus;
-import uz.kapitalbank.umida.enums.dq.DqDimension;
-import uz.kapitalbank.umida.enums.dq.DqIssueStatus;
-import uz.kapitalbank.umida.enums.dq.DqRuleType;
-import uz.kapitalbank.umida.enums.dq.DqSeverity;
-import uz.kapitalbank.umida.service.dq.DqCheckExecutorService;
-import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jmix.core.DataManager;
@@ -25,24 +11,24 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import uz.kapitalbank.umida.dto.dq.DqRuleFilter;
+import uz.kapitalbank.umida.entity.dict.DictDataDomain;
+import uz.kapitalbank.umida.entity.dq.*;
+import uz.kapitalbank.umida.enums.dq.*;
+import uz.kapitalbank.umida.service.dq.DqCheckExecutorService;
+import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Exercises a real check run end to end against the main store: the rules are evaluated over
- * {@code umida_dq_data_domain}, the table behind {@link DqDataDomain}, so the SQL the builder
+ * {@code umida_dq_data_domain}, the table behind {@link DictDataDomain}, so the SQL the builder
  * produces is actually executed.
  * <p>
  * The rules are tied to a domain created by the test and the filter selects that domain, so a run
@@ -69,7 +55,7 @@ public class DqCheckExecutorServiceTests {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final List<DqCheckRun> checkRuns = new ArrayList<>();
 
-    private DqDataDomain domain;
+    private DictDataDomain domain;
     private DqRule passingRule;
     private DqRule failingRule;
     private DqRule unsupportedRule;
@@ -204,13 +190,12 @@ public class DqCheckExecutorServiceTests {
         return filter;
     }
 
-    private DqDataDomain createDomain() {
-        DqDataDomain dataDomain = dataManager.create(DqDataDomain.class);
+    private DictDataDomain createDomain() {
+        DictDataDomain dataDomain = dataManager.create(DictDataDomain.class);
         String suffix = UUID.randomUUID().toString().substring(0, 8);
         dataDomain.setCode("dq-test-" + suffix);
         dataDomain.setShortName("DQ test " + suffix);
-        dataDomain.setName("DQ executor test domain " + suffix);
-        dataDomain.setCreatedAt(LocalDateTime.now());
+        dataDomain.setShortName("DQ executor test domain " + suffix);
         return dataManager.save(dataDomain);
     }
 

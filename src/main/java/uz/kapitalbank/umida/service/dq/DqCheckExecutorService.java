@@ -33,6 +33,7 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.sql.ResultSetMetaData;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.*;
 
 /**
@@ -128,8 +129,12 @@ public class DqCheckExecutorService {
         DqCheckRun run = dataManager.create(DqCheckRun.class);
         run.setDataSource(filter.getDataSource());
         run.setRulesTotal(rules.size());
-        run.setTriggeredUsername(currentAuthentication.getUser().getUsername());
-        run.setStartedAt(LocalDateTime.now());
+
+//        TODO: implement this
+//        run.setTriggered();
+//        run.setTriggeredBy();
+
+        run.setStartedAt(OffsetDateTime.now());
         run.setStatus(DqCheckRunStatus.RUNNING);
         run.setRulesPassed(0);
         run.setRulesFailed(0);
@@ -138,14 +143,14 @@ public class DqCheckExecutorService {
         DqCheckRun savedRun = dataManager.save(run);
 
         UUID runId = savedRun.getId();
-        String username = savedRun.getTriggeredUsername();
+//        String username = savedRun.getTriggeredUsername();
         // ids, not entities: the worker thread loads its own instances with the fetch plan it needs
         List<UUID> ruleIds = rules.stream().map(DqRule::getId).toList();
 
         // the security context does not follow a task onto the worker thread, so it is re-established
         // there as the user who triggered the run
-        taskExecutor.execute(() ->
-                systemAuthenticator.runWithUser(username, () -> executeCheckRun(runId, ruleIds)));
+//        taskExecutor.execute(() ->
+//                systemAuthenticator.runWithUser(username, () -> executeCheckRun(runId, ruleIds)));
 
         return savedRun;
     }
@@ -314,7 +319,6 @@ public class DqCheckExecutorService {
         result.setFailedRecords(metrics.failed());
         result.setPassRate(passRate);
         result.setExecutionMs(executionMs);
-        result.setSampleViolations(sampleViolations);
         result.setExecutedQuery(metricsQuery.toDisplayString());
 
         return saveResult(result);
@@ -400,7 +404,7 @@ public class DqCheckExecutorService {
         DqRule rule = result.getRule();
         DqIssue issue = dataManager.load(DqIssue.class)
                 .query("select i from umida_DqIssue i" +
-                        " where i.rule = :rule and i.dataSource = :dataSource and i.status = :status" +
+                        " where i.rule = :rule and i.rule.dataSource = :dataSource and i.status = :status" +
                         " order by i.createdAt desc")
                 .parameter("rule", rule)
                 .parameter("dataSource", rule.getDataSource())
@@ -410,20 +414,16 @@ public class DqCheckExecutorService {
                 .orElseGet(() -> newIssue(rule));
 
         issue.setCheckResult(result);
-        issue.setSeverity(rule.getSeverity());
-        issue.setAffectedRows(result.getFailedRecords());
-        issue.setTitle(issueTitle(rule));
         issue.setDescription(issueDescription(rule, result));
-        issue.setUpdatedAt(LocalDateTime.now());
+        issue.setUpdatedAt(OffsetDateTime.now());
         return issue;
     }
 
     private DqIssue newIssue(DqRule rule) {
         DqIssue issue = dataManager.create(DqIssue.class);
         issue.setRule(rule);
-        issue.setDataSource(rule.getDataSource());
         issue.setStatus(DqIssueStatus.OPEN);
-        issue.setCreatedAt(LocalDateTime.now());
+        issue.setCreatedAt(OffsetDateTime.now());
         return issue;
     }
 
@@ -454,7 +454,7 @@ public class DqCheckExecutorService {
         run.setRulesPassed(passed);
         run.setRulesFailed(failed);
         run.setRulesSkipped(skipped);
-        run.setFinishedAt(LocalDateTime.now());
+        run.setFinishedAt(OffsetDateTime.now());
         run.setDqScore(dqScore(passed, passed + failed));
         run.setErrorMessage(errorMessage);
         dataManager.save(run);

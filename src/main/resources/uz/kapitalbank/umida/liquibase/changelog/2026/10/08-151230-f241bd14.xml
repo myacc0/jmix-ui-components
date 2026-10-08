@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd"
+        objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+        logicalFilePath="uz/kapitalbank/umida/liquibase/changelog/2026/10/08-151230-f241bd14.xml">
+    <changeSet id="1" author="umida">
+        <dropForeignKeyConstraint baseTableName="UMIDA_DQ_RULE" constraintName="FK_UMIDA_DQ_RULE_ON_OWNER"/>
+    </changeSet>
+    <changeSet id="4" author="umida">
+        <createIndex indexName="IDX_UMIDA_DQ_RULE_OWNER" tableName="UMIDA_DQ_RULE">
+            <column name="OWNER_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="OWNER_ID" baseTableName="UMIDA_DQ_RULE"
+                                 constraintName="FK_UMIDA_DQ_RULE_ON_OWNER" onDelete="SET NULL"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_ORG_STRUCTURE_SUBDIVISIONS"/>
+    </changeSet>
+    <changeSet id="3" author="umida">
+        <createIndex indexName="IDX_UMIDA_DQ_RULE_DOMAIN" tableName="UMIDA_DQ_RULE">
+            <column name="DOMAIN_ID"/>
+        </createIndex>
+    </changeSet>
+    <changeSet id="2" author="umida">
+        <createIndex indexName="IDX_UMIDA_DQ_RULE_DATA_PRODUCT" tableName="UMIDA_DQ_RULE">
+            <column name="DATA_PRODUCT_ID"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

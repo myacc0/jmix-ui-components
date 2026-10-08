@@ -26,7 +26,6 @@
                 <responsiveStep minWidth="0" columns="1"/>
             </responsiveSteps>
             <textField id="dataSourceField" property="dataSource"/>
-            <textField id="triggeredUsernameField" property="triggeredUsername"/>
             <dateTimePicker id="startedAtField" property="startedAt"/>
             <dateTimePicker id="finishedAtField" property="finishedAt"/>
             <select id="statusField" property="status"/>

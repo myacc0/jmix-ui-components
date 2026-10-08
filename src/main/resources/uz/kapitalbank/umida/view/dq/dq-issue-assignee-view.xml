@@ -23,15 +23,6 @@
             <responsiveSteps>
                 <responsiveStep minWidth="0" columns="1"/>
             </responsiveSteps>
-            <textField id="assigneNameField"
-                       property="assigneName"
-                       required="true"
-                       requiredMessage="msg://dqIssueAssigneeView.assigneNameRequired"/>
-            <textField id="assigneeEmailField"
-                       property="assigneeEmail"
-                       required="true"
-                       requiredMessage="msg://dqIssueAssigneeView.assigneeEmailRequired"/>
-            <textField id="assigneePhoneField" property="assigneePhone"/>
             <datePicker id="dueDateField" property="dueDate"/>
         </formLayout>
         <hbox id="detailActions" width="100%" justifyContent="START">

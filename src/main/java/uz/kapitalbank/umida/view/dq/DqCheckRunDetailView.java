@@ -82,7 +82,7 @@ public class DqCheckRunDetailView extends StandardDetailView<DqCheckRun> {
             return;
         }
 
-        String sampleViolations = result.getSampleViolations();
+        String sampleViolations = "";
         List<Map<String, Object>> rows = sampleViolationsService.parseRows(sampleViolations);
 
         if (rows.isEmpty()) {

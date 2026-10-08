@@ -27,7 +27,7 @@ public class DqRuleService {
 
         UserDetails user = currentAuthentication.getUser();
         if (user instanceof User owner) {
-            rule.setOwner(owner);
+//            rule.setOwner(owner.getEmployee());
         }
     }
 }

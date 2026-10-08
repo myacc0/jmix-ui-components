@@ -1,9 +1,9 @@
 package uz.kapitalbank.umida.service.dq;
 
-import uz.kapitalbank.umida.entity.dq.DqIssue;
 import org.springframework.stereotype.Service;
+import uz.kapitalbank.umida.entity.dq.DqIssue;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 /** Issue bookkeeping shared by the flows that edit an issue from the issue list. */
 @Service
@@ -14,7 +14,7 @@ public class DqIssueService {
      * travels with the same save.
      */
     public void markUpdated(DqIssue issue) {
-        issue.setUpdatedAt(LocalDateTime.now());
+        issue.setUpdatedAt(OffsetDateTime.now());
     }
 
     /**
@@ -22,7 +22,7 @@ public class DqIssueService {
      * Called before the change is written, so both stamps travel with the same save.
      */
     public void markClosed(DqIssue issue) {
-        LocalDateTime now = LocalDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now();
         issue.setResolvedAt(now);
         issue.setUpdatedAt(now);
     }

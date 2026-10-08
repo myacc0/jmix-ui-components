@@ -1,19 +1,15 @@
 package uz.kapitalbank.umida.entity.dq;
 
-import uz.kapitalbank.umida.enums.dq.DqIssueStatus;
-import uz.kapitalbank.umida.enums.dq.DqSeverity;
 import io.jmix.core.DeletePolicy;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
 import io.jmix.core.entity.annotation.OnDeleteInverse;
-import io.jmix.core.metamodel.annotation.InstanceName;
 import io.jmix.core.metamodel.annotation.JmixEntity;
-import io.jmix.core.metamodel.annotation.NumberFormat;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import uz.kapitalbank.umida.enums.dq.DqIssueStatus;
 
-import java.math.BigInteger;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @JmixEntity
@@ -28,88 +24,74 @@ public class DqIssue {
     @Id
     private UUID id;
 
+    @Column(name = "CODE", nullable = false, length = 50)
+    @NotNull
+    private String code;
+
     @OnDeleteInverse(DeletePolicy.UNLINK)
     @JoinColumn(name = "CHECK_RESULT_ID")
     @ManyToOne(fetch = FetchType.LAZY)
     private DqCheckRunResult checkResult;
 
-    @OnDeleteInverse(DeletePolicy.CASCADE)
     @NotNull
+    @OnDeleteInverse(DeletePolicy.CASCADE)
     @JoinColumn(name = "RULE_ID", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private DqRule rule;
 
     @NotNull
-    @Column(name = "DATA_SOURCE", nullable = false, length = 100)
-    private String dataSource;
-
-    @NotNull
     @Column(name = "STATUS", nullable = false, length = 40, columnDefinition = "VARCHAR(40) DEFAULT 'OPEN'")
     private String status;
 
-    @NotNull
-    @Column(name = "SEVERITY", nullable = false, length = 20)
-    private String severity;
-
-    @NotNull
-    @InstanceName
-    @Column(name = "TITLE", nullable = false, length = 500)
-    private String title;
-
-    @Column(name = "DESCRIPTION", columnDefinition = "text")
+    @Column(name = "DESCRIPTION", length = 1000, columnDefinition = "text")
     private String description;
-
-    @Column(name = "ASSIGNE_NAME", length = 200)
-    private String assigneName;
-
-    @Column(name = "ASSIGNEE_EMAIL", length = 200)
-    private String assigneeEmail;
-
-    @Column(name = "ASSIGNEE_PHONE", length = 200)
-    private String assigneePhone;
 
     @Column(name = "DUE_DATE")
     private LocalDate dueDate;
 
     @Column(name = "RESOLVED_AT", columnDefinition = "TIMESTAMP")
-    private LocalDateTime resolvedAt;
+    private OffsetDateTime resolvedAt;
 
     @Column(name = "RESOLUTION_NOTES", columnDefinition = "text")
     private String resolutionNotes;
 
-    @NumberFormat(pattern = "#")
-    @Column(name = "AFFECTED_ROWS", precision = 19)
-    private BigInteger affectedRows;
-
     @NotNull
     @Column(name = "CREATED_AT", nullable = false, updatable = false, columnDefinition = "TIMESTAMP")
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
 
     @Column(name = "UPDATED_AT", columnDefinition = "TIMESTAMP")
-    private LocalDateTime updatedAt;
+    private OffsetDateTime updatedAt;
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
+    public void setResolvedAt(OffsetDateTime resolvedAt) {
+        this.resolvedAt = resolvedAt;
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
+    public OffsetDateTime getResolvedAt() {
+        return resolvedAt;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public void setUpdatedAt(OffsetDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
+    public OffsetDateTime getUpdatedAt() {
+        return updatedAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(OffsetDateTime createdAt) {
         this.createdAt = createdAt;
     }
 
-    public BigInteger getAffectedRows() {
-        return affectedRows;
-    }
-
-    public void setAffectedRows(BigInteger affectedRows) {
-        this.affectedRows = affectedRows;
+    public OffsetDateTime getCreatedAt() {
+        return createdAt;
     }
 
     public String getResolutionNotes() {
@@ -120,44 +102,12 @@ public class DqIssue {
         this.resolutionNotes = resolutionNotes;
     }
 
-    public LocalDateTime getResolvedAt() {
-        return resolvedAt;
-    }
-
-    public void setResolvedAt(LocalDateTime resolvedAt) {
-        this.resolvedAt = resolvedAt;
-    }
-
     public LocalDate getDueDate() {
         return dueDate;
     }
 
     public void setDueDate(LocalDate dueDate) {
         this.dueDate = dueDate;
-    }
-
-    public String getAssigneePhone() {
-        return assigneePhone;
-    }
-
-    public void setAssigneePhone(String assigneePhone) {
-        this.assigneePhone = assigneePhone;
-    }
-
-    public String getAssigneeEmail() {
-        return assigneeEmail;
-    }
-
-    public void setAssigneeEmail(String assigneeEmail) {
-        this.assigneeEmail = assigneeEmail;
-    }
-
-    public String getAssigneName() {
-        return assigneName;
-    }
-
-    public void setAssigneName(String assigneName) {
-        this.assigneName = assigneName;
     }
 
     public String getDescription() {
@@ -168,36 +118,12 @@ public class DqIssue {
         this.description = description;
     }
 
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public DqSeverity getSeverity() {
-        return severity == null ? null : DqSeverity.fromId(severity);
-    }
-
-    public void setSeverity(DqSeverity severity) {
-        this.severity = severity == null ? null : severity.getId();
-    }
-
     public DqIssueStatus getStatus() {
         return status == null ? null : DqIssueStatus.fromId(status);
     }
 
     public void setStatus(DqIssueStatus status) {
         this.status = status == null ? null : status.getId();
-    }
-
-    public String getDataSource() {
-        return dataSource;
-    }
-
-    public void setDataSource(String dataSource) {
-        this.dataSource = dataSource;
     }
 
     public DqRule getRule() {

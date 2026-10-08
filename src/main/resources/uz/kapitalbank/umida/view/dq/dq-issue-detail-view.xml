@@ -28,18 +28,11 @@
                     <action id="entityClearAction" type="entity_clear"/>
                 </actions>
             </entityPicker>
-            <textField id="dataSourceField" property="dataSource"/>
             <select id="statusField" property="status"/>
-            <select id="severityField" property="severity"/>
-            <textField id="titleField" property="title"/>
             <textArea id="descriptionField" property="description" minRows="5"/>
-            <textField id="assigneNameField" property="assigneName"/>
-            <textField id="assigneeEmailField" property="assigneeEmail"/>
-            <textField id="assigneePhoneField" property="assigneePhone"/>
             <datePicker id="dueDateField" property="dueDate"/>
             <dateTimePicker id="resolvedAtField" property="resolvedAt"/>
             <textArea id="resolutionNotesField" property="resolutionNotes" minRows="5"/>
-            <textField id="affectedRowsField" property="affectedRows"/>
             <dateTimePicker id="createdAtField" property="createdAt"/>
             <dateTimePicker id="updatedAtField" property="updatedAt"/>
         </formLayout>

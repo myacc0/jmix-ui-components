@@ -10,8 +10,6 @@
                 <property name="owner" fetchPlan="_instance_name"/>
                 <property name="domain" fetchPlan="_instance_name"/>
                 <property name="dataProduct" fetchPlan="_instance_name"/>
-                <property name="assigneeSubdivision" fetchPlan="_instance_name"/>
-                <property name="assigneeEmployee" fetchPlan="_instance_name"/>
             </fetchPlan>
             <loader id="dqRuleDl"/>
         </instance>

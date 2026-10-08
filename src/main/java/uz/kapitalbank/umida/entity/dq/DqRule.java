@@ -1,23 +1,30 @@
 package uz.kapitalbank.umida.entity.dq;
 
-import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
-import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
-import uz.kapitalbank.umida.entity.User;
-import uz.kapitalbank.umida.enums.dq.DqDimension;
-import uz.kapitalbank.umida.enums.dq.DqRuleType;
-import uz.kapitalbank.umida.enums.dq.DqSeverity;
-import uz.kapitalbank.umida.utils.JsonbStringConverter;
 import io.jmix.core.DeletePolicy;
+import io.jmix.core.annotation.DeletedBy;
+import io.jmix.core.annotation.DeletedDate;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
 import io.jmix.core.entity.annotation.OnDeleteInverse;
 import io.jmix.core.metamodel.annotation.InstanceName;
 import io.jmix.core.metamodel.annotation.JmixEntity;
+import io.jmix.core.metamodel.annotation.NumberFormat;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import org.eclipse.persistence.annotations.Convert;
 import org.eclipse.persistence.annotations.Converter;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import uz.kapitalbank.umida.entity.dict.DictDataDomain;
+import uz.kapitalbank.umida.entity.dict.DictDataProduct;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
+import uz.kapitalbank.umida.enums.dq.DqDimension;
+import uz.kapitalbank.umida.enums.dq.DqRuleType;
+import uz.kapitalbank.umida.enums.dq.DqSeverity;
+import uz.kapitalbank.umida.utils.JsonbStringConverter;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @JmixEntity
@@ -26,8 +33,7 @@ import java.util.UUID;
         @Index(name = "IDX_UMIDA_DQ_RULE_DOMAIN", columnList = "DOMAIN_ID"),
         @Index(name = "IDX_UMIDA_DQ_RULE_DATA_PRODUCT", columnList = "DATA_PRODUCT_ID"),
         @Index(name = "IDX_UMIDA_DQ_RULE_GROUP", columnList = "GROUP_ID"),
-        @Index(name = "IDX_UMIDA_DQ_RULE_ASSIGNEE_SUBDIVISION", columnList = "ASSIGNEE_SUBDIVISION_ID"),
-        @Index(name = "IDX_UMIDA_DQ_RULE_ASSIGNEE_EMPLOYEE", columnList = "ASSIGNEE_EMPLOYEE_ID")
+        @Index(name = "IDX_UMIDA_DQ_RULE_ASSIGNE", columnList = "ASSIGNEE_ID")
 })
 @Entity(name = "umida_DqRule")
 public class DqRule {
@@ -35,6 +41,10 @@ public class DqRule {
     @Column(name = "ID", nullable = false)
     @Id
     private UUID id;
+
+    @Column(name = "CODE", nullable = false, length = 50)
+    @NotNull
+    private String code;
 
     @InstanceName
     @Column(name = "NAME", nullable = false)
@@ -84,55 +94,171 @@ public class DqRule {
     private Boolean active = false;
 
     @OnDeleteInverse(DeletePolicy.UNLINK)
-    @JoinColumn(name = "OWNER_ID")
-    @ManyToOne(fetch = FetchType.LAZY)
-    private User owner;
-
-    @OnDeleteInverse(DeletePolicy.UNLINK)
     @JoinColumn(name = "DOMAIN_ID")
     @ManyToOne(fetch = FetchType.LAZY)
-    private DqDataDomain domain;
+    private DictDataDomain domain;
 
     @OnDeleteInverse(DeletePolicy.UNLINK)
     @JoinColumn(name = "DATA_PRODUCT_ID")
     @ManyToOne(fetch = FetchType.LAZY)
-    private DqDataProduct dataProduct;
+    private DictDataProduct dataProduct;
 
     @OnDeleteInverse(DeletePolicy.UNLINK)
-    @JoinColumn(name = "ASSIGNEE_SUBDIVISION_ID")
+    @JoinColumn(name = "OWNER_ID")
     @ManyToOne(fetch = FetchType.LAZY)
-    private OrgStructureSubdivision assigneeSubdivision;
+    private OrgStructureSubdivision owner;
 
     @OnDeleteInverse(DeletePolicy.UNLINK)
-    @JoinColumn(name = "ASSIGNEE_EMPLOYEE_ID")
+    @JoinColumn(name = "ASSIGNEE_ID")
     @ManyToOne(fetch = FetchType.LAZY)
-    private OrgStructureEmployee assigneeEmployee;
+    private OrgStructureSubdivision assignee;
+
+    @NumberFormat(pattern = "#")
+    @Column(name = "DUE_DAYS")
+    private Integer dueDays;
+
+    @Column(name = "KEY_FIELDS_CHANGED_AT", nullable = false)
+    @NotNull
+    private OffsetDateTime keyFieldsChangedAt;
 
     @Column(name = "VERSION", nullable = false)
     @Version
     private Integer version;
 
-    @Column(name = "CREATED_AT", nullable = false, columnDefinition = "TIMESTAMP")
-    @NotNull
-    private LocalDateTime createdAt;
+    @CreatedBy
+    @Column(name = "CREATED_BY")
+    private String createdBy;
 
-    @Column(name = "UPDATED_AT", columnDefinition = "TIMESTAMP")
-    private LocalDateTime updatedAt;
+    @CreatedDate
+    @Column(name = "CREATED_DATE")
+    private OffsetDateTime createdDate;
 
-    public OrgStructureEmployee getAssigneeEmployee() {
-        return assigneeEmployee;
+    @LastModifiedBy
+    @Column(name = "LAST_MODIFIED_BY")
+    private String lastModifiedBy;
+
+    @LastModifiedDate
+    @Column(name = "LAST_MODIFIED_DATE")
+    private OffsetDateTime lastModifiedDate;
+
+    @DeletedBy
+    @Column(name = "DELETED_BY")
+    private String deletedBy;
+
+    @DeletedDate
+    @Column(name = "DELETED_DATE")
+    private OffsetDateTime deletedDate;
+
+    public String getCode() {
+        return code;
     }
 
-    public void setAssigneeEmployee(OrgStructureEmployee assigneeEmployee) {
-        this.assigneeEmployee = assigneeEmployee;
+    public void setCode(String code) {
+        this.code = code;
     }
 
-    public OrgStructureSubdivision getAssigneeSubdivision() {
-        return assigneeSubdivision;
+    public Integer getDueDays() {
+        return dueDays;
     }
 
-    public void setAssigneeSubdivision(OrgStructureSubdivision subdivision) {
-        this.assigneeSubdivision = subdivision;
+    public void setDueDays(Integer dueDays) {
+        this.dueDays = dueDays;
+    }
+
+    public OffsetDateTime getKeyFieldsChangedAt() {
+        return keyFieldsChangedAt;
+    }
+
+    public void setKeyFieldsChangedAt(OffsetDateTime keyFieldsChangedAt) {
+        this.keyFieldsChangedAt = keyFieldsChangedAt;
+    }
+
+    public OrgStructureSubdivision getAssignee() {
+        return assignee;
+    }
+
+    public void setAssignee(OrgStructureSubdivision assigne) {
+        this.assignee = assigne;
+    }
+
+    public void setOwner(OrgStructureSubdivision owner) {
+        this.owner = owner;
+    }
+
+    public OrgStructureSubdivision getOwner() {
+        return owner;
+    }
+
+    public OffsetDateTime getDeletedDate() {
+        return deletedDate;
+    }
+
+    public void setDeletedDate(OffsetDateTime deletedDate) {
+        this.deletedDate = deletedDate;
+    }
+
+    public String getDeletedBy() {
+        return deletedBy;
+    }
+
+    public void setDeletedBy(String deletedBy) {
+        this.deletedBy = deletedBy;
+    }
+
+    public OffsetDateTime getLastModifiedDate() {
+        return lastModifiedDate;
+    }
+
+    public void setLastModifiedDate(OffsetDateTime lastModifiedDate) {
+        this.lastModifiedDate = lastModifiedDate;
+    }
+
+    public String getLastModifiedBy() {
+        return lastModifiedBy;
+    }
+
+    public void setLastModifiedBy(String lastModifiedBy) {
+        this.lastModifiedBy = lastModifiedBy;
+    }
+
+    public OffsetDateTime getCreatedDate() {
+        return createdDate;
+    }
+
+    public void setCreatedDate(OffsetDateTime createdDate) {
+        this.createdDate = createdDate;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
+
+    public void setDataProduct(DictDataProduct dataProduct) {
+        this.dataProduct = dataProduct;
+    }
+
+    public DictDataProduct getDataProduct() {
+        return dataProduct;
+    }
+
+    public void setDomain(DictDataDomain domain) {
+        this.domain = domain;
+    }
+
+    public DictDataDomain getDomain() {
+        return domain;
     }
 
     public DqRuleGroup getGroup() {
@@ -149,54 +275,6 @@ public class DqRule {
 
     public void setDbSchema(String schema) {
         this.dbSchema = schema;
-    }
-
-    public DqDataProduct getDataProduct() {
-        return dataProduct;
-    }
-
-    public void setDataProduct(DqDataProduct dataProduct) {
-        this.dataProduct = dataProduct;
-    }
-
-    public DqDataDomain getDomain() {
-        return domain;
-    }
-
-    public void setDomain(DqDataDomain domain) {
-        this.domain = domain;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Integer getVersion() {
-        return version;
-    }
-
-    public void setVersion(Integer version) {
-        this.version = version;
-    }
-
-    public User getOwner() {
-        return owner;
-    }
-
-    public void setOwner(User owner) {
-        this.owner = owner;
     }
 
     public Boolean getActive() {
@@ -285,16 +363,6 @@ public class DqRule {
 
     public void setId(UUID id) {
         this.id = id;
-    }
-
-    @PrePersist
-    public void prePersist() {
-        this.createdAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    public void preUpdate() {
-        this.updatedAt = LocalDateTime.now();
     }
 
 }

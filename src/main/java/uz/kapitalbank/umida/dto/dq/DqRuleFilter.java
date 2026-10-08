@@ -1,16 +1,16 @@
 package uz.kapitalbank.umida.dto.dq;
 
-import uz.kapitalbank.umida.entity.dq.DqDataDomain;
-import uz.kapitalbank.umida.entity.dq.DqDataProduct;
-import uz.kapitalbank.umida.entity.dq.DqRuleGroup;
-import uz.kapitalbank.umida.entity.User;
-import uz.kapitalbank.umida.enums.dq.DqDimension;
-import uz.kapitalbank.umida.enums.dq.DqRuleType;
-import uz.kapitalbank.umida.enums.dq.DqSeverity;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
 import io.jmix.core.entity.annotation.JmixId;
 import io.jmix.core.metamodel.annotation.JmixEntity;
 import io.jmix.core.metamodel.annotation.JmixProperty;
+import uz.kapitalbank.umida.entity.dict.DictDataDomain;
+import uz.kapitalbank.umida.entity.dict.DictDataProduct;
+import uz.kapitalbank.umida.entity.dq.DqRuleGroup;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
+import uz.kapitalbank.umida.enums.dq.DqDimension;
+import uz.kapitalbank.umida.enums.dq.DqRuleType;
+import uz.kapitalbank.umida.enums.dq.DqSeverity;
 
 import java.util.UUID;
 
@@ -34,19 +34,19 @@ public class DqRuleFilter {
     private DqRuleGroup group;
 
     @JmixProperty
-    private DqDataDomain domain;
+    private DictDataDomain domain;
 
     @JmixProperty
-    private DqDataProduct dataProduct;
+    private DictDataProduct dataProduct;
 
     @JmixProperty
-    private DqDimension dimension;
+    private String dimension;
 
     @JmixProperty
-    private DqSeverity severity;
+    private String severity;
 
     @JmixProperty
-    private DqRuleType ruleType;
+    private String ruleType;
 
     @JmixProperty
     private String tableName;
@@ -55,7 +55,55 @@ public class DqRuleFilter {
     private String columnName;
 
     @JmixProperty
-    private User owner;
+    private OrgStructureSubdivision owner;
+
+    public void setOwner(OrgStructureSubdivision owner) {
+        this.owner = owner;
+    }
+
+    public OrgStructureSubdivision getOwner() {
+        return owner;
+    }
+
+    public void setDataProduct(DictDataProduct dataProduct) {
+        this.dataProduct = dataProduct;
+    }
+
+    public DictDataProduct getDataProduct() {
+        return dataProduct;
+    }
+
+    public void setDomain(DictDataDomain domain) {
+        this.domain = domain;
+    }
+
+    public DictDataDomain getDomain() {
+        return domain;
+    }
+
+    public void setDimension(DqDimension dimension) {
+        this.dimension = dimension == null ? null : dimension.getId();
+    }
+
+    public DqDimension getDimension() {
+        return dimension == null ? null : DqDimension.fromId(dimension);
+    }
+
+    public void setSeverity(DqSeverity severity) {
+        this.severity = severity == null ? null : severity.getId();
+    }
+
+    public DqSeverity getSeverity() {
+        return severity == null ? null : DqSeverity.fromId(severity);
+    }
+
+    public void setRuleType(DqRuleType ruleType) {
+        this.ruleType = ruleType == null ? null : ruleType.getId();
+    }
+
+    public DqRuleType getRuleType() {
+        return ruleType == null ? null : DqRuleType.fromId(ruleType);
+    }
 
     public UUID getId() {
         return id;
@@ -81,46 +129,6 @@ public class DqRuleFilter {
         this.group = group;
     }
 
-    public DqDataDomain getDomain() {
-        return domain;
-    }
-
-    public void setDomain(DqDataDomain domain) {
-        this.domain = domain;
-    }
-
-    public DqDataProduct getDataProduct() {
-        return dataProduct;
-    }
-
-    public void setDataProduct(DqDataProduct dataProduct) {
-        this.dataProduct = dataProduct;
-    }
-
-    public DqDimension getDimension() {
-        return dimension;
-    }
-
-    public void setDimension(DqDimension dimension) {
-        this.dimension = dimension;
-    }
-
-    public DqSeverity getSeverity() {
-        return severity;
-    }
-
-    public void setSeverity(DqSeverity severity) {
-        this.severity = severity;
-    }
-
-    public DqRuleType getRuleType() {
-        return ruleType;
-    }
-
-    public void setRuleType(DqRuleType ruleType) {
-        this.ruleType = ruleType;
-    }
-
     public String getTableName() {
         return tableName;
     }
@@ -137,11 +145,4 @@ public class DqRuleFilter {
         this.columnName = columnName;
     }
 
-    public User getOwner() {
-        return owner;
-    }
-
-    public void setOwner(User owner) {
-        this.owner = owner;
-    }
 }

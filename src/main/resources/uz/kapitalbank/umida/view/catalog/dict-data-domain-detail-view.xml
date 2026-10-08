@@ -58,7 +58,7 @@
             </tab>
             <tab id="stewardsTab" label="msg://stewardsTab.label" enabled="false">
                 <fragment id="stewardsFragment"
-                          class="uz.kapitalbank.umida.view.dict.DictDataDomainStewardListFragment"/>
+                          class="uz.kapitalbank.umida.view.catalog.DictDataDomainStewardListFragment"/>
             </tab>
         </tabSheet>
         <hbox id="detailActions">

@@ -19,10 +19,9 @@
         <action id="closeAction" type="detail_close"/>
     </actions>
     <layout>
-        <formLayout id="form" dataContainer="dqRuleGroupDc">
+        <formLayout id="form" dataContainer="dqRuleGroupDc" width="50%">
             <responsiveSteps>
                 <responsiveStep minWidth="0" columns="1"/>
-                <responsiveStep minWidth="40em" columns="2"/>
             </responsiveSteps>
             <textField id="nameField" property="name"/>
             <entityPicker id="parentField" property="parent">
@@ -33,7 +32,7 @@
             </entityPicker>
             <textArea id="descriptionField" property="description" minRows="5"/>
         </formLayout>
-        <hbox id="detailActions">
+        <hbox id="detailActions" width="50%">
             <button id="saveAndCloseButton" action="saveCloseAction"/>
             <button id="closeButton" action="closeAction"/>
         </hbox>

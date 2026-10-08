@@ -4,17 +4,14 @@ import io.jmix.core.metamodel.datatype.EnumClass;
 
 import org.springframework.lang.Nullable;
 
-public enum DqAuditAction implements EnumClass<String> {
+public enum DqCheckRunTrigger implements EnumClass<String> {
 
-    CREATE("create"),
-    UPDATE("update"),
-    DELETE("delete"),
-    ACTIVATE("activate"),
-    DEACTIVATE("deactivate");
+    MANUAL("manual"),
+    SYSTEM("system");
 
     private final String id;
 
-    DqAuditAction(String id) {
+    DqCheckRunTrigger(String id) {
         this.id = id;
     }
 
@@ -23,8 +20,8 @@ public enum DqAuditAction implements EnumClass<String> {
     }
 
     @Nullable
-    public static DqAuditAction fromId(String id) {
-        for (DqAuditAction at : DqAuditAction.values()) {
+    public static DqCheckRunTrigger fromId(String id) {
+        for (DqCheckRunTrigger at : DqCheckRunTrigger.values()) {
             if (at.getId().equals(id)) {
                 return at;
             }

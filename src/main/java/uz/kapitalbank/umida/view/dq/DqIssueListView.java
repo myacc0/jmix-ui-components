@@ -40,7 +40,7 @@ public class DqIssueListView extends StandardListView<DqIssue> {
 
     @Supply(to = "dqIssuesDataGrid.severity", subject = "renderer")
     private Renderer<DqIssue> dqIssuesDataGridSeverityRenderer() {
-        return dqBadges.renderer(DqBadges.SEVERITY, DqIssue::getSeverity);
+        return dqBadges.renderer(DqBadges.SEVERITY, dqIssue -> dqIssue.getRule().getSeverity());
     }
 
     /** Only an open issue can be assigned: once it is resolved or closed, the assignee is history. */

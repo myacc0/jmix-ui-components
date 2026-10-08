@@ -1,20 +1,5 @@
 package uz.kapitalbank.umida.dq;
 
-import uz.kapitalbank.umida.UmidaApplication;
-import uz.kapitalbank.umida.service.dq.DqBadges;
-import uz.kapitalbank.umida.entity.dq.DqCheckRun;
-import uz.kapitalbank.umida.entity.dq.DqDataDomain;
-import uz.kapitalbank.umida.entity.dq.DqIssue;
-import uz.kapitalbank.umida.entity.dq.DqRule;
-import uz.kapitalbank.umida.enums.dq.DqCheckRunStatus;
-import uz.kapitalbank.umida.enums.dq.DqDimension;
-import uz.kapitalbank.umida.enums.dq.DqIssueStatus;
-import uz.kapitalbank.umida.enums.dq.DqRuleType;
-import uz.kapitalbank.umida.enums.dq.DqSeverity;
-import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
-import uz.kapitalbank.umida.view.dq.DqCheckRunListView;
-import uz.kapitalbank.umida.view.dq.DqIssueListView;
-import uz.kapitalbank.umida.view.dq.DqRuleListView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
@@ -33,13 +18,22 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import uz.kapitalbank.umida.UmidaApplication;
+import uz.kapitalbank.umida.entity.dict.DictDataDomain;
+import uz.kapitalbank.umida.entity.dq.DqCheckRun;
+import uz.kapitalbank.umida.entity.dq.DqIssue;
+import uz.kapitalbank.umida.entity.dq.DqRule;
+import uz.kapitalbank.umida.enums.dq.*;
+import uz.kapitalbank.umida.service.dq.DqBadges;
+import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
+import uz.kapitalbank.umida.view.dq.DqCheckRunListView;
+import uz.kapitalbank.umida.view.dq.DqIssueListView;
+import uz.kapitalbank.umida.view.dq.DqRuleListView;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * The enum columns of the DQ list views render their value as a badge. The stylesheet cannot be
@@ -60,7 +54,7 @@ public class DqBadgeColumnsUiTest {
     @Autowired
     Messages messages;
 
-    private DqDataDomain domain;
+    private DictDataDomain domain;
     private DqRule rule;
     private DqIssue issue;
     private DqCheckRun checkRun;
@@ -69,11 +63,10 @@ public class DqBadgeColumnsUiTest {
     void setUp() {
         String suffix = UUID.randomUUID().toString().substring(0, 8);
 
-        domain = dataManager.create(DqDataDomain.class);
+        domain = dataManager.create(DictDataDomain.class);
         domain.setCode("dq-badge-" + suffix);
         domain.setShortName("DQ BDG " + suffix);
-        domain.setName("DQ badge UI test domain " + suffix);
-        domain.setCreatedAt(LocalDateTime.now());
+        domain.setShortName("DQ badge UI test domain " + suffix);
         domain = dataManager.save(domain);
 
         rule = dataManager.create(DqRule.class);

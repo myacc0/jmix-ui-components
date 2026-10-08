@@ -1,20 +1,26 @@
 package uz.kapitalbank.umida.entity.dq;
 
-import uz.kapitalbank.umida.enums.dq.DqCheckRunStatus;
+import io.jmix.core.DeletePolicy;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
+import io.jmix.core.entity.annotation.OnDeleteInverse;
 import io.jmix.core.metamodel.annotation.Composition;
 import io.jmix.core.metamodel.annotation.JmixEntity;
 import io.jmix.core.metamodel.annotation.NumberFormat;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
+import uz.kapitalbank.umida.enums.dq.DqCheckRunStatus;
+import uz.kapitalbank.umida.enums.dq.DqCheckRunTrigger;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
 @JmixEntity
-@Table(name = "UMIDA_DQ_CHECK_RUN")
+@Table(name = "UMIDA_DQ_CHECK_RUN", indexes = {
+        @Index(name = "IDX_UMIDA_DQ_CHECK_RUN_TRIGGERED_BY", columnList = "TRIGGERED_BY_ID")
+})
 @Entity(name = "umida_DqCheckRun")
 public class DqCheckRun {
     @JmixGeneratedValue
@@ -26,16 +32,21 @@ public class DqCheckRun {
     @NotNull
     private String dataSource;
 
-    @Column(name = "TRIGGERED_USERNAME", nullable = false, length = 200)
+    @Column(name = "TRIGGERED", nullable = false, length = 50)
     @NotNull
-    private String triggeredUsername;
+    private String triggered;
 
-    @Column(name = "STARTED_AT", nullable = false, columnDefinition = "TIMESTAMP")
+    @OnDeleteInverse(DeletePolicy.UNLINK)
+    @JoinColumn(name = "TRIGGERED_BY_ID")
+    @ManyToOne(fetch = FetchType.LAZY)
+    private OrgStructureEmployee triggeredBy;
+
     @NotNull
-    private LocalDateTime startedAt;
+    @Column(name = "STARTED_AT", nullable = false, columnDefinition = "TIMESTAMP")
+    private OffsetDateTime startedAt;
 
     @Column(name = "FINISHED_AT", columnDefinition = "TIMESTAMP")
-    private LocalDateTime finishedAt;
+    private OffsetDateTime finishedAt;
 
     @Column(name = "STATUS", nullable = false, length = 20)
     @NotNull
@@ -67,6 +78,38 @@ public class DqCheckRun {
     @Composition
     @OneToMany(mappedBy = "checkRun")
     private List<DqCheckRunResult> checkResults;
+
+    public void setFinishedAt(OffsetDateTime finishedAt) {
+        this.finishedAt = finishedAt;
+    }
+
+    public OffsetDateTime getFinishedAt() {
+        return finishedAt;
+    }
+
+    public void setStartedAt(OffsetDateTime startedAt) {
+        this.startedAt = startedAt;
+    }
+
+    public OffsetDateTime getStartedAt() {
+        return startedAt;
+    }
+
+    public OrgStructureEmployee getTriggeredBy() {
+        return triggeredBy;
+    }
+
+    public void setTriggeredBy(OrgStructureEmployee triggeredBy) {
+        this.triggeredBy = triggeredBy;
+    }
+
+    public DqCheckRunTrigger getTriggered() {
+        return triggered == null ? null : DqCheckRunTrigger.fromId(triggered);
+    }
+
+    public void setTriggered(DqCheckRunTrigger triggered) {
+        this.triggered = triggered == null ? null : triggered.getId();
+    }
 
     public List<DqCheckRunResult> getCheckResults() {
         return checkResults;
@@ -130,30 +173,6 @@ public class DqCheckRun {
 
     public void setStatus(DqCheckRunStatus status) {
         this.status = status == null ? null : status.getId();
-    }
-
-    public LocalDateTime getFinishedAt() {
-        return finishedAt;
-    }
-
-    public void setFinishedAt(LocalDateTime finishedAt) {
-        this.finishedAt = finishedAt;
-    }
-
-    public LocalDateTime getStartedAt() {
-        return startedAt;
-    }
-
-    public void setStartedAt(LocalDateTime startedAt) {
-        this.startedAt = startedAt;
-    }
-
-    public String getTriggeredUsername() {
-        return triggeredUsername;
-    }
-
-    public void setTriggeredUsername(String triggeredUsername) {
-        this.triggeredUsername = triggeredUsername;
     }
 
     public String getDataSource() {

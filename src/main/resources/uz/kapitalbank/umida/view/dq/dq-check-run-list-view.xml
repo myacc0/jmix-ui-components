@@ -49,7 +49,6 @@
             </actions>
             <columns resizable="true">
                 <column property="dataSource" autoWidth="true" flexGrow="0"/>
-                <column property="triggeredUsername" autoWidth="true" flexGrow="0"/>
                 <column property="startedAt" autoWidth="true" flexGrow="0"/>
                 <column property="finishedAt" autoWidth="true" flexGrow="0"/>
                 <column property="status" autoWidth="true" flexGrow="0"/>
