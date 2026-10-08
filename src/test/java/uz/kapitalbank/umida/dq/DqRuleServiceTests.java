@@ -87,11 +87,11 @@ class DqRuleServiceTests {
         assertThat(reload(rule).getKeyFieldsChangedAt()).isEqualTo(created);
 
         // the same config, reformatted as the editor does
-        rule.setRuleConfig("{\n  \"sampleSize\" : 10,\n  \"threshold\" : 100\n}");
+        rule.setRuleConfig("{\n  \"threshold\" : 100\n}");
         rule = save(rule);
         assertThat(reload(rule).getKeyFieldsChangedAt()).isEqualTo(created);
 
-        rule.setRuleConfig("{\"threshold\": 90.0, \"sampleSize\": 10}");
+        rule.setRuleConfig("{\"threshold\": 90.0}");
         rule = save(rule);
         OffsetDateTime configChanged = reload(rule).getKeyFieldsChangedAt();
         assertThat(configChanged).isAfter(created);
@@ -135,7 +135,7 @@ class DqRuleServiceTests {
         rule.setColumnName("name");
         rule.setDimension(DqDimension.COMPLETENESS);
         rule.setRuleType(DqRuleType.NOT_NULL);
-        rule.setRuleConfig("{\"threshold\": 100.0, \"sampleSize\": 10}");
+        rule.setRuleConfig("{\"threshold\": 100.0}");
         rule.setSeverity(DqSeverity.LOW);
         return rule;
     }

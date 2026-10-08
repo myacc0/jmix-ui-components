@@ -32,11 +32,6 @@ public class DqRuleValidator {
     private static final int MIN_THRESHOLD = 0;
     private static final int MAX_THRESHOLD = 100;
 
-    /** The accepted sample size, also used by the editor to bound its input. */
-    public static final int MIN_SAMPLE_SIZE = 1;
-    public static final int MAX_SAMPLE_SIZE = 100;
-    public static final int DEFAULT_SAMPLE_SIZE = 10;
-
     /** The accepted issue resolution period, in days, also used by the editor to bound its input. */
     public static final int MIN_DUE_DAYS = 1;
     public static final int MAX_DUE_DAYS = 365;
@@ -112,12 +107,6 @@ public class DqRuleValidator {
         if (threshold != null && (threshold < MIN_THRESHOLD || threshold > MAX_THRESHOLD)) {
             errors.add(formatError(FIELD_THRESHOLD, "dqRuleValidation.thresholdOutOfRange",
                     MIN_THRESHOLD, MAX_THRESHOLD));
-        }
-
-        Integer sampleSize = config.getSampleSize();
-        if (sampleSize != null && (sampleSize < MIN_SAMPLE_SIZE || sampleSize > MAX_SAMPLE_SIZE)) {
-            errors.add(formatError(FIELD_SAMPLE_SIZE, "dqRuleValidation.sampleSizeOutOfRange",
-                    MIN_SAMPLE_SIZE, MAX_SAMPLE_SIZE));
         }
     }
 

@@ -10,8 +10,6 @@ import java.util.List;
 public class DqRuleConfig {
     // threshold default 100%
     private Double threshold;
-    // if null, all selected
-    private Integer sampleSize;
     // columns projected by the samples query; if null or empty, the whole row is stored.
     // Wide tables would otherwise blow up the sample storage and make the samples hard to read.
     private List<String> samplesQueryColumns;
@@ -48,14 +46,6 @@ public class DqRuleConfig {
 
     public void setThreshold(Double threshold) {
         this.threshold = threshold;
-    }
-
-    public Integer getSampleSize() {
-        return sampleSize;
-    }
-
-    public void setSampleSize(Integer sampleSize) {
-        this.sampleSize = sampleSize;
     }
 
     public List<String> getSamplesQueryColumns() {
@@ -182,7 +172,6 @@ public class DqRuleConfig {
     public String toString() {
         return "DqRuleConfig{" +
                 "threshold=" + threshold +
-                ", sampleSize=" + sampleSize +
                 ", samplesQueryColumns=" + samplesQueryColumns +
                 ", min=" + min +
                 ", max=" + max +

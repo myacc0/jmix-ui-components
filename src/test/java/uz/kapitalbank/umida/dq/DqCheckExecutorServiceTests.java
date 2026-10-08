@@ -16,6 +16,7 @@ import uz.kapitalbank.umida.entity.dict.DictDataDomain;
 import uz.kapitalbank.umida.entity.dq.*;
 import uz.kapitalbank.umida.enums.dq.*;
 import uz.kapitalbank.umida.service.dq.DqCheckExecutorService;
+import uz.kapitalbank.umida.service.dq.DqSqlQueryBuilder;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
 
 import java.math.BigDecimal;
@@ -66,7 +67,7 @@ public class DqCheckExecutorServiceTests {
         // "name" is a NOT NULL column, so no row can violate the rule
         passingRule = createRule("passing", DqRuleType.NOT_NULL, "name", "{}");
         // the domain created above has no parent, so this rule always finds a violation
-        failingRule = createRule("failing", DqRuleType.NOT_NULL, "parent_id", "{\"sampleSize\": 5}");
+        failingRule = createRule("failing", DqRuleType.NOT_NULL, "parent_id", "{}");
         // the query builder does not translate this type yet
         unsupportedRule = createRule("unsupported", DqRuleType.CUSTOM_SQL, "name",
                 "{\"sql\": \"select 1\"}");
@@ -113,7 +114,7 @@ public class DqCheckExecutorServiceTests {
         JsonNode samples = readSamples(failed);
         assertTrue(samples.isArray());
         assertTrue(samples.size() > 0);
-        assertTrue(samples.size() <= 5, "sampleSize of the rule configuration caps the samples");
+        assertTrue(samples.size() <= DqSqlQueryBuilder.MAX_SAMPLE_ROWS, "the query builder caps the samples");
 
         DqCheckRunResult skipped = resultOf(results, unsupportedRule);
         assertEquals(DqCheckResultStatus.SKIPPED, skipped.getStatus());

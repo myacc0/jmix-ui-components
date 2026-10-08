@@ -32,8 +32,8 @@ import java.util.stream.Collectors;
  * <ul>
  *     <li>a <b>metrics</b> query returning {@value #COLUMN_TOTAL_COUNT} and
  *     {@value #COLUMN_FAILED_COUNT} in a single row;</li>
- *     <li>a <b>samples</b> query returning the violating rows, capped by {@code ruleConfig.sampleSize}
- *     (no cap when it is not set) and projected onto {@code ruleConfig.samplesQueryColumns}
+ *     <li>a <b>samples</b> query returning the violating rows, capped at {@value #MAX_SAMPLE_ROWS}
+ *     and projected onto {@code ruleConfig.samplesQueryColumns}
  *     ({@value #ALL_COLUMNS}, or an absent list, keeps the whole row).</li>
  * </ul>
  * The {@code threshold} attribute is deliberately not part of the SQL: it compares against the pass
@@ -47,6 +47,12 @@ import java.util.stream.Collectors;
  */
 @Service
 public class DqSqlQueryBuilder {
+
+    /**
+     * The number of violating rows the samples query returns. They only illustrate a failure, and
+     * an uncapped query against a large table would be read into memory in full.
+     */
+    public static final int MAX_SAMPLE_ROWS = 20;
 
     /** Alias of the total row count in the metrics query. */
     public static final String COLUMN_TOTAL_COUNT = "total_count";
@@ -232,10 +238,7 @@ public class DqSqlQueryBuilder {
         if (orderByColumn != null) {
             samples.append(" ORDER BY ").append(orderByColumn);
         }
-        Integer sampleSize = config.getSampleSize();
-        if (sampleSize != null && sampleSize > 0) {
-            samples.append(' ').append(dialect.limitClause(sampleSize));
-        }
+        samples.append(' ').append(dialect.limitClause(MAX_SAMPLE_ROWS));
 
         return new DqRuleQueries(
                 new DqSqlQuery(metrics, violation.params()),

@@ -128,8 +128,6 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
     @ViewComponent
     private Slider thresholdField;
     @ViewComponent
-    private JmixNumberField sampleSizeField;
-    @ViewComponent
     private JmixMultiSelectComboBox<String> samplesQueryColumnsField;
 
     /** Columns of the currently selected table — the item set of {@link #samplesQueryColumnsField}. */
@@ -161,11 +159,6 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         // the same bounds the validator enforces
         dueDaysField.setMin(DqRuleValidator.MIN_DUE_DAYS);
         dueDaysField.setMax(DqRuleValidator.MAX_DUE_DAYS);
-
-        // the same bounds the validator enforces, so the field cannot offer a value it would reject
-        sampleSizeField.setMin(DqRuleValidator.MIN_SAMPLE_SIZE);
-        sampleSizeField.setMax(DqRuleValidator.MAX_SAMPLE_SIZE);
-        sampleSizeField.setStep(1);
 
         List<SelectDto> dataSources = dataSourceProvider.getDataSourceList();
         dataSourceField.setItems(dataSources.stream().map(SelectDto::getId).collect(Collectors.toList()));
@@ -236,7 +229,6 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         maxIncludedField.addValueChangeListener(e -> onDynamicFieldChange());
         regexpField.addValueChangeListener(e -> onDynamicFieldChange());
         thresholdField.addValueChangeListener(e -> onDynamicFieldChange());
-        sampleSizeField.addValueChangeListener(e -> onDynamicFieldChange());
         samplesQueryColumnsField.addValueChangeListener(e -> onDynamicFieldChange());
     }
 
@@ -333,10 +325,6 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         // Always-visible config fields, independent of rule type.
         Double threshold = config != null ? config.getThreshold() : null;
         thresholdField.setValue(threshold != null ? (int) Math.round(threshold) : 100);
-        Integer sampleSize = config != null ? config.getSampleSize() : null;
-        sampleSizeField.setValue(sampleSize != null
-                ? sampleSize.doubleValue()
-                : (double) DqRuleValidator.DEFAULT_SAMPLE_SIZE);
         List<String> samplesQueryColumns = config != null ? config.getSamplesQueryColumns() : null;
         // "*" is the stored form of "every column"; the picker shows it as an empty selection, which
         // reads as the placeholder rather than as a chip per column on a table that has hundreds
@@ -395,8 +383,6 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         }
         // Always-visible config fields, independent of rule type.
         config.setThreshold(thresholdField.getValue() != null ? thresholdField.getValue().doubleValue() : null);
-        Double sampleSize = sampleSizeField.getValue();
-        config.setSampleSize(sampleSize != null ? (int) Math.round(sampleSize) : null);
         config.setSamplesQueryColumns(samplesProjection());
         try {
             getEditedEntity().setRuleConfig(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(config));
@@ -448,7 +434,6 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
             case DqRuleValidationError.FIELD_COLUMN_NAME -> columnNameField;
             case DqRuleValidationError.FIELD_RULE_TYPE -> ruleTypeField;
             case DqRuleValidationError.FIELD_THRESHOLD -> thresholdField;
-            case DqRuleValidationError.FIELD_SAMPLE_SIZE -> sampleSizeField;
             case DqRuleValidationError.FIELD_REGEXP -> regexpField;
             case DqRuleValidationError.FIELD_MIN -> rangeDate ? minDateField : minNumberField;
             case DqRuleValidationError.FIELD_MAX -> rangeDate ? maxDateField : maxNumberField;

@@ -146,10 +146,6 @@
                             value="100"
                             css="margin-top: 10px"/>
 
-                <formItem label="msg://ruleConfig.sampleSize">
-                    <numberField id="sampleSizeField" stepButtonsVisible="true"/>
-                </formItem>
-
                 <formItem label="msg://ruleConfig.samplesQueryColumns">
                     <multiSelectComboBox id="samplesQueryColumnsField"
                                          placeholder="msg://ruleConfig.samplesQueryColumns.placeholder"

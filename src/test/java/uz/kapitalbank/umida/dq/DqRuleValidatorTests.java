@@ -70,17 +70,6 @@ public class DqRuleValidatorTests {
         assertTrue(fields(rule(DqRuleType.NOT_NULL, "{\"threshold\": 100}")).isEmpty());
     }
 
-    @Test
-    void sampleSizeOutsideOneToHundredIsRejected() {
-        assertEquals(List.of(FIELD_SAMPLE_SIZE), fields(rule(DqRuleType.NOT_NULL, "{\"sampleSize\": 0}")));
-        assertEquals(List.of(FIELD_SAMPLE_SIZE), fields(rule(DqRuleType.NOT_NULL, "{\"sampleSize\": -1}")));
-        assertEquals(List.of(FIELD_SAMPLE_SIZE), fields(rule(DqRuleType.NOT_NULL, "{\"sampleSize\": 101}")));
-        assertTrue(fields(rule(DqRuleType.NOT_NULL, "{\"sampleSize\": 1}")).isEmpty());
-        assertTrue(fields(rule(DqRuleType.NOT_NULL, "{\"sampleSize\": 100}")).isEmpty());
-        // the config attribute stays optional
-        assertTrue(fields(rule(DqRuleType.NOT_NULL, "{}")).isEmpty());
-    }
-
     // ----- NOT_NULL / UNIQUENESS -----
 
     @ParameterizedTest
