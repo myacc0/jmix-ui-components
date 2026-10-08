@@ -17,7 +17,6 @@
                 <property name="severity"/>
                 <property name="active"/>
                 <property name="group" fetchPlan="_instance_name"/>
-                <property name="owner" fetchPlan="_instance_name"/>
                 <property name="domain" fetchPlan="_instance_name"/>
                 <property name="dataProduct" fetchPlan="_instance_name"/>
             </fetchPlan>
@@ -68,7 +67,6 @@
                 <column property="ruleType" autoWidth="true" flexGrow="0" filterable="true"/>
                 <column property="severity" autoWidth="true" flexGrow="0" filterable="true"/>
                 <column property="active" autoWidth="true" flexGrow="0" filterable="true"/>
-                <column property="owner" autoWidth="true" flexGrow="0" filterable="true"/>
                 <column property="domain" autoWidth="true" flexGrow="0" filterable="true"/>
                 <column property="dataProduct" autoWidth="true" flexGrow="0" filterable="true"/>
             </columns>

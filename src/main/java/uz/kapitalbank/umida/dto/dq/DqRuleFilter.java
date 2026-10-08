@@ -7,7 +7,6 @@ import io.jmix.core.metamodel.annotation.JmixProperty;
 import uz.kapitalbank.umida.entity.dict.DictDataDomain;
 import uz.kapitalbank.umida.entity.dict.DictDataProduct;
 import uz.kapitalbank.umida.entity.dq.DqRuleGroup;
-import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.enums.dq.DqDimension;
 import uz.kapitalbank.umida.enums.dq.DqRuleType;
 import uz.kapitalbank.umida.enums.dq.DqSeverity;
@@ -53,17 +52,6 @@ public class DqRuleFilter {
 
     @JmixProperty
     private String columnName;
-
-    @JmixProperty
-    private OrgStructureSubdivision owner;
-
-    public void setOwner(OrgStructureSubdivision owner) {
-        this.owner = owner;
-    }
-
-    public OrgStructureSubdivision getOwner() {
-        return owner;
-    }
 
     public void setDataProduct(DictDataProduct dataProduct) {
         this.dataProduct = dataProduct;

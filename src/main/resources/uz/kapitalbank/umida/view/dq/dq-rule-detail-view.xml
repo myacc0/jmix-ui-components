@@ -7,7 +7,6 @@
         <instance id="dqRuleDc" class="uz.kapitalbank.umida.entity.dq.DqRule">
             <fetchPlan extends="_base">
                 <property name="group" fetchPlan="_instance_name"/>
-                <property name="owner" fetchPlan="_instance_name"/>
                 <property name="assignee" fetchPlan="_instance_name"/>
                 <property name="domain" fetchPlan="_instance_name"/>
                 <property name="dataProduct" fetchPlan="_instance_name"/>
@@ -27,7 +26,7 @@
                 id="form"
                 dataContainer="dqRuleDc"
                 autoResponsive="true"
-                width="50%"
+                width="60%"
                 expandColumns="true"
                 expandFields="true">
 
@@ -66,9 +65,6 @@
                             <action id="entityClearAction" type="entity_clear"/>
                         </actions>
                     </entityPicker>
-                </formItem>
-                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.owner">
-                    <select id="ownerField"/>
                 </formItem>
                 <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.dimension">
                     <select id="dimensionField" property="dimension"/>

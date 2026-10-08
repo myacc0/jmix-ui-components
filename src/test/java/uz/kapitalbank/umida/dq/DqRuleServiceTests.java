@@ -2,24 +2,18 @@ package uz.kapitalbank.umida.dq;
 
 import io.jmix.core.DataManager;
 import io.jmix.core.Id;
-import io.jmix.core.security.SystemAuthenticator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import uz.kapitalbank.umida.entity.User;
 import uz.kapitalbank.umida.entity.dq.DqRule;
-import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
-import uz.kapitalbank.umida.entity.orgstructure.OrgStructurePosition;
-import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.enums.dq.DqDimension;
 import uz.kapitalbank.umida.enums.dq.DqRuleType;
 import uz.kapitalbank.umida.enums.dq.DqSeverity;
 import uz.kapitalbank.umida.service.dq.DqRuleService;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * The bookkeeping of a rule that its editor does not ask for: the generated code, the key fields
- * timestamp, the default resolution period, and the subdivisions a new rule may belong to.
+ * timestamp and the default resolution period.
  */
 @SpringBootTest
 @ExtendWith(AuthenticatedAsAdmin.class)
@@ -40,8 +34,6 @@ class DqRuleServiceTests {
     private DataManager dataManager;
     @Autowired
     private DqRuleService ruleService;
-    @Autowired
-    private SystemAuthenticator systemAuthenticator;
 
     private final List<Object> cleanup = new ArrayList<>();
 
@@ -130,34 +122,6 @@ class DqRuleServiceTests {
         }
     }
 
-    @Test
-    void aUserWithoutAnEmployeeHasNoSubdivisions() {
-        assertThat(ruleService.getCurrentUserSubdivisions()).isEmpty();
-    }
-
-    @Test
-    void theSubdivisionsOfTheCurrentEmployeeAreListedOnceByNameWithoutDismissedPositions() {
-        String suffix = UUID.randomUUID().toString().substring(0, 8);
-        OrgStructureSubdivision zeta = createSubdivision("Zeta " + suffix);
-        OrgStructureSubdivision alpha = createSubdivision("Alpha " + suffix);
-        OrgStructureSubdivision left = createSubdivision("Left " + suffix);
-        OrgStructureSubdivision other = createSubdivision("Other " + suffix);
-
-        OrgStructureEmployee employee = createEmployee();
-        OrgStructureEmployee colleague = createEmployee();
-        createPosition(zeta, employee, null);
-        createPosition(alpha, employee, LocalDate.now().plusDays(10));
-        createPosition(alpha, employee, null);
-        createPosition(left, employee, LocalDate.now());
-        createPosition(other, colleague, null);
-        User user = createUser(employee);
-
-        List<OrgStructureSubdivision> subdivisions = systemAuthenticator.withUser(user.getUsername(),
-                () -> ruleService.getCurrentUserSubdivisions());
-
-        assertThat(subdivisions).containsExactly(alpha, zeta);
-    }
-
     // ---------------------------------------------------------------------
     // fixtures
     // ---------------------------------------------------------------------
@@ -190,44 +154,6 @@ class DqRuleServiceTests {
 
     private long codeNumber(DqRule rule) {
         return Long.parseLong(rule.getCode().substring(DqRuleService.CODE_PREFIX.length()));
-    }
-
-    private OrgStructureSubdivision createSubdivision(String name) {
-        OrgStructureSubdivision subdivision = dataManager.create(OrgStructureSubdivision.class);
-        subdivision.setId(UUID.randomUUID().toString());
-        subdivision.setName(name);
-        OrgStructureSubdivision saved = dataManager.save(subdivision);
-        cleanup.add(saved);
-        return saved;
-    }
-
-    private OrgStructureEmployee createEmployee() {
-        OrgStructureEmployee employee = dataManager.create(OrgStructureEmployee.class);
-        employee.setId(UUID.randomUUID().toString());
-        employee.setFullName("Dq Rule Service Test " + UUID.randomUUID());
-        OrgStructureEmployee saved = dataManager.save(employee);
-        cleanup.add(saved);
-        return saved;
-    }
-
-    private void createPosition(OrgStructureSubdivision subdivision, OrgStructureEmployee employee,
-                                LocalDate dismissalDate) {
-        OrgStructurePosition position = dataManager.create(OrgStructurePosition.class);
-        position.setId(UUID.randomUUID().toString());
-        position.setSubdivision(subdivision);
-        position.setEmployee(employee);
-        position.setDismissalDate(dismissalDate);
-        // removed before the subdivision and the employee it references
-        cleanup.add(0, dataManager.save(position));
-    }
-
-    private User createUser(OrgStructureEmployee employee) {
-        User user = dataManager.create(User.class);
-        user.setUsername("dq-rule-service-test-" + UUID.randomUUID());
-        user.setEmployee(employee);
-        User saved = dataManager.save(user);
-        cleanup.add(0, saved);
-        return saved;
     }
 
     @AfterEach

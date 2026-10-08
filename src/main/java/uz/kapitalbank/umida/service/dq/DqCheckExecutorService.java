@@ -198,8 +198,7 @@ public class DqCheckExecutorService {
     private DqCheckRunResult executeRule(DqCheckRun run, UUID ruleId) {
         DqRule rule = dataManager.load(DqRule.class)
                 .id(ruleId)
-                // owner is needed to assign the issue a failing rule opens
-                .fetchPlan(builder -> builder.addFetchPlan(FetchPlan.BASE).add("owner", FetchPlan.LOCAL))
+                .fetchPlan(FetchPlan.BASE)
                 .one();
 
         DqRuleType ruleType = rule.getRuleType();

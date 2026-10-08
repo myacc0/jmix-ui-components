@@ -5,12 +5,10 @@ import uz.kapitalbank.umida.dto.dq.DqRuleConfig;
 import uz.kapitalbank.umida.dto.dq.DqRuleValidationError;
 import uz.kapitalbank.umida.dto.SelectDto;
 import uz.kapitalbank.umida.entity.dq.DqRule;
-import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.enums.dq.DqRuleType;
 import uz.kapitalbank.umida.enums.dq.DqSeverity;
 import uz.kapitalbank.umida.repository.DqRuleRepository;
 import uz.kapitalbank.umida.service.dq.DqDataSourceProvider;
-import uz.kapitalbank.umida.service.dq.DqRuleService;
 import uz.kapitalbank.umida.service.dq.DqRuleValidator;
 import uz.kapitalbank.umida.service.dq.DqSqlQueryBuilder;
 import uz.kapitalbank.umida.utils.DateUtils;
@@ -28,7 +26,6 @@ import com.vaadin.flow.router.Route;
 import io.jmix.core.EntityStates;
 import io.jmix.core.FetchPlan;
 import io.jmix.core.Messages;
-import io.jmix.core.MetadataTools;
 import io.jmix.core.SaveContext;
 import io.jmix.flowui.component.checkbox.JmixCheckbox;
 import io.jmix.flowui.component.combobox.JmixComboBox;
@@ -69,16 +66,10 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
     private DqRuleValidator ruleValidator;
 
     @Autowired
-    private DqRuleService ruleService;
-
-    @Autowired
     private EntityStates entityStates;
 
     @Autowired
     private Messages messages;
-
-    @Autowired
-    private MetadataTools metadataTools;
 
     @ViewComponent
     private MessageBundle messageBundle;
@@ -88,9 +79,6 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
 
     @ViewComponent
     private TypedTextField<String> codeField;
-
-    @ViewComponent
-    private JmixSelect<OrgStructureSubdivision> ownerField;
 
     @ViewComponent
     private JmixSelect<DqSeverity> severityField;
@@ -144,9 +132,6 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
     @ViewComponent
     private JmixMultiSelectComboBox<String> samplesQueryColumnsField;
 
-    /** The subdivisions a new rule may belong to: those of the employee of the current user. */
-    private List<OrgStructureSubdivision> ownerOptions = List.of();
-
     /** Columns of the currently selected table — the item set of {@link #samplesQueryColumnsField}. */
     private List<String> availableColumns = List.of();
 
@@ -170,8 +155,6 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
 
     @Subscribe
     public void onInit(final InitEvent event) {
-        ownerField.setItemLabelGenerator(subdivision -> subdivision == null ? ""
-                : metadataTools.getInstanceName(subdivision));
         severityField.setItemLabelGenerator(severity -> severity == null ? ""
                 : messageBundle.formatMessage("severityItemLabel", messages.getMessage(severity), severity.getDayCost()));
 
@@ -257,36 +240,14 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         samplesQueryColumnsField.addValueChangeListener(e -> onDynamicFieldChange());
     }
 
-    /** A new rule belongs to the first subdivision of its author, who may pick another one of theirs. */
-    @Subscribe
-    public void onInitEntity(final InitEntityEvent<DqRule> event) {
-        ownerOptions = ruleService.getCurrentUserSubdivisions();
-        if (event.getEntity().getOwner() == null && !ownerOptions.isEmpty()) {
-            event.getEntity().setOwner(ownerOptions.get(0));
-        }
-    }
-
     @Subscribe
     public void onReady(final ReadyEvent event) {
         DqRule rule = getEditedEntity();
 
-        // The code is generated on the first save, so a new rule has none to show yet. The owner is
-        // chosen once, on creation: editing a rule does not move it to another subdivision.
-        boolean isNew = entityStates.isNew(rule);
-        codeFormItem.setVisible(!isNew);
+        // The code is generated on the first save, so a new rule has none to show yet.
+        codeFormItem.setVisible(!entityStates.isNew(rule));
         // generated, never entered: the required marker the binding puts on it would only mislead
         codeField.setRequired(false);
-        // The owner field is not bound to the property: replacing the items of a select clears its
-        // value, which a binding would write to the rule. It is synced by hand once the items are set.
-        OrgStructureSubdivision owner = rule.getOwner();
-        if (isNew) {
-            ownerField.setItems(ownerOptions);
-        } else {
-            ownerField.setItems(owner != null ? List.of(owner) : List.of());
-            ownerField.setReadOnly(true);
-        }
-        ownerField.setValue(owner);
-        ownerField.addValueChangeListener(e -> getEditedEntity().setOwner(e.getValue()));
 
         if (rule.getRuleConfig() == null) {
             rule.setRuleConfig("{}");

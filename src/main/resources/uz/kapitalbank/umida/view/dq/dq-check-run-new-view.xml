@@ -17,7 +17,6 @@
                 <property name="severity"/>
                 <property name="active"/>
                 <property name="group" fetchPlan="_instance_name"/>
-                <property name="owner" fetchPlan="_instance_name"/>
                 <property name="domain" fetchPlan="_instance_name"/>
                 <property name="dataProduct" fetchPlan="_instance_name"/>
             </fetchPlan>
@@ -90,14 +89,6 @@
                       property="columnName"
                       label="msg://uz.kapitalbank.umida.entity.dq/DqRule.columnName"
                       clearButtonVisible="true"/>
-            <entityPicker id="ownerField"
-                          property="owner"
-                          label="msg://uz.kapitalbank.umida.entity.dq/DqRule.owner">
-                <actions>
-                    <action id="entityLookupAction" type="entity_lookup"/>
-                    <action id="entityClearAction" type="entity_clear"/>
-                </actions>
-            </entityPicker>
         </formLayout>
 
         <hbox id="viewActions" width="100%" justifyContent="START">
@@ -127,7 +118,6 @@
                     <column property="ruleType" autoWidth="true" flexGrow="0"/>
                     <column property="severity" autoWidth="true" flexGrow="0"/>
                     <column property="active" autoWidth="true" flexGrow="0"/>
-                    <column property="owner" autoWidth="true" flexGrow="0"/>
                     <column property="domain" autoWidth="true" flexGrow="0"/>
                     <column property="dataProduct" autoWidth="true" flexGrow="0"/>
                 </columns>

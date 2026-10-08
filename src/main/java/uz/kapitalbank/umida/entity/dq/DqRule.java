@@ -29,7 +29,6 @@ import java.util.UUID;
 
 @JmixEntity
 @Table(name = "UMIDA_DQ_RULE", indexes = {
-        @Index(name = "IDX_UMIDA_DQ_RULE_OWNER", columnList = "OWNER_ID"),
         @Index(name = "IDX_UMIDA_DQ_RULE_DOMAIN", columnList = "DOMAIN_ID"),
         @Index(name = "IDX_UMIDA_DQ_RULE_DATA_PRODUCT", columnList = "DATA_PRODUCT_ID"),
         @Index(name = "IDX_UMIDA_DQ_RULE_GROUP", columnList = "GROUP_ID"),
@@ -104,11 +103,6 @@ public class DqRule {
     private DictDataProduct dataProduct;
 
     @OnDeleteInverse(DeletePolicy.UNLINK)
-    @JoinColumn(name = "OWNER_ID")
-    @ManyToOne(fetch = FetchType.LAZY)
-    private OrgStructureSubdivision owner;
-
-    @OnDeleteInverse(DeletePolicy.UNLINK)
     @JoinColumn(name = "ASSIGNEE_ID")
     @ManyToOne(fetch = FetchType.LAZY)
     private OrgStructureSubdivision assignee;
@@ -179,14 +173,6 @@ public class DqRule {
 
     public void setAssignee(OrgStructureSubdivision assigne) {
         this.assignee = assigne;
-    }
-
-    public void setOwner(OrgStructureSubdivision owner) {
-        this.owner = owner;
-    }
-
-    public OrgStructureSubdivision getOwner() {
-        return owner;
     }
 
     public OffsetDateTime getDeletedDate() {

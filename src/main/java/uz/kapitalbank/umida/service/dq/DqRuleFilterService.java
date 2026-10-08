@@ -29,7 +29,6 @@ public class DqRuleFilterService {
     public static final String PARAM_RULE_TYPE = "ruleType";
     public static final String PARAM_TABLE_NAME = "tableName";
     public static final String PARAM_COLUMN_NAME = "columnName";
-    public static final String PARAM_OWNER = "owner";
 
     /**
      * Returns the condition to assign to the rules loader once, at view init. The actual filtering
@@ -45,8 +44,7 @@ public class DqRuleFilterService {
                 condition("{E}.severity = :" + PARAM_SEVERITY),
                 condition("{E}.ruleType = :" + PARAM_RULE_TYPE),
                 condition("{E}.tableName = :" + PARAM_TABLE_NAME),
-                condition("{E}.columnName = :" + PARAM_COLUMN_NAME),
-                condition("{E}.owner = :" + PARAM_OWNER)
+                condition("{E}.columnName = :" + PARAM_COLUMN_NAME)
         );
     }
 
@@ -65,7 +63,6 @@ public class DqRuleFilterService {
         parameters.put(PARAM_RULE_TYPE, filter.getRuleType());
         parameters.put(PARAM_TABLE_NAME, filter.getTableName());
         parameters.put(PARAM_COLUMN_NAME, filter.getColumnName());
-        parameters.put(PARAM_OWNER, filter.getOwner());
         return parameters;
     }
 
