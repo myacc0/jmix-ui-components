@@ -31,6 +31,7 @@ import uz.kapitalbank.umida.view.dq.DqIssueListView;
 import uz.kapitalbank.umida.view.dq.DqRuleListView;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -84,17 +85,13 @@ public class DqBadgeColumnsUiTest {
 
         issue = dataManager.create(DqIssue.class);
         issue.setRule(rule);
-        issue.setDataSource("main");
         issue.setStatus(DqIssueStatus.OPEN);
-        issue.setSeverity(DqSeverity.MEDIUM);
-        issue.setTitle("dq badge ui test issue " + suffix);
-        issue.setCreatedAt(LocalDateTime.now());
+        issue.setCreatedAt(OffsetDateTime.now());
         issue = dataManager.save(issue);
 
         checkRun = dataManager.create(DqCheckRun.class);
         checkRun.setDataSource("main");
-        checkRun.setTriggeredUsername("admin");
-        checkRun.setStartedAt(LocalDateTime.now());
+        checkRun.setStartedAt(OffsetDateTime.now());
         checkRun.setStatus(DqCheckRunStatus.SUCCESS);
         checkRun.setRulesTotal(1);
         checkRun = dataManager.save(checkRun);

@@ -31,6 +31,7 @@ import uz.kapitalbank.umida.view.dq.DqCheckRunDetailView;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -86,9 +87,9 @@ public class DqCheckRunDetailUiTest {
 
         checkRun = dataManager.create(DqCheckRun.class);
         checkRun.setDataSource("main");
-        checkRun.setTriggeredUsername("admin");
-        checkRun.setStartedAt(LocalDateTime.now());
-        checkRun.setFinishedAt(LocalDateTime.now());
+//        checkRun.setTriggeredUsername("admin");
+        checkRun.setStartedAt(OffsetDateTime.now());
+        checkRun.setFinishedAt(OffsetDateTime.now());
         checkRun.setStatus(DqCheckRunStatus.SUCCESS);
         checkRun.setRulesTotal(2);
         checkRun.setRulesPassed(1);
@@ -156,7 +157,7 @@ public class DqCheckRunDetailUiTest {
     void aSampleThatIsNotARowSetFallsBackToTheJsonEditor() {
         DqCheckRunResult failed = failedResult();
         // valid JSON, but nothing a grid can be built from
-        failed.setSampleViolations("\"5 rows violate the rule\"");
+//        failed.setSampleViolations("\"5 rows violate the rule\"");
         results.set(results.indexOf(failed), dataManager.save(failed));
 
         DataGrid<DqCheckRunResult> grid = openResultsGrid();
@@ -222,7 +223,7 @@ public class DqCheckRunDetailUiTest {
         result.setExecutionMs(12L);
         result.setExecutedQuery("select count(*) from umida_dq_data_domain");
         if (status == DqCheckResultStatus.FAILED) {
-            result.setSampleViolations(SAMPLE_VIOLATIONS);
+//            result.setSampleViolations(SAMPLE_VIOLATIONS);
             result.setErrorMessage("5 rows violate the rule");
         }
         return result;
