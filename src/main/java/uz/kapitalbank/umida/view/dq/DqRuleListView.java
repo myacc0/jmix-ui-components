@@ -6,15 +6,22 @@ import uz.kapitalbank.umida.entity.dq.DqRule;
 import uz.kapitalbank.umida.repository.DqRuleRepository;
 import uz.kapitalbank.umida.service.dq.DqDataSourceProvider;
 import uz.kapitalbank.umida.view.main.MainView;
+import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.router.Route;
+import io.jmix.core.querycondition.Condition;
+import io.jmix.core.querycondition.LogicalCondition;
+import io.jmix.core.querycondition.PropertyCondition;
 import io.jmix.core.repository.JmixDataRepositoryContext;
+import io.jmix.core.security.CurrentAuthentication;
 import io.jmix.flowui.UiComponents;
 import io.jmix.flowui.component.combobox.JmixComboBox;
 import io.jmix.flowui.component.grid.DataGrid;
 import io.jmix.flowui.component.grid.DataGridColumn;
 import io.jmix.flowui.component.grid.headerfilter.DataGridHeaderFilter;
 import io.jmix.flowui.component.propertyfilter.PropertyFilter;
+import io.jmix.flowui.component.checkbox.JmixCheckbox;
+import io.jmix.flowui.model.CollectionLoader;
 import io.jmix.flowui.view.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -42,8 +49,20 @@ public class DqRuleListView extends StandardListView<DqRule> {
     @Autowired
     private UiComponents uiComponents;
 
+    @Autowired
+    private CurrentAuthentication currentAuthentication;
+
     @ViewComponent
     private DataGrid<DqRule> dqRulesDataGrid;
+
+    @ViewComponent
+    private CollectionLoader<DqRule> dqRulesDl;
+
+    /**
+     * The "mine" filter: the rules created by the current user. It carries no value while the
+     * checkbox is clear, and the loader then skips it.
+     */
+    private final PropertyCondition mineCondition = PropertyCondition.equal("createdBy", null).skipNullOrEmpty();
 
     // The customized header filters of the three location columns.
     private ComboBoxFilter dataSourceFilter;
@@ -86,6 +105,26 @@ public class DqRuleListView extends StandardListView<DqRule> {
                 .orElse(id));
 
         reloadSchemaOptions();
+        installMineCondition();
+    }
+
+    /** Adds the "mine" filter next to the conditions of the column header filters, which share the root condition. */
+    private void installMineCondition() {
+        Condition root = dqRulesDl.getCondition();
+        LogicalCondition and = root instanceof LogicalCondition logical ? logical : LogicalCondition.and();
+        if (root != null && root != and) {
+            and.add(root);
+        }
+        and.add(mineCondition);
+        dqRulesDl.setCondition(and);
+    }
+
+    @Subscribe("mineField")
+    public void onMineFieldValueChange(final AbstractField.ComponentValueChangeEvent<JmixCheckbox, Boolean> event) {
+        mineCondition.setParameterValue(Boolean.TRUE.equals(event.getValue())
+                ? currentAuthentication.getUser().getUsername()
+                : null);
+        dqRulesDl.load();
     }
 
     /**

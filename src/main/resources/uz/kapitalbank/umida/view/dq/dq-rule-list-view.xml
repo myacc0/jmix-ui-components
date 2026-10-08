@@ -41,6 +41,7 @@
                 <button id="removeButton" action="dqRulesDataGrid.removeAction"/>
             </startSlot>
             <endSlot>
+                <checkbox id="mineField" label="msg://mineField.label" css="display: flex; align-items: center"/>
                 <simplePagination id="pagination" dataLoader="dqRulesDl" itemsPerPageDefaultValue="20"/>
             </endSlot>
         </hbox>
