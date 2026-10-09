@@ -4,13 +4,10 @@ import uz.kapitalbank.umida.service.dq.DqBadges;
 import uz.kapitalbank.umida.entity.dq.DqCheckRun;
 import uz.kapitalbank.umida.entity.dq.DqCheckRunResult;
 import uz.kapitalbank.umida.enums.dq.DqCheckResultStatus;
-import uz.kapitalbank.umida.service.dq.DqSampleViolationsService;
-import uz.kapitalbank.umida.utils.StringUtils;
 import uz.kapitalbank.umida.view.main.MainView;
-import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.router.Route;
+import io.jmix.flowui.DialogWindows;
 import io.jmix.flowui.Dialogs;
 import io.jmix.flowui.UiComponents;
 import io.jmix.flowui.component.codeeditor.CodeEditor;
@@ -21,16 +18,11 @@ import io.jmix.flowui.view.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 
-import java.util.List;
-import java.util.Map;
-
 @Route(value = "dq-check-runs/:id", layout = MainView.class)
 @ViewController(id = "umida_DqCheckRun.detail")
 @ViewDescriptor(path = "dq-check-run-detail-view.xml")
 @EditedEntityContainer("dqCheckRunDc")
 public class DqCheckRunDetailView extends StandardDetailView<DqCheckRun> {
-
-    private static final String SAMPLE_VIOLATIONS_HEADER = "dqCheckRunDetailView.sampleViolationsAction";
 
     @Autowired
     private DqBadges dqBadges;
@@ -39,10 +31,10 @@ public class DqCheckRunDetailView extends StandardDetailView<DqCheckRun> {
     private Dialogs dialogs;
 
     @Autowired
-    private UiComponents uiComponents;
+    private DialogWindows dialogWindows;
 
     @Autowired
-    private DqSampleViolationsService sampleViolationsService;
+    private UiComponents uiComponents;
 
     @ViewComponent
     private MessageBundle messageBundle;
@@ -55,11 +47,17 @@ public class DqCheckRunDetailView extends StandardDetailView<DqCheckRun> {
         return dqBadges.renderer(DqBadges.RESULT_STATUS, DqCheckRunResult::getStatus);
     }
 
-    /** Violating rows are only sampled for a rule that failed: any other status has nothing to show. */
-    @Install(to = "checkResultsDataGrid.sampleViolationsAction", subject = "enabledRule")
-    private boolean sampleViolationsActionEnabledRule() {
+    /**
+     * Only a rule that failed has violating rows to show, and only a rule type that can point at
+     * individual rows leaves a query to read them with.
+     */
+    @Install(to = "checkResultsDataGrid.violationsAction", subject = "enabledRule")
+    private boolean violationsActionEnabledRule() {
         DqCheckRunResult result = checkResultsDataGrid.getSingleSelectedItem();
-        return result != null && result.getStatus() == DqCheckResultStatus.FAILED;
+        return result != null
+                && result.getStatus() == DqCheckResultStatus.FAILED
+                && result.getViolationsQuery() != null
+                && !result.getViolationsQuery().isBlank();
     }
 
     @Subscribe("checkResultsDataGrid.executedQueryAction")
@@ -70,49 +68,15 @@ public class DqCheckRunDetailView extends StandardDetailView<DqCheckRun> {
         }
     }
 
-    /**
-     * The sampled rows carry the columns of the rule's own samples query, so the grid showing them
-     * is built per result. A value that is not the expected array of flat rows still has to be
-     * readable, so it falls back to the raw JSON.
-     */
-    @Subscribe("checkResultsDataGrid.sampleViolationsAction")
-    public void onSampleViolationsAction(final ActionPerformedEvent event) {
+    @Subscribe("checkResultsDataGrid.violationsAction")
+    public void onViolationsAction(final ActionPerformedEvent event) {
         DqCheckRunResult result = checkResultsDataGrid.getSingleSelectedItem();
         if (result == null) {
             return;
         }
-
-        String sampleViolations = "";
-        List<Map<String, Object>> rows = sampleViolationsService.parseRows(sampleViolations);
-
-        if (rows.isEmpty()) {
-            showCode(SAMPLE_VIOLATIONS_HEADER, CodeEditorMode.JSON,
-                    sampleViolationsService.prettify(sampleViolations));
-        } else {
-            dialogs.createMessageDialog()
-                    .withHeader(messageBundle.getMessage(SAMPLE_VIOLATIONS_HEADER))
-                    .withContent(createSamplesGrid(rows))
-                    .withWidth("60em")
-                    .withResizable(true)
-                    .open();
-        }
-    }
-
-    private Component createSamplesGrid(List<Map<String, Object>> rows) {
-        Grid<Map<String, Object>> grid = new Grid<>();
-        grid.setItems(rows);
-        grid.setColumnReorderingAllowed(true);
-        grid.setWidthFull();
-        grid.setHeight("25em");
-
-        for (String column : sampleViolationsService.columns(rows)) {
-            grid.addColumn(row -> StringUtils.asText(row.get(column)))
-                    .setHeader(column)
-                    .setAutoWidth(true)
-                    .setResizable(true);
-        }
-
-        return grid;
+        dialogWindows.view(this, DqCheckRunViolationsView.class)
+                .withViewConfigurer(view -> view.setCheckResult(result))
+                .open();
     }
 
     /**

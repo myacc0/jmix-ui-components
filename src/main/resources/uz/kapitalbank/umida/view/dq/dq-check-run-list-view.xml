@@ -1,15 +1,31 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <view xmlns="http://jmix.io/schema/flowui/view"
-      xmlns:c="http://jmix.io/schema/flowui/jpql-condition"
       title="msg://dqCheckRunListView.title"
       focusComponent="dqCheckRunsDataGrid">
     <data>
         <collection id="dqCheckRunsDc"
                     class="uz.kapitalbank.umida.entity.dq.DqCheckRun">
-            <fetchPlan extends="_base"/>
+            <fetchPlan extends="_base">
+                <property name="triggeredBy" fetchPlan="_instance_name"/>
+            </fetchPlan>
             <loader id="dqCheckRunsDl" readOnly="true">
                 <query>
-                    <![CDATA[select e from umida_DqCheckRun e]]>
+                    <![CDATA[select e from umida_DqCheckRun e
+                    where e.status in ('success', 'failed', 'cancelled')
+                    order by e.startedAt desc, e.dataSource asc]]>
+                </query>
+            </loader>
+        </collection>
+        <collection id="runningCheckRunsDc"
+                    class="uz.kapitalbank.umida.entity.dq.DqCheckRun">
+            <fetchPlan extends="_base">
+                <property name="triggeredBy" fetchPlan="_instance_name"/>
+            </fetchPlan>
+            <loader id="runningCheckRunsDl" readOnly="true">
+                <query>
+                    <![CDATA[select e from umida_DqCheckRun e
+                    where e.status = 'running'
+                    order by e.startedAt desc, e.dataSource asc]]>
                 </query>
             </loader>
         </collection>
@@ -26,35 +42,71 @@
     </actions>
     <layout>
         <hbox id="buttonsPanel" classNames="buttons-panel">
-            <startSlot>
-                <button id="readButton" action="dqCheckRunsDataGrid.readAction"/>
-                <button id="runCheckButton" themeNames="primary" icon="vaadin:plus" text="msg://dqCheckRunListView.runCheckButton"/>
-            </startSlot>
-            <endSlot>
-                <simplePagination id="pagination" dataLoader="dqCheckRunsDl"/>
-            </endSlot>
+            <button id="runCheckButton" themeNames="primary" icon="vaadin:plus" text="msg://dqCheckRunListView.runCheckButton"/>
         </hbox>
-        <dataGrid id="dqCheckRunsDataGrid"
-                  width="100%"
-                  minHeight="20em"
-                  dataContainer="dqCheckRunsDc"
-                  columnReorderingAllowed="true">
-            <actions>
-                <action id="readAction" type="list_read"/>
-            </actions>
-            <columns resizable="true">
-                <column property="dataSource" autoWidth="true" flexGrow="0"/>
-                <column property="startedAt" autoWidth="true" flexGrow="0"/>
-                <column property="finishedAt" autoWidth="true" flexGrow="0"/>
-                <column property="status" autoWidth="true" flexGrow="0"/>
-                <column property="rulesTotal" autoWidth="true" flexGrow="0"/>
-                <column property="rulesPassed" autoWidth="true" flexGrow="0"/>
-                <column property="rulesFailed" autoWidth="true" flexGrow="0"/>
-                <column property="rulesSkipped" autoWidth="true" flexGrow="0"/>
-                <column property="dqScore" autoWidth="true" flexGrow="0"/>
-                <column property="errorMessage" autoWidth="true" flexGrow="0"/>
-            </columns>
-        </dataGrid>
+        <tabSheet id="checkRunsTabSheet" width="100%" height="100%">
+            <tab id="journalTab" label="msg://dqCheckRunListView.journalTab">
+                <vbox id="journalTabContent" width="100%" height="100%" padding="false">
+                    <hbox id="journalButtonsPanel" classNames="buttons-panel" width="100%">
+                        <startSlot>
+                            <button id="readButton" action="dqCheckRunsDataGrid.readAction"/>
+                        </startSlot>
+                        <endSlot>
+                            <simplePagination id="pagination" dataLoader="dqCheckRunsDl"/>
+                        </endSlot>
+                    </hbox>
+                    <dataGrid id="dqCheckRunsDataGrid"
+                              width="100%"
+                              minHeight="20em"
+                              dataContainer="dqCheckRunsDc"
+                              columnReorderingAllowed="true">
+                        <actions>
+                            <action id="readAction" type="list_read"/>
+                        </actions>
+                        <columns resizable="true">
+                            <column property="dataSource" autoWidth="true" flexGrow="0"/>
+                            <column property="startedAt" autoWidth="true" flexGrow="0"/>
+                            <column property="finishedAt" autoWidth="true" flexGrow="0"/>
+                            <column property="status" autoWidth="true" flexGrow="0"/>
+                            <column key="triggeredBy"
+                                    header="msg://uz.kapitalbank.umida.entity.dq/DqCheckRun.triggeredBy"
+                                    sortable="false" autoWidth="true" flexGrow="0"/>
+                            <column property="rulesTotal" autoWidth="true" flexGrow="0"/>
+                            <column property="rulesPassed" autoWidth="true" flexGrow="0"/>
+                            <column property="rulesFailed" autoWidth="true" flexGrow="0"/>
+                            <column property="rulesSkipped" autoWidth="true" flexGrow="0"/>
+                            <column property="dqScore" autoWidth="true" flexGrow="0"/>
+                            <column property="errorMessage" autoWidth="true" flexGrow="0"/>
+                        </columns>
+                    </dataGrid>
+                </vbox>
+            </tab>
+            <tab id="runningTab" label="msg://dqCheckRunListView.runningTab">
+                <vbox id="runningTabContent" width="100%" height="100%" padding="false">
+                    <hbox id="runningButtonsPanel" classNames="buttons-panel">
+                        <button id="refreshRunningButton" action="runningCheckRunsDataGrid.refreshAction"/>
+                    </hbox>
+                    <dataGrid id="runningCheckRunsDataGrid"
+                              width="100%"
+                              minHeight="20em"
+                              dataContainer="runningCheckRunsDc"
+                              columnReorderingAllowed="true">
+                        <actions>
+                            <action id="refreshAction" type="list_refresh"/>
+                        </actions>
+                        <columns resizable="true">
+                            <column property="dataSource" autoWidth="true" flexGrow="0"/>
+                            <column property="startedAt" autoWidth="true" flexGrow="0"/>
+                            <column property="status" autoWidth="true" flexGrow="0"/>
+                            <column key="triggeredBy"
+                                    header="msg://uz.kapitalbank.umida.entity.dq/DqCheckRun.triggeredBy"
+                                    sortable="false" autoWidth="true" flexGrow="0"/>
+                            <column property="rulesTotal" autoWidth="true" flexGrow="0"/>
+                        </columns>
+                    </dataGrid>
+                </vbox>
+            </tab>
+        </tabSheet>
         <hbox id="lookupActions" visible="false">
             <button id="selectButton" action="selectAction"/>
             <button id="discardButton" action="discardAction"/>

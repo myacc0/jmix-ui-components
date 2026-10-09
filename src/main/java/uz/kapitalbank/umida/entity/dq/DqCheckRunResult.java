@@ -77,6 +77,14 @@ public class DqCheckRunResult {
         this.createdAt = createdAt;
     }
 
+    public String getViolationsQuery() {
+        return violationsQuery;
+    }
+
+    public void setViolationsQuery(String violationsQuery) {
+        this.violationsQuery = violationsQuery;
+    }
+
     public String getExecutedQuery() {
         return executedQuery;
     }

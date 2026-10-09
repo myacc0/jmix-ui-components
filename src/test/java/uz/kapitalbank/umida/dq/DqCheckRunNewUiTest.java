@@ -23,16 +23,14 @@ import uz.kapitalbank.umida.entity.dq.DqCheckRunResult;
 import uz.kapitalbank.umida.entity.dq.DqIssue;
 import uz.kapitalbank.umida.entity.dq.DqRule;
 import uz.kapitalbank.umida.enums.dq.DqCheckRunStatus;
-import uz.kapitalbank.umida.enums.dq.DqDimension;
 import uz.kapitalbank.umida.enums.dq.DqRuleType;
-import uz.kapitalbank.umida.enums.dq.DqSeverity;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
+import uz.kapitalbank.umida.test_support.DqTestData;
 import uz.kapitalbank.umida.view.dq.DqCheckRunListView;
 import uz.kapitalbank.umida.view.dq.DqCheckRunNewView;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -60,30 +58,15 @@ public class DqCheckRunNewUiTest {
 
     private final List<DqCheckRun> checkRuns = new ArrayList<>();
 
+    private DqTestData testData;
     private DictDataDomain domain;
     private DqRule rule;
 
     @BeforeEach
     void setUp() {
-        domain = dataManager.create(DictDataDomain.class);
-        String suffix = UUID.randomUUID().toString().substring(0, 8);
-        domain.setCode("dq-ui-" + suffix);
-        domain.setShortName("DQ UI " + suffix);
-        domain.setShortName("DQ check run UI test domain " + suffix);
-        domain = dataManager.save(domain);
-
-        rule = dataManager.create(DqRule.class);
-        rule.setName("dq ui test rule " + suffix);
-        rule.setDataSource("main");
-        rule.setTableName("umida_dq_data_domain");
-        rule.setColumnName("name");
-        rule.setDimension(DqDimension.COMPLETENESS);
-        rule.setRuleType(DqRuleType.NOT_NULL);
-        rule.setRuleConfig("{}");
-        rule.setSeverity(DqSeverity.MEDIUM);
-        rule.setActive(true);
-        rule.setDomain(domain);
-        rule = dataManager.save(rule);
+        testData = new DqTestData(dataManager);
+        domain = testData.createDomain();
+        rule = testData.createRule(domain, "new run ui", DqRuleType.NOT_NULL, "short_name", "{}");
     }
 
     @Test
@@ -193,7 +176,6 @@ public class DqCheckRunNewUiTest {
         checkRuns.forEach(dataManager::remove);
         checkRuns.clear();
 
-        dataManager.remove(rule);
-        dataManager.remove(domain);
+        testData.cleanup();
     }
 }

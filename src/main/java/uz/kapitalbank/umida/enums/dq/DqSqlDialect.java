@@ -67,19 +67,35 @@ public enum DqSqlDialect {
     }
 
     /**
-     * Renders the row-limiting clause appended to the end of a {@code SELECT}. The limit is inlined
+     * Renders the paging clause appended to the end of a {@code SELECT}. The numbers are inlined
      * rather than bound, because Oracle does not accept a bind variable in every position of
-     * {@code FETCH FIRST}.
+     * {@code OFFSET ... FETCH}.
      *
-     * @param maxRows positive row count
+     * @param firstResult zero-based index of the first row
+     * @param maxResults  positive row count
      */
-    public String limitClause(int maxRows) {
-        if (maxRows < 1) {
-            throw new IllegalArgumentException("Row limit must be positive: " + maxRows);
+    public String pageClause(int firstResult, int maxResults) {
+        if (firstResult < 0) {
+            throw new IllegalArgumentException("First row must not be negative: " + firstResult);
+        }
+        if (maxResults < 1) {
+            throw new IllegalArgumentException("Row limit must be positive: " + maxResults);
         }
         return switch (this) {
-            case POSTGRESQL, MYSQL -> "LIMIT " + maxRows;
-            case ORACLE -> "FETCH FIRST " + maxRows + " ROWS ONLY";
+            case POSTGRESQL, MYSQL -> "LIMIT " + maxResults + " OFFSET " + firstResult;
+            case ORACLE -> "OFFSET " + firstResult + " ROWS FETCH NEXT " + maxResults + " ROWS ONLY";
         };
+    }
+
+    /**
+     * Renders a string literal. MySQL, unlike the others, treats a backslash inside a literal as an
+     * escape character by default, so there it is doubled to keep a regexp such as {@code \d} intact.
+     */
+    public String stringLiteral(String value) {
+        String escaped = value.replace("'", "''");
+        if (this == MYSQL) {
+            escaped = escaped.replace("\\", "\\\\");
+        }
+        return "'" + escaped + "'";
     }
 }

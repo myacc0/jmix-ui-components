@@ -7,7 +7,9 @@
                   class="uz.kapitalbank.umida.entity.dq.DqCheckRun">
             <fetchPlan extends="_base">
                 <property name="checkResults" fetchPlan="_base">
-                    <property name="rule" fetchPlan="_instance_name"/>
+                    <property name="rule" fetchPlan="_instance_name">
+                        <property name="code"/>
+                    </property>
                 </property>
             </fetchPlan>
             <loader id="dqCheckRunDl"/>
@@ -38,7 +40,7 @@
         </formLayout>
         <hbox id="checkResultsButtonsPanel" classNames="buttons-panel">
             <button id="executedQueryButton" themeNames="primary" action="checkResultsDataGrid.executedQueryAction"/>
-            <button id="sampleViolationsButton" themeNames="primary" action="checkResultsDataGrid.sampleViolationsAction"/>
+            <button id="violationsButton" themeNames="primary" action="checkResultsDataGrid.violationsAction"/>
         </hbox>
         <dataGrid id="checkResultsDataGrid"
                   width="100%"
@@ -50,15 +52,15 @@
                         type="list_itemTracking"
                         text="msg://dqCheckRunDetailView.executedQueryAction"
                         icon="vaadin:code"/>
-                <action id="sampleViolationsAction"
+                <action id="violationsAction"
                         type="list_itemTracking"
-                        text="msg://dqCheckRunDetailView.sampleViolationsAction"
+                        text="msg://dqCheckRunDetailView.violationsAction"
                         icon="vaadin:file-search"/>
             </actions>
             <columns resizable="true">
-                <column key="ruleName"
-                        property="rule.name"
-                        header="msg://dqCheckRunDetailView.ruleNameColumn"
+                <column key="ruleCode"
+                        property="rule.code"
+                        header="msg://dqCheckRunDetailView.ruleColumn"
                         autoWidth="true"
                         flexGrow="0"/>
                 <column property="status" autoWidth="true" flexGrow="0"/>

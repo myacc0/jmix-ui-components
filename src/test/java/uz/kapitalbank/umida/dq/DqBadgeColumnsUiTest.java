@@ -26,6 +26,7 @@ import uz.kapitalbank.umida.entity.dq.DqRule;
 import uz.kapitalbank.umida.enums.dq.*;
 import uz.kapitalbank.umida.service.dq.DqBadges;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
+import uz.kapitalbank.umida.test_support.DqTestData;
 import uz.kapitalbank.umida.view.dq.DqCheckRunListView;
 import uz.kapitalbank.umida.view.dq.DqIssueListView;
 import uz.kapitalbank.umida.view.dq.DqRuleListView;
@@ -55,6 +56,7 @@ public class DqBadgeColumnsUiTest {
     @Autowired
     Messages messages;
 
+    private DqTestData testData;
     private DictDataDomain domain;
     private DqRule rule;
     private DqIssue issue;
@@ -62,28 +64,15 @@ public class DqBadgeColumnsUiTest {
 
     @BeforeEach
     void setUp() {
-        String suffix = UUID.randomUUID().toString().substring(0, 8);
-
-        domain = dataManager.create(DictDataDomain.class);
-        domain.setCode("dq-badge-" + suffix);
-        domain.setShortName("DQ BDG " + suffix);
-        domain.setShortName("DQ badge UI test domain " + suffix);
-        domain = dataManager.save(domain);
-
-        rule = dataManager.create(DqRule.class);
-        rule.setName("dq badge ui test rule " + suffix);
-        rule.setDataSource("main");
-        rule.setTableName("umida_dq_data_domain");
-        rule.setColumnName("name");
-        rule.setDimension(DqDimension.VALIDITY);
-        rule.setRuleType(DqRuleType.NOT_NULL);
-        rule.setRuleConfig("{}");
-        rule.setSeverity(DqSeverity.CRITICAL);
-        rule.setActive(true);
-        rule.setDomain(domain);
-        rule = dataManager.save(rule);
+        testData = new DqTestData(dataManager);
+        domain = testData.createDomain();
+        rule = testData.createRule(domain, "badge ui", DqRuleType.NOT_NULL, "short_name", "{}", r -> {
+            r.setDimension(DqDimension.VALIDITY);
+            r.setSeverity(DqSeverity.CRITICAL);
+        });
 
         issue = dataManager.create(DqIssue.class);
+        issue.setCode("dq-badge-" + UUID.randomUUID().toString().substring(0, 8));
         issue.setRule(rule);
         issue.setStatus(DqIssueStatus.OPEN);
         issue.setCreatedAt(OffsetDateTime.now());
@@ -91,6 +80,7 @@ public class DqBadgeColumnsUiTest {
 
         checkRun = dataManager.create(DqCheckRun.class);
         checkRun.setDataSource("main");
+        checkRun.setTriggered(DqCheckRunTrigger.SYSTEM);
         checkRun.setStartedAt(OffsetDateTime.now());
         checkRun.setStatus(DqCheckRunStatus.SUCCESS);
         checkRun.setRulesTotal(1);
@@ -148,9 +138,12 @@ public class DqBadgeColumnsUiTest {
 
     @AfterEach
     void tearDown() {
-        dataManager.remove(checkRun);
-        dataManager.remove(issue);
-        dataManager.remove(rule);
-        dataManager.remove(domain);
+        if (checkRun != null) {
+            dataManager.remove(checkRun);
+        }
+        if (issue != null) {
+            dataManager.remove(issue);
+        }
+        testData.cleanup();
     }
 }

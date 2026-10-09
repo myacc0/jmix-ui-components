@@ -10,8 +10,10 @@ import uz.kapitalbank.umida.entity.dq.DqIssue;
 import uz.kapitalbank.umida.entity.dq.DqRule;
 import uz.kapitalbank.umida.enums.dq.DqCheckResultStatus;
 import uz.kapitalbank.umida.enums.dq.DqCheckRunStatus;
+import uz.kapitalbank.umida.enums.dq.DqCheckRunTrigger;
 import uz.kapitalbank.umida.enums.dq.DqIssueStatus;
 import uz.kapitalbank.umida.enums.dq.DqRuleType;
+import uz.kapitalbank.umida.enums.dq.DqSqlDialect;
 import uz.kapitalbank.umida.utils.JsonUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jmix.core.*;
@@ -31,8 +33,6 @@ import org.springframework.util.StringUtils;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.sql.ResultSetMetaData;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.*;
 
@@ -47,7 +47,9 @@ import java.util.*;
  * totals when it ends. A run left in {@code RUNNING} therefore means the application died mid-run.
  * <p>
  * The SQL comes from {@link DqSqlQueryBuilder}: for each rule a metrics query, whose two counts give
- * the pass rate, and a samples query for the violating rows. A rule fails when its pass rate is below
+ * the pass rate, and a violations query selecting the violating rows. The violations query is not run
+ * here: it is stored on the result, with its parameters inlined, and run page by page when a user
+ * looks at the violating rows ({@link DqViolationsService}). A rule fails when its pass rate is below
  * the {@code threshold} of its configuration ({@value #DEFAULT_THRESHOLD}% when it sets none). A rule
  * that cannot be translated or executed is not fatal — it is recorded as
  * {@link DqCheckResultStatus#SKIPPED} with the reason and the run carries on.
@@ -59,12 +61,6 @@ public class DqCheckExecutorService {
 
     /** Pass rate, in percent, a rule must reach when its configuration sets no threshold. */
     public static final double DEFAULT_THRESHOLD = 100d;
-
-    /**
-     * Hard cap on the sample rows kept for one result, the same the query builder puts on the samples
-     * query: it also holds for a samples query that does not limit itself.
-     */
-    private static final int MAX_SAMPLE_ROWS = DqSqlQueryBuilder.MAX_SAMPLE_ROWS;
 
     private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
     private static final int RATE_SCALE = 2;
@@ -81,6 +77,7 @@ public class DqCheckExecutorService {
     private final DqSqlQueryBuilder queryBuilder;
     private final DqDataSourceProvider dataSourceProvider;
     private final DqRuleFilterService ruleFilterService;
+    private final DqCheckRunService checkRunService;
     private final CurrentAuthentication currentAuthentication;
     private final SystemAuthenticator systemAuthenticator;
     private final Messages messages;
@@ -91,6 +88,7 @@ public class DqCheckExecutorService {
                                   DqSqlQueryBuilder queryBuilder,
                                   DqDataSourceProvider dataSourceProvider,
                                   DqRuleFilterService ruleFilterService,
+                                  DqCheckRunService checkRunService,
                                   CurrentAuthentication currentAuthentication,
                                   SystemAuthenticator systemAuthenticator,
                                   Messages messages,
@@ -100,6 +98,7 @@ public class DqCheckExecutorService {
         this.queryBuilder = queryBuilder;
         this.dataSourceProvider = dataSourceProvider;
         this.ruleFilterService = ruleFilterService;
+        this.checkRunService = checkRunService;
         this.currentAuthentication = currentAuthentication;
         this.systemAuthenticator = systemAuthenticator;
         this.messages = messages;
@@ -109,7 +108,8 @@ public class DqCheckExecutorService {
 
     /**
      * Records a check run for the rules matching the filter and starts evaluating them in the
-     * background.
+     * background. The run is a {@link DqCheckRunTrigger#MANUAL} one, triggered by the employee the
+     * current user is linked to — none for a user without an employee, such as {@code admin}.
      *
      * @return the persisted run, with status {@link DqCheckRunStatus#RUNNING} — the totals are filled
      * in later, so reload it to observe the outcome
@@ -125,14 +125,13 @@ public class DqCheckExecutorService {
             throw new IllegalArgumentException("No rules match the filter");
         }
 
+        String username = currentAuthentication.getUser().getUsername();
+
         DqCheckRun run = dataManager.create(DqCheckRun.class);
         run.setDataSource(filter.getDataSource());
         run.setRulesTotal(rules.size());
-
-//        TODO: implement this
-//        run.setTriggered();
-//        run.setTriggeredBy();
-
+        run.setTriggered(DqCheckRunTrigger.MANUAL);
+        run.setTriggeredBy(checkRunService.findEmployeeOfUser(username).orElse(null));
         run.setStartedAt(OffsetDateTime.now());
         run.setStatus(DqCheckRunStatus.RUNNING);
         run.setRulesPassed(0);
@@ -142,14 +141,13 @@ public class DqCheckExecutorService {
         DqCheckRun savedRun = dataManager.save(run);
 
         UUID runId = savedRun.getId();
-//        String username = savedRun.getTriggeredUsername();
         // ids, not entities: the worker thread loads its own instances with the fetch plan it needs
         List<UUID> ruleIds = rules.stream().map(DqRule::getId).toList();
 
         // the security context does not follow a task onto the worker thread, so it is re-established
         // there as the user who triggered the run
-//        taskExecutor.execute(() ->
-//                systemAuthenticator.runWithUser(username, () -> executeCheckRun(runId, ruleIds)));
+        taskExecutor.execute(() ->
+                systemAuthenticator.runWithUser(username, () -> executeCheckRun(runId, ruleIds)));
 
         return savedRun;
     }
@@ -227,7 +225,7 @@ public class DqCheckExecutorService {
     // ---------------------------------------------------------------------
     //
     // Every implemented type is measured the same way — the query builder folds the difference
-    // between them into the violation predicate of the metrics and samples queries. The types keep
+    // between them into the violation predicate of the metrics and violations queries. The types keep
     // a method of their own so that a type needing more than a row count (a second data source, a
     // comparison the database cannot make) has a place to grow into.
 
@@ -290,10 +288,11 @@ public class DqCheckExecutorService {
 
     /**
      * Measures a rule that can point at individual violating rows: runs the metrics query, derives
-     * the pass rate, and collects sample rows for a rule that failed.
+     * the pass rate, and stores the query selecting the violating rows next to the numbers.
      */
     private DqCheckRunResult executeRowLevelCheck(DqCheckRun run, DqRule rule) {
-        DqRuleQueries queries = queryBuilder.buildQueries(rule);
+        DqSqlDialect dialect = dataSourceProvider.resolveDialect(rule.getDataSource());
+        DqRuleQueries queries = queryBuilder.buildQueries(rule, dialect);
         JdbcTemplate jdbcTemplate = dataSourceProvider.getJdbcTemplate(rule.getDataSource());
         DqSqlQuery metricsQuery = queries.metrics();
 
@@ -302,10 +301,6 @@ public class DqCheckExecutorService {
         Metrics metrics = jdbcTemplate.query(metricsQuery.sql(), METRICS_EXTRACTOR, metricsQuery.paramArray());
         BigDecimal passRate = passRate(metrics);
         boolean failed = passRate.compareTo(BigDecimal.valueOf(threshold(rule))) < 0;
-        // sampling costs a second query, so it is only paid for when there is something to show
-        String sampleViolations = failed && queries.samples() != null
-                ? loadSamples(jdbcTemplate, queries.samples())
-                : null;
 
         long executionMs = System.currentTimeMillis() - startedAt;
 
@@ -317,55 +312,14 @@ public class DqCheckExecutorService {
         result.setFailedRecords(metrics.failed());
         result.setPassRate(passRate);
         result.setExecutionMs(executionMs);
-        result.setExecutedQuery(metricsQuery.toDisplayString());
+        result.setExecutedQuery(metricsQuery.toDisplayString(dialect));
+        if (queries.violations() != null) {
+            // run later against the same data source, outside of this rule's context: the
+            // parameters are inlined so that the stored text is complete on its own
+            result.setViolationsQuery(queries.violations().toDisplayString(dialect));
+        }
 
         return saveResult(result);
-    }
-
-    /**
-     * Reads the violating rows as a JSON array of objects keyed by column label.
-     *
-     * @return the JSON text, or {@code null} when the query returned no row
-     */
-    @Nullable
-    private String loadSamples(JdbcTemplate jdbcTemplate, DqSqlQuery samplesQuery) {
-        List<Map<String, Object>> rows = jdbcTemplate.query(samplesQuery.sql(), rs -> {
-            List<Map<String, Object>> result = new ArrayList<>();
-            ResultSetMetaData metaData = rs.getMetaData();
-            int columnCount = metaData.getColumnCount();
-            while (result.size() < MAX_SAMPLE_ROWS && rs.next()) {
-                Map<String, Object> row = new LinkedHashMap<>();
-                for (int i = 1; i <= columnCount; i++) {
-                    row.put(metaData.getColumnLabel(i), jsonValue(rs.getObject(i)));
-                }
-                result.add(row);
-            }
-            return result;
-        }, samplesQuery.paramArray());
-
-        if (rows == null || rows.isEmpty()) {
-            return null;
-        }
-        try {
-            return objectMapper.writeValueAsString(rows);
-        } catch (Exception e) {
-            // the samples are a diagnostic aid, not the measurement: losing them must not fail the rule
-            log.warn("Sample violations cannot be serialized", e);
-            return null;
-        }
-    }
-
-    /**
-     * Narrows a value read from an arbitrary column to something JSON can carry. Anything that is not
-     * a number, a boolean or a string — a timestamp, an array, a database-specific object — is stored
-     * as its text form rather than mapped structurally.
-     */
-    @Nullable
-    private Object jsonValue(@Nullable Object value) {
-        if (value == null || value instanceof Number || value instanceof Boolean || value instanceof String) {
-            return value;
-        }
-        return String.valueOf(value);
     }
 
     // ---------------------------------------------------------------------
@@ -373,15 +327,16 @@ public class DqCheckExecutorService {
     // ---------------------------------------------------------------------
 
     /**
-     * Stores a result and, for a failed one, the issue it raises. Both are saved in a single call so
-     * that a result never appears without the issue it opened.
+     * Stores a result.
+     * <p>
+     * TODO a failed result is to raise an issue again once {@link DqIssue} is reworked: the entity now
+     *  requires a {@code code} that nothing generates yet, and saving the issue together with the
+     *  result would turn every failed rule into a skipped one. Then save both in a single call, so
+     *  that a result never appears without the issue it opened:
+     *  {@code dataManager.save(result, issueFor(result)).get(result)}.
      */
     private DqCheckRunResult saveResult(DqCheckRunResult result) {
-        if (result.getStatus() != DqCheckResultStatus.FAILED) {
-            return dataManager.save(result);
-        }
-        EntitySet saved = dataManager.save(result, issueFor(result));
-        return saved.get(result);
+        return dataManager.save(result);
     }
 
     private DqCheckRunResult skippedResult(DqCheckRun run, DqRule rule, String reason) {

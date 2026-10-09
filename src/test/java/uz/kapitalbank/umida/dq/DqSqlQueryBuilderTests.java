@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -71,8 +72,8 @@ public class DqSqlQueryBuilderTests {
                         " COUNT(CASE WHEN (t.\"first_name\" IS NULL) THEN 1 END) AS failed_count" +
                         " FROM \"employee\" t",
                 queries.metrics().sql());
-        assertEquals("SELECT t.* FROM \"employee\" t WHERE (t.\"first_name\" IS NULL) LIMIT 20",
-                queries.samples().sql());
+        assertEquals("SELECT t.* FROM \"employee\" t WHERE (t.\"first_name\" IS NULL)",
+                queries.violations().sql());
         assertEquals(List.of(), queries.metrics().params());
     }
 
@@ -85,28 +86,37 @@ public class DqSqlQueryBuilderTests {
                 queries.metrics().sql());
     }
 
-    // ----- row limit, per dialect -----
+    // ----- violations query, per dialect -----
 
     @Test
-    void theSamplesAreCappedInPostgresSyntax() {
+    void theViolationsAreNotCappedSoThatTheyCanBePagedThrough() {
         DqRuleQueries queries = build(rule(DqRuleType.NOT_NULL, "{}"), DqSqlDialect.POSTGRESQL);
-        assertTrue(queries.samples().sql().endsWith(" LIMIT 20"), queries.samples().sql());
+        assertFalse(queries.violations().sql().contains("LIMIT"), queries.violations().sql());
     }
 
     @Test
-    void theSamplesAreCappedInMysqlSyntaxWithBacktickQuoting() {
+    void theViolationsUseBacktickQuotingInMysql() {
         DqRuleQueries queries = build(rule(DqRuleType.NOT_NULL, "{}"), DqSqlDialect.MYSQL);
 
-        assertEquals("SELECT t.* FROM `employee` t WHERE (t.`first_name` IS NULL) LIMIT 20",
-                queries.samples().sql());
+        assertEquals("SELECT t.* FROM `employee` t WHERE (t.`first_name` IS NULL)",
+                queries.violations().sql());
     }
 
     @Test
-    void theSamplesAreCappedInOracleSyntax() {
+    void theViolationsAreNotCappedInOracle() {
         DqRuleQueries queries = build(rule(DqRuleType.NOT_NULL, "{}"), DqSqlDialect.ORACLE);
 
-        assertEquals("SELECT t.* FROM \"employee\" t WHERE (t.\"first_name\" IS NULL)" +
-                " FETCH FIRST 20 ROWS ONLY", queries.samples().sql());
+        assertEquals("SELECT t.* FROM \"employee\" t WHERE (t.\"first_name\" IS NULL)",
+                queries.violations().sql());
+    }
+
+    @Test
+    void pageClausePerDialect() {
+        assertEquals("LIMIT 50 OFFSET 100", DqSqlDialect.POSTGRESQL.pageClause(100, 50));
+        assertEquals("LIMIT 50 OFFSET 0", DqSqlDialect.MYSQL.pageClause(0, 50));
+        assertEquals("OFFSET 100 ROWS FETCH NEXT 50 ROWS ONLY", DqSqlDialect.ORACLE.pageClause(100, 50));
+        assertThrows(IllegalArgumentException.class, () -> DqSqlDialect.POSTGRESQL.pageClause(-1, 50));
+        assertThrows(IllegalArgumentException.class, () -> DqSqlDialect.POSTGRESQL.pageClause(0, 0));
     }
 
     // ----- UNIQUENESS -----
@@ -122,8 +132,8 @@ public class DqSqlQueryBuilderTests {
                         " FROM \"employee\" t",
                 queries.metrics().sql());
         assertEquals("SELECT t.* FROM \"employee\" t WHERE (" + duplicates + ")" +
-                        " ORDER BY t.\"first_name\" LIMIT 20",
-                queries.samples().sql());
+                        " ORDER BY t.\"first_name\"",
+                queries.violations().sql());
     }
 
     // ----- REGEXP -----
@@ -134,25 +144,25 @@ public class DqSqlQueryBuilderTests {
                 DqSqlDialect.POSTGRESQL);
 
         assertEquals("SELECT t.* FROM \"employee\" t" +
-                        " WHERE (t.\"first_name\" IS NOT NULL AND NOT (t.\"first_name\" ~ ?)) LIMIT 20",
-                queries.samples().sql());
-        assertEquals(List.of("^[A-Z]+$"), queries.samples().params());
+                        " WHERE (t.\"first_name\" IS NOT NULL AND NOT (t.\"first_name\" ~ ?))",
+                queries.violations().sql());
+        assertEquals(List.of("^[A-Z]+$"), queries.violations().params());
     }
 
     @Test
     void regexpUsesTheMysqlOperator() {
         DqRuleQueries queries = build(rule(DqRuleType.REGEXP, "{\"regexp\": \"^[A-Z]+$\"}"), DqSqlDialect.MYSQL);
 
-        assertTrue(queries.samples().sql().contains("NOT (t.`first_name` REGEXP ?)"),
-                queries.samples().sql());
+        assertTrue(queries.violations().sql().contains("NOT (t.`first_name` REGEXP ?)"),
+                queries.violations().sql());
     }
 
     @Test
     void regexpUsesTheOracleFunction() {
         DqRuleQueries queries = build(rule(DqRuleType.REGEXP, "{\"regexp\": \"^[A-Z]+$\"}"), DqSqlDialect.ORACLE);
 
-        assertTrue(queries.samples().sql().contains("NOT (REGEXP_LIKE(t.\"first_name\", ?))"),
-                queries.samples().sql());
+        assertTrue(queries.violations().sql().contains("NOT (REGEXP_LIKE(t.\"first_name\", ?))"),
+                queries.violations().sql());
     }
 
     @Test
@@ -172,9 +182,9 @@ public class DqSqlQueryBuilderTests {
         // condition selects the VIOLATING rows, which is the negation: salary < 10 OR salary > 20.
         // salary == 10 and salary == 20 must not be selected.
         assertEquals("SELECT t.* FROM \"employee\" t" +
-                        " WHERE (t.\"salary\" IS NOT NULL AND (t.\"salary\" < ? OR t.\"salary\" > ?)) LIMIT 20",
-                queries.samples().sql());
-        assertEquals(List.of(BigDecimal.valueOf(10d), BigDecimal.valueOf(20d)), queries.samples().params());
+                        " WHERE (t.\"salary\" IS NOT NULL AND (t.\"salary\" < ? OR t.\"salary\" > ?))",
+                queries.violations().sql());
+        assertEquals(List.of(BigDecimal.valueOf(10d), BigDecimal.valueOf(20d)), queries.violations().params());
     }
 
     @Test
@@ -186,8 +196,8 @@ public class DqSqlQueryBuilderTests {
 
         // allowed is now 10 < salary < 20, so salary == 10 and salary == 20 become violations —
         // this is the only case in which the comparison includes equality
-        assertTrue(queries.samples().sql().contains("(t.\"salary\" <= ? OR t.\"salary\" >= ?)"),
-                queries.samples().sql());
+        assertTrue(queries.violations().sql().contains("(t.\"salary\" <= ? OR t.\"salary\" >= ?)"),
+                queries.violations().sql());
     }
 
     @Test
@@ -195,8 +205,8 @@ public class DqSqlQueryBuilderTests {
         DqRuleQueries queries = build(rule(DqRuleType.RANGE_NUMBER, "{\"min\": 10}", "employee", "salary"),
                 DqSqlDialect.POSTGRESQL);
 
-        assertTrue(queries.samples().sql().contains("(t.\"salary\" < ?)"), queries.samples().sql());
-        assertEquals(1, queries.samples().params().size());
+        assertTrue(queries.violations().sql().contains("(t.\"salary\" < ?)"), queries.violations().sql());
+        assertEquals(1, queries.violations().params().size());
     }
 
     @Test
@@ -221,9 +231,9 @@ public class DqSqlQueryBuilderTests {
                 DqSqlDialect.ORACLE);
 
         assertEquals(List.of(Date.valueOf("2020-01-01"), Date.valueOf("2020-12-31")),
-                queries.samples().params());
-        assertTrue(queries.samples().sql().contains("(t.\"hire_date\" < ? OR t.\"hire_date\" > ?)"),
-                queries.samples().sql());
+                queries.violations().params());
+        assertTrue(queries.violations().sql().contains("(t.\"hire_date\" < ? OR t.\"hire_date\" > ?)"),
+                queries.violations().sql());
     }
 
     @Test
@@ -240,8 +250,8 @@ public class DqSqlQueryBuilderTests {
         DqRuleQueries queries = build(rule(DqRuleType.RANGE_DATE, "{\"min\": \"2020-01-01\"}",
                 "employee", "hire_date"), DqSqlDialect.POSTGRESQL);
 
-        assertTrue(queries.samples().toDisplayString().contains("t.\"hire_date\" < DATE '2020-01-01'"),
-                queries.samples().toDisplayString());
+        assertTrue(queries.violations().toDisplayString(DqSqlDialect.POSTGRESQL).contains("t.\"hire_date\" < DATE '2020-01-01'"),
+                queries.violations().toDisplayString(DqSqlDialect.POSTGRESQL));
     }
 
     @Test
@@ -249,8 +259,19 @@ public class DqSqlQueryBuilderTests {
         DqRuleQueries queries = build(rule(DqRuleType.REGEXP, "{\"regexp\": \"o'brien\"}"),
                 DqSqlDialect.POSTGRESQL);
 
-        assertTrue(queries.samples().toDisplayString().contains("~ 'o''brien'"),
-                queries.samples().toDisplayString());
+        assertTrue(queries.violations().toDisplayString(DqSqlDialect.POSTGRESQL).contains("~ 'o''brien'"),
+                queries.violations().toDisplayString(DqSqlDialect.POSTGRESQL));
+    }
+
+    @Test
+    void displayStringDoublesBackslashesInAMysqlPattern() {
+        DqRuleQueries queries = build(rule(DqRuleType.REGEXP, "{\"regexp\": \"^\\\\d+$\"}"),
+                DqSqlDialect.MYSQL);
+
+        assertTrue(queries.violations().toDisplayString(DqSqlDialect.MYSQL).contains("REGEXP '^\\\\d+$'"),
+                queries.violations().toDisplayString(DqSqlDialect.MYSQL));
+        assertTrue(queries.violations().toDisplayString(DqSqlDialect.POSTGRESQL).contains("'^\\d+$'"),
+                queries.violations().toDisplayString(DqSqlDialect.POSTGRESQL));
     }
 
     // ----- rejected input -----
@@ -286,8 +307,8 @@ public class DqSqlQueryBuilderTests {
     void samplesSelectTheWholeRowWhenNoColumnsAreConfigured() {
         DqRuleQueries queries = build(rule(DqRuleType.NOT_NULL, "{}"), DqSqlDialect.POSTGRESQL);
 
-        assertEquals("SELECT t.* FROM \"employee\" t WHERE (t.\"first_name\" IS NULL) LIMIT 20",
-                queries.samples().sql());
+        assertEquals("SELECT t.* FROM \"employee\" t WHERE (t.\"first_name\" IS NULL)",
+                queries.violations().sql());
     }
 
     @Test
@@ -295,8 +316,8 @@ public class DqSqlQueryBuilderTests {
         DqRuleQueries queries = build(
                 rule(DqRuleType.NOT_NULL, "{\"samplesQueryColumns\": [\"*\"]}"), DqSqlDialect.POSTGRESQL);
 
-        assertEquals("SELECT t.* FROM \"employee\" t WHERE (t.\"first_name\" IS NULL) LIMIT 20",
-                queries.samples().sql());
+        assertEquals("SELECT t.* FROM \"employee\" t WHERE (t.\"first_name\" IS NULL)",
+                queries.violations().sql());
     }
 
     @Test
@@ -306,8 +327,8 @@ public class DqSqlQueryBuilderTests {
                 DqSqlDialect.POSTGRESQL);
 
         assertEquals("SELECT t.\"id\", t.\"first_name\" FROM \"employee\" t" +
-                        " WHERE (t.\"first_name\" IS NULL) LIMIT 20",
-                queries.samples().sql());
+                        " WHERE (t.\"first_name\" IS NULL)",
+                queries.violations().sql());
         // the projection never reaches the metrics query: it counts rows, not values
         assertTrue(queries.metrics().sql().startsWith("SELECT COUNT(*) AS total_count"),
                 queries.metrics().sql());
@@ -319,8 +340,8 @@ public class DqSqlQueryBuilderTests {
                 rule(DqRuleType.NOT_NULL, "{\"samplesQueryColumns\": [\"id\", \"first_name\"]}"),
                 DqSqlDialect.MYSQL);
 
-        assertEquals("SELECT t.`id`, t.`first_name` FROM `employee` t WHERE (t.`first_name` IS NULL) LIMIT 20",
-                queries.samples().sql());
+        assertEquals("SELECT t.`id`, t.`first_name` FROM `employee` t WHERE (t.`first_name` IS NULL)",
+                queries.violations().sql());
     }
 
     @Test
@@ -329,8 +350,8 @@ public class DqSqlQueryBuilderTests {
                 rule(DqRuleType.NOT_NULL, "{\"samplesQueryColumns\": [\" id \", \"id\", \"\"]}"),
                 DqSqlDialect.POSTGRESQL);
 
-        assertEquals("SELECT t.\"id\" FROM \"employee\" t WHERE (t.\"first_name\" IS NULL) LIMIT 20",
-                queries.samples().sql());
+        assertEquals("SELECT t.\"id\" FROM \"employee\" t WHERE (t.\"first_name\" IS NULL)",
+                queries.violations().sql());
     }
 
     @Test
@@ -338,8 +359,8 @@ public class DqSqlQueryBuilderTests {
         DqRuleQueries queries = build(
                 rule(DqRuleType.NOT_NULL, "{\"samplesQueryColumns\": []}"), DqSqlDialect.POSTGRESQL);
 
-        assertEquals("SELECT t.* FROM \"employee\" t WHERE (t.\"first_name\" IS NULL) LIMIT 20",
-                queries.samples().sql());
+        assertEquals("SELECT t.* FROM \"employee\" t WHERE (t.\"first_name\" IS NULL)",
+                queries.violations().sql());
     }
 
     @Test
@@ -383,9 +404,9 @@ public class DqSqlQueryBuilderTests {
         System.out.println(queries.metrics().sql());
         System.out.println(queries.metrics().params());
 
-        System.out.println("\nSamples: ");
-        System.out.println(queries.samples().sql());
-        System.out.println(queries.samples().params());
+        System.out.println("\nViolations: ");
+        System.out.println(queries.violations().sql());
+        System.out.println(queries.violations().params());
     }
 
 }

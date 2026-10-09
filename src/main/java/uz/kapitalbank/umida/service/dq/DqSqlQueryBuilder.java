@@ -32,9 +32,9 @@ import java.util.stream.Collectors;
  * <ul>
  *     <li>a <b>metrics</b> query returning {@value #COLUMN_TOTAL_COUNT} and
  *     {@value #COLUMN_FAILED_COUNT} in a single row;</li>
- *     <li>a <b>samples</b> query returning the violating rows, capped at {@value #MAX_SAMPLE_ROWS}
- *     and projected onto {@code ruleConfig.samplesQueryColumns}
- *     ({@value #ALL_COLUMNS}, or an absent list, keeps the whole row).</li>
+ *     <li>a <b>violations</b> query returning every violating row, projected onto
+ *     {@code ruleConfig.samplesQueryColumns} ({@value #ALL_COLUMNS}, or an absent list, keeps the
+ *     whole row). It carries no row limit: whoever runs it pages through it.</li>
  * </ul>
  * The {@code threshold} attribute is deliberately not part of the SQL: it compares against the pass
  * rate derived from the two counts and belongs to the executor.
@@ -47,12 +47,6 @@ import java.util.stream.Collectors;
  */
 @Service
 public class DqSqlQueryBuilder {
-
-    /**
-     * The number of violating rows the samples query returns. They only illustrate a failure, and
-     * an uncapped query against a large table would be read into memory in full.
-     */
-    public static final int MAX_SAMPLE_ROWS = 20;
 
     /** Alias of the total row count in the metrics query. */
     public static final String COLUMN_TOTAL_COUNT = "total_count";
@@ -139,7 +133,7 @@ public class DqSqlQueryBuilder {
 
     /**
      * Violating row: the column value occurs more than once in the table. Every member of a duplicate
-     * group counts, not just the surplus ones, so the samples show the full group. {@code NULL} never
+     * group counts, not just the surplus ones, so the violating rows show the full group. {@code NULL} never
      * violates uniqueness, which matches how SQL unique constraints treat it.
      */
     private DqRuleQueries buildUniqueness(DqRule rule, DqRuleConfig config, DqSqlDialect dialect) {
@@ -152,7 +146,7 @@ public class DqSqlQueryBuilder {
                 + " GROUP BY " + duplicateColumn
                 + " HAVING COUNT(*) > 1)";
 
-        // ordering keeps the members of a duplicate group adjacent in the sample rows
+        // ordering keeps the members of a duplicate group adjacent in the violating rows
         return rowLevelQueries(rule, config, dialect, new Predicate(predicate, List.of()), column);
     }
 
@@ -218,9 +212,9 @@ public class DqSqlQueryBuilder {
     // ---------------------------------------------------------------------
 
     /**
-     * Builds the metrics/samples pair from a predicate that identifies a single violating row.
+     * Builds the metrics/violations pair from a predicate that identifies a single violating row.
      *
-     * @param orderByColumn column expression to order the sample rows by, or {@code null} to leave
+     * @param orderByColumn column expression to order the violating rows by, or {@code null} to leave
      *                      the order to the database
      */
     private DqRuleQueries rowLevelQueries(DqRule rule, DqRuleConfig config, DqSqlDialect dialect,
@@ -232,17 +226,16 @@ public class DqSqlQueryBuilder {
                 + ", COUNT(CASE WHEN (" + violation.sql() + ") THEN 1 END) AS " + COLUMN_FAILED_COUNT
                 + from;
 
-        StringBuilder samples = new StringBuilder("SELECT ").append(samplesProjection(rule, config, dialect))
+        StringBuilder violations = new StringBuilder("SELECT ").append(violationsProjection(rule, config, dialect))
                 .append(from)
                 .append(" WHERE (").append(violation.sql()).append(')');
         if (orderByColumn != null) {
-            samples.append(" ORDER BY ").append(orderByColumn);
+            violations.append(" ORDER BY ").append(orderByColumn);
         }
-        samples.append(' ').append(dialect.limitClause(MAX_SAMPLE_ROWS));
 
         return new DqRuleQueries(
                 new DqSqlQuery(metrics, violation.params()),
-                new DqSqlQuery(samples.toString(), violation.params()));
+                new DqSqlQuery(violations.toString(), violation.params()));
     }
 
     /**
@@ -282,11 +275,11 @@ public class DqSqlQueryBuilder {
     }
 
     /**
-     * The select list of the samples query. Storing only the columns worth looking at keeps the
-     * serialized samples small and readable on tables that carry hundreds of them; the whole row is
-     * kept when the configuration names {@value #ALL_COLUMNS} or names nothing usable.
+     * The select list of the violations query. Selecting only the columns worth looking at keeps the
+     * violating rows readable on tables that carry hundreds of them; the whole row is selected when
+     * the configuration names {@value #ALL_COLUMNS} or names nothing usable.
      */
-    private String samplesProjection(DqRule rule, DqRuleConfig config, DqSqlDialect dialect) {
+    private String violationsProjection(DqRule rule, DqRuleConfig config, DqSqlDialect dialect) {
         List<String> columns = config.getSamplesQueryColumns();
         if (columns == null || columns.contains(ALL_COLUMNS)) {
             return ROW_ALIAS + ".*";
