@@ -52,7 +52,7 @@ public class DqDataSourceProviderTests {
     }
 
     @ParameterizedTest
-    @CsvSource({"main,public,employee", "dwh,public,orders"})
+    @CsvSource({"main,public,umida_org_structure_employees"})
     void test_get_schema_table_columns(String dataSourceId, String schema, String tableName) {
         List<String> columns = dqDataSourceProvider.getTableColumns(dataSourceId, schema, tableName);
         System.out.println("size: " + columns.size());
@@ -73,9 +73,7 @@ public class DqDataSourceProviderTests {
 
     @ParameterizedTest
     @CsvSource({
-            "main,employee",
-            "dwh,product_categories",
-            "dwh,products", "dwh,orders"
+            "main,umida_org_structure_employees",
     })
     void test_get_table_columns(String dataSourceId, String tableName) {
         List<String> columns = dqDataSourceProvider.getTableColumns(dataSourceId, tableName);

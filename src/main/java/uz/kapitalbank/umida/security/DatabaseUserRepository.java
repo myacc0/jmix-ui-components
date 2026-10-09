@@ -22,8 +22,7 @@ import java.util.Locale;
 public class DatabaseUserRepository extends AbstractDatabaseUserRepository<User> {
 
     /**
-     * The form a username is stored and compared in: trimmed and lower-cased. The unique index
-     * {@code IDX_UMIDA_USER_ON_LOWER_USERNAME} holds the database to the same rule.
+     * The form a username is stored and compared in: trimmed and lower-cased.
      */
     public static String normalizeUsername(String username) {
         return username.trim().toLowerCase(Locale.ROOT);
