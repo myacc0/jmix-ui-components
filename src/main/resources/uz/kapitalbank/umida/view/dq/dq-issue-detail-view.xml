@@ -6,7 +6,16 @@
         <instance id="dqIssueDc"
                   class="uz.kapitalbank.umida.entity.dq.DqIssue">
             <fetchPlan extends="_base">
-                <property name="rule" fetchPlan="_instance_name"/>
+                <property name="rule" fetchPlan="_instance_name">
+                    <property name="code"/>
+                    <property name="dataSource"/>
+                    <property name="severity"/>
+                </property>
+                <property name="checkResult">
+                    <property name="status"/>
+                    <property name="failedRecords"/>
+                    <property name="violationsQuery"/>
+                </property>
             </fetchPlan>
             <loader id="dqIssueDl"/>
         </instance>
@@ -18,26 +27,40 @@
         <action id="closeAction" type="detail_close"/>
     </actions>
     <layout>
+        <!-- an issue is maintained by the check runs: it is only ever closed here, never edited -->
         <formLayout id="form" dataContainer="dqIssueDc" width="60%">
             <responsiveSteps>
                 <responsiveStep minWidth="0" columns="1"/>
+                <responsiveStep minWidth="40em" columns="2"/>
             </responsiveSteps>
-            <entityPicker id="ruleField" property="rule">
-                <actions>
-                    <action id="entityLookupAction" type="entity_lookup"/>
-                    <action id="entityClearAction" type="entity_clear"/>
-                </actions>
-            </entityPicker>
-            <select id="statusField" property="status"/>
-            <textArea id="descriptionField" property="description" minRows="5"/>
-            <datePicker id="dueDateField" property="dueDate"/>
-            <dateTimePicker id="resolvedAtField" property="resolvedAt"/>
-            <textArea id="resolutionNotesField" property="resolutionNotes" minRows="5"/>
-            <dateTimePicker id="createdAtField" property="createdAt"/>
-            <dateTimePicker id="updatedAtField" property="updatedAt"/>
+            <textField id="codeField" property="code" readOnly="true"/>
+            <select id="statusField" property="status" readOnly="true"/>
+            <textField id="ruleField" property="rule.code" readOnly="true"
+                       label="msg://uz.kapitalbank.umida.entity.dq/DqIssue.rule"/>
+            <textField id="dataSourceField" property="rule.dataSource" readOnly="true"
+                       label="msg://uz.kapitalbank.umida.entity.dq/DqRule.dataSource"/>
+            <select id="severityField" property="rule.severity" readOnly="true"
+                    label="msg://uz.kapitalbank.umida.entity.dq/DqRule.severity"/>
+            <textField id="affectedRowsField" property="checkResult.failedRecords" readOnly="true"
+                       label="msg://dqIssue.affectedRows"/>
+            <datePicker id="dueDateField" property="dueDate" readOnly="true"/>
+            <dateTimePicker id="resolvedAtField" property="resolvedAt" readOnly="true"/>
+            <dateTimePicker id="createdAtField" property="createdAt" readOnly="true"/>
+            <dateTimePicker id="updatedAtField" property="updatedAt" readOnly="true"/>
+            <textArea id="descriptionField" property="description" readOnly="true" minRows="3" colspan="2"/>
+            <textArea id="resolutionNotesField" property="resolutionNotes" readOnly="true" minRows="3"
+                      colspan="2"/>
         </formLayout>
-        <hbox id="detailActions" width="60%" justifyContent="CENTER" css="padding-bottom: 40px">
+        <hbox id="detailActions" width="60%">
+            <button id="closeIssueButton"
+                    text="msg://dqIssueListView.closeIssueAction"
+                    icon="vaadin:check"
+                    themeNames="primary"/>
             <button id="closeButton" action="closeAction"/>
         </hbox>
+        <h4 id="violationsHeader" text="msg://dqIssueDetailView.violationsHeader"/>
+        <vbox id="violationsBox" width="100%" height="32em" padding="false" css="padding-bottom: 40px">
+            <fragment id="violationsFragment" class="uz.kapitalbank.umida.view.dq.DqViolationsFragment"/>
+        </vbox>
     </layout>
 </view>

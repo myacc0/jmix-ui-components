@@ -6,6 +6,7 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Span;
 import io.jmix.core.DataManager;
 import io.jmix.flowui.ViewNavigators;
+import io.jmix.flowui.component.UiComponentUtils;
 import io.jmix.flowui.component.grid.DataGrid;
 import io.jmix.flowui.kit.component.button.JmixButton;
 import io.jmix.flowui.testassist.FlowuiTestAssistConfiguration;
@@ -27,6 +28,7 @@ import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
 import uz.kapitalbank.umida.test_support.DqTestData;
 import uz.kapitalbank.umida.view.dq.DqCheckRunDetailView;
 import uz.kapitalbank.umida.view.dq.DqCheckRunViolationsView;
+import uz.kapitalbank.umida.view.dq.DqViolationsFragment;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -40,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * The results of a check run are listed on the run's own page. The violating rows of a failed rule are
  * read with the query stored on its result and shown in a dialog, a page of
- * {@value DqCheckRunViolationsView#PAGE_SIZE} rows at a time.
+ * {@value DqViolationsFragment#PAGE_SIZE} rows at a time.
  */
 @UiTest
 @SpringBootTest(classes = {UmidaApplication.class, FlowuiTestAssistConfiguration.class})
@@ -48,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class DqCheckRunDetailUiTest {
 
     /** More violating rows than a page holds, so that the second page is reachable. */
-    private static final int VIOLATING_ROWS = DqCheckRunViolationsView.PAGE_SIZE + 5;
+    private static final int VIOLATING_ROWS = DqViolationsFragment.PAGE_SIZE + 5;
 
     @Autowired
     DataManager dataManager;
@@ -131,15 +133,16 @@ public class DqCheckRunDetailUiTest {
         violationsButton.click();
 
         DqCheckRunViolationsView violationsView = openedViolationsView();
-        Grid<?> violationsGrid = UiTestUtils.getComponent(violationsView, "violationsDataGrid");
+        DqViolationsFragment violations = UiTestUtils.getComponent(violationsView, "violationsFragment");
+        Grid<?> violationsGrid = (Grid<?>) UiComponentUtils.getComponent(violations, "violationsDataGrid");
         assertEquals(List.of("code", "short_name"), headers(violationsGrid),
                 "the columns are the ones the violations query selects");
-        assertEquals(DqCheckRunViolationsView.PAGE_SIZE, violationsGrid.getGenericDataView().getItems().count(),
+        assertEquals(DqViolationsFragment.PAGE_SIZE, violationsGrid.getGenericDataView().getItems().count(),
                 "the first page is full");
 
-        JmixButton previousPageButton = UiTestUtils.getComponent(violationsView, "previousPageButton");
-        JmixButton nextPageButton = UiTestUtils.getComponent(violationsView, "nextPageButton");
-        Span pageStatusLabel = UiTestUtils.getComponent(violationsView, "pageStatusLabel");
+        JmixButton previousPageButton = (JmixButton) UiComponentUtils.getComponent(violations, "previousPageButton");
+        JmixButton nextPageButton = (JmixButton) UiComponentUtils.getComponent(violations, "nextPageButton");
+        Span pageStatusLabel = (Span) UiComponentUtils.getComponent(violations, "pageStatusLabel");
         assertFalse(previousPageButton.isEnabled(), "there is nothing before the first page");
         assertTrue(nextPageButton.isEnabled(), "the rows do not fit on one page");
         assertTrue(pageStatusLabel.getText().contains(String.valueOf(VIOLATING_ROWS)),
@@ -147,7 +150,7 @@ public class DqCheckRunDetailUiTest {
 
         nextPageButton.click();
 
-        assertEquals(VIOLATING_ROWS - DqCheckRunViolationsView.PAGE_SIZE,
+        assertEquals(VIOLATING_ROWS - DqViolationsFragment.PAGE_SIZE,
                 violationsGrid.getGenericDataView().getItems().count(), "the second page holds the rest");
         assertTrue(previousPageButton.isEnabled());
         assertFalse(nextPageButton.isEnabled(), "the second page is the last one");

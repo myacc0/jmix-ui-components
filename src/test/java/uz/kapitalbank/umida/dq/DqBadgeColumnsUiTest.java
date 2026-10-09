@@ -103,8 +103,8 @@ public class DqBadgeColumnsUiTest {
 
         assertBadge(grid, "status", issue, DqBadges.ISSUE_STATUS + "open",
                 messages.getMessage(DqIssueStatus.OPEN));
-        assertBadge(grid, "severity", issue, DqBadges.SEVERITY + "medium",
-                messages.getMessage(DqSeverity.MEDIUM));
+        assertBadge(grid, "severity", issue, DqBadges.SEVERITY + "critical",
+                messages.getMessage(DqSeverity.CRITICAL));
     }
 
     @Test

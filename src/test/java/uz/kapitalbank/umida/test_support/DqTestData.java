@@ -1,6 +1,7 @@
 package uz.kapitalbank.umida.test_support;
 
 import io.jmix.core.DataManager;
+import io.jmix.core.Id;
 import io.jmix.core.SaveContext;
 import io.jmix.data.PersistenceHints;
 import uz.kapitalbank.umida.entity.dict.DictDataDomain;
@@ -92,9 +93,14 @@ public class DqTestData {
         List<Object> reversed = new ArrayList<>(created);
         Collections.reverse(reversed);
         for (Object entity : reversed) {
-            dataManager.save(new SaveContext()
-                    .removing(entity)
-                    .setHint(PersistenceHints.SOFT_DELETION, false));
+            // reloaded: a test may have saved the entity again since, which leaves the tracked
+            // instance with a stale version, or removed it already
+            dataManager.load(Id.of(entity))
+                    .hint(PersistenceHints.SOFT_DELETION, false)
+                    .optional()
+                    .ifPresent(current -> dataManager.save(new SaveContext()
+                            .removing(current)
+                            .setHint(PersistenceHints.SOFT_DELETION, false)));
         }
         created.clear();
     }

@@ -10,7 +10,10 @@ import io.jmix.flowui.component.validation.ValidationErrors;
 import io.jmix.flowui.view.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
-/** Closes an open issue with an outcome: only the closing statuses are offered. */
+/**
+ * Closes an open issue by hand. Only the outcomes a user may choose are offered: an issue is resolved
+ * by the check runs, once its data is fixed.
+ */
 @Route(value = "dq-issues/:id/close", layout = MainView.class)
 @ViewController(id = "umida_DqIssue.close")
 @ViewDescriptor(path = "dq-issue-close-view.xml")
@@ -35,19 +38,23 @@ public class DqIssueCloseView extends StandardDetailView<DqIssue> {
 
     @Subscribe
     public void onInit(final InitEvent event) {
-        statusField.setItems(DqIssueStatus.RESOLVED, DqIssueStatus.WONTFIX, DqIssueStatus.FALSE_POSITIVE);
+        statusField.setItems(DqIssueService.MANUAL_CLOSING_STATUSES);
     }
 
     /**
      * The issue arrives here still open, and the field shows that value as blank because it is not
-     * among the offered ones. Saving it back unchanged would close nothing, so it is rejected.
+     * among the offered ones. Saving it back unchanged would close nothing, so it is rejected. The
+     * right to close is checked again: the list only hides the action from the others.
      */
     @Subscribe
     public void onValidation(final ValidationEvent event) {
-        if (getEditedEntity().getStatus() == DqIssueStatus.OPEN) {
-            ValidationErrors errors = new ValidationErrors();
+        ValidationErrors errors = new ValidationErrors();
+        if (!DqIssueService.MANUAL_CLOSING_STATUSES.contains(getEditedEntity().getStatus())) {
             errors.add(statusField, messageBundle.getMessage("dqIssueCloseView.statusRequired"));
-            event.addErrors(errors);
         }
+        if (!dqIssueService.isInAssigneeSubdivision(getEditedEntity())) {
+            errors.add(messageBundle.getMessage("dqIssueCloseView.notAssignee"));
+        }
+        event.addErrors(errors);
     }
 }

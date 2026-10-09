@@ -4,11 +4,14 @@ import uz.kapitalbank.umida.component.slider.Slider;
 import uz.kapitalbank.umida.dto.dq.DqRuleConfig;
 import uz.kapitalbank.umida.dto.dq.DqRuleValidationError;
 import uz.kapitalbank.umida.dto.SelectDto;
+import uz.kapitalbank.umida.entity.dq.DqIssue;
 import uz.kapitalbank.umida.entity.dq.DqRule;
 import uz.kapitalbank.umida.enums.dq.DqRuleType;
 import uz.kapitalbank.umida.enums.dq.DqSeverity;
 import uz.kapitalbank.umida.repository.DqRuleRepository;
 import uz.kapitalbank.umida.service.dq.DqDataSourceProvider;
+import uz.kapitalbank.umida.service.dq.DqIssueService;
+import uz.kapitalbank.umida.service.dq.DqRuleService;
 import uz.kapitalbank.umida.service.dq.DqRuleValidator;
 import uz.kapitalbank.umida.service.dq.DqSqlQueryBuilder;
 import uz.kapitalbank.umida.utils.DateUtils;
@@ -27,6 +30,8 @@ import io.jmix.core.EntityStates;
 import io.jmix.core.FetchPlan;
 import io.jmix.core.Messages;
 import io.jmix.core.SaveContext;
+import io.jmix.flowui.Dialogs;
+import io.jmix.flowui.action.DialogAction;
 import io.jmix.flowui.component.checkbox.JmixCheckbox;
 import io.jmix.flowui.component.combobox.JmixComboBox;
 import io.jmix.flowui.component.datepicker.TypedDatePicker;
@@ -64,6 +69,15 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
 
     @Autowired
     private DqRuleValidator ruleValidator;
+
+    @Autowired
+    private DqRuleService ruleService;
+
+    @Autowired
+    private DqIssueService issueService;
+
+    @Autowired
+    private Dialogs dialogs;
 
     @Autowired
     private EntityStates entityStates;
@@ -439,6 +453,32 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
             case DqRuleValidationError.FIELD_MAX -> rangeDate ? maxDateField : maxNumberField;
             default -> null;
         };
+    }
+
+    /**
+     * Moving a stored rule to another data source, schema, table or column closes its open issues
+     * (see {@link DqIssueService}), so the user confirms that first, seeing the issues it closes.
+     */
+    @Subscribe
+    public void onBeforeSave(final BeforeSaveEvent event) {
+        DqRule rule = getEditedEntity();
+        if (entityStates.isNew(rule) || !ruleService.isDataSourceChanged(rule)) {
+            return;
+        }
+        List<DqIssue> openIssues = issueService.findOpenIssues(rule);
+        if (openIssues.isEmpty()) {
+            return;
+        }
+
+        event.preventSave();
+        String codes = openIssues.stream().map(DqIssue::getCode).collect(Collectors.joining(", "));
+        dialogs.createOptionDialog()
+                .withHeader(messageBundle.getMessage("dqRuleDetailView.dataSourceChangedHeader"))
+                .withText(messageBundle.formatMessage("dqRuleDetailView.dataSourceChangedText", codes))
+                .withActions(
+                        new DialogAction(DialogAction.Type.YES).withHandler(e -> event.resume()),
+                        new DialogAction(DialogAction.Type.NO))
+                .open();
     }
 
     @Install(target = Target.DATA_CONTEXT)

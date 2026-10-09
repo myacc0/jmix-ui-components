@@ -31,6 +31,12 @@ public class DqRuleService {
             "dataSource", "dbSchema", "tableName", "columnName", "ruleType", "ruleConfig"
     };
 
+    /**
+     * The attributes that locate the data a rule checks. Changing any of them closes the open issues
+     * of the rule as {@code RULE_DATA_SOURCE_CHANGED}, see {@link DqIssueService}.
+     */
+    public static final String[] DATA_SOURCE_FIELDS = {"dataSource", "dbSchema", "tableName", "columnName"};
+
     /** Unconstrained: the bookkeeping reads what the rule holds, whatever the current user may see of it. */
     private final UnconstrainedDataManager dataManager;
     private final Sequences sequences;
@@ -68,26 +74,41 @@ public class DqRuleService {
         }
     }
 
+    /** Whether a stored rule is about to be moved to another data source, schema, table or column. */
+    public boolean isDataSourceChanged(DqRule rule) {
+        return loadStored(rule, DATA_SOURCE_FIELDS)
+                .map(original -> isDataSourceChanged(original, rule))
+                .orElse(false);
+    }
+
     /**
      * Whether the key fields of a stored rule differ from what the database holds. The rule config
      * is compared as JSON: the editor reformats it, which alone is no change.
      */
     public boolean isKeyFieldsChanged(DqRule rule) {
-        Optional<DqRule> stored = dataManager.load(DqRule.class)
-                .id(rule.getId())
-                .fetchPlanProperties(KEY_FIELDS)
-                .joinTransaction(false)
-                .optional();
-        if (stored.isEmpty()) {
-            return false;
-        }
+        return loadStored(rule, KEY_FIELDS)
+                .map(original -> isDataSourceChanged(original, rule)
+                        || original.getRuleType() != rule.getRuleType()
+                        || !JsonUtils.sameJson(original.getRuleConfig(), rule.getRuleConfig(), objectMapper))
+                .orElse(false);
+    }
 
-        DqRule original = stored.get();
+    private boolean isDataSourceChanged(DqRule original, DqRule rule) {
         return !Objects.equals(original.getDataSource(), rule.getDataSource())
                 || !Objects.equals(original.getDbSchema(), rule.getDbSchema())
                 || !Objects.equals(original.getTableName(), rule.getTableName())
-                || !Objects.equals(original.getColumnName(), rule.getColumnName())
-                || original.getRuleType() != rule.getRuleType()
-                || !JsonUtils.sameJson(original.getRuleConfig(), rule.getRuleConfig(), objectMapper);
+                || !Objects.equals(original.getColumnName(), rule.getColumnName());
+    }
+
+    /** The rule as the database holds it, outside of the transaction saving it; empty for a new one. */
+    private Optional<DqRule> loadStored(DqRule rule, String[] properties) {
+        if (rule.getId() == null) {
+            return Optional.empty();
+        }
+        return dataManager.load(DqRule.class)
+                .id(rule.getId())
+                .fetchPlanProperties(properties)
+                .joinTransaction(false)
+                .optional();
     }
 }

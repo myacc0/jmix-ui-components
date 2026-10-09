@@ -9,7 +9,8 @@ public enum DqIssueStatus implements EnumClass<String> {
     OPEN("open"),
     RESOLVED("resolved"),
     WONTFIX("wontfix"),
-    FALSE_POSITIVE("false_positive");
+    FALSE_POSITIVE("false_positive"),
+    RULE_DATA_SOURCE_CHANGED("rule_data_source_changed");
 
     private final String id;
 

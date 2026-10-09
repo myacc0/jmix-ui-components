@@ -11,7 +11,6 @@ import uz.kapitalbank.umida.entity.dq.DqRule;
 import uz.kapitalbank.umida.enums.dq.DqCheckResultStatus;
 import uz.kapitalbank.umida.enums.dq.DqCheckRunStatus;
 import uz.kapitalbank.umida.enums.dq.DqCheckRunTrigger;
-import uz.kapitalbank.umida.enums.dq.DqIssueStatus;
 import uz.kapitalbank.umida.enums.dq.DqRuleType;
 import uz.kapitalbank.umida.enums.dq.DqSqlDialect;
 import uz.kapitalbank.umida.utils.JsonUtils;
@@ -39,7 +38,8 @@ import java.util.*;
 /**
  * Runs a data quality check: takes the rule filter of the "run check" page, records a
  * {@link DqCheckRun}, evaluates every matching {@link DqRule} against its data source and stores a
- * {@link DqCheckRunResult} per rule, opening a {@link DqIssue} for the rules that failed.
+ * {@link DqCheckRunResult} per rule, and keeps the {@link DqIssue}s of the rules in step with the
+ * results ({@link DqIssueService#issuesFor}).
  * <p>
  * The run is asynchronous. {@link #startCheckRun(DqRuleFilter)} persists the run with status
  * {@link DqCheckRunStatus#RUNNING} and returns immediately; the rules are evaluated on a worker
@@ -78,6 +78,7 @@ public class DqCheckExecutorService {
     private final DqDataSourceProvider dataSourceProvider;
     private final DqRuleFilterService ruleFilterService;
     private final DqCheckRunService checkRunService;
+    private final DqIssueService issueService;
     private final CurrentAuthentication currentAuthentication;
     private final SystemAuthenticator systemAuthenticator;
     private final Messages messages;
@@ -89,6 +90,7 @@ public class DqCheckExecutorService {
                                   DqDataSourceProvider dataSourceProvider,
                                   DqRuleFilterService ruleFilterService,
                                   DqCheckRunService checkRunService,
+                                  DqIssueService issueService,
                                   CurrentAuthentication currentAuthentication,
                                   SystemAuthenticator systemAuthenticator,
                                   Messages messages,
@@ -99,6 +101,7 @@ public class DqCheckExecutorService {
         this.dataSourceProvider = dataSourceProvider;
         this.ruleFilterService = ruleFilterService;
         this.checkRunService = checkRunService;
+        this.issueService = issueService;
         this.currentAuthentication = currentAuthentication;
         this.systemAuthenticator = systemAuthenticator;
         this.messages = messages;
@@ -327,16 +330,17 @@ public class DqCheckExecutorService {
     // ---------------------------------------------------------------------
 
     /**
-     * Stores a result.
-     * <p>
-     * TODO a failed result is to raise an issue again once {@link DqIssue} is reworked: the entity now
-     *  requires a {@code code} that nothing generates yet, and saving the issue together with the
-     *  result would turn every failed rule into a skipped one. Then save both in a single call, so
-     *  that a result never appears without the issue it opened:
-     *  {@code dataManager.save(result, issueFor(result)).get(result)}.
+     * Stores a result together with the issues it opens, refreshes or resolves, in a single call, so
+     * that a result never appears without the issue it opened.
      */
     private DqCheckRunResult saveResult(DqCheckRunResult result) {
-        return dataManager.save(result);
+        String failureDescription = result.getStatus() == DqCheckResultStatus.FAILED
+                ? issueDescription(result.getRule(), result)
+                : null;
+
+        SaveContext saveContext = new SaveContext().saving(result);
+        issueService.issuesFor(result, failureDescription).forEach(saveContext::saving);
+        return dataManager.save(saveContext).get(result);
     }
 
     private DqCheckRunResult skippedResult(DqCheckRun run, DqRule rule, String reason) {
@@ -346,43 +350,6 @@ public class DqCheckExecutorService {
         result.setStatus(DqCheckResultStatus.SKIPPED);
         result.setErrorMessage(reason);
         return result;
-    }
-
-    /**
-     * The issue a failed result raises: the one already open for the same rule and data source when
-     * there is one, refreshed with the latest numbers, otherwise a new one. Re-running a check that
-     * keeps failing therefore keeps a single issue instead of a new one per run.
-     */
-    private DqIssue issueFor(DqCheckRunResult result) {
-        DqRule rule = result.getRule();
-        DqIssue issue = dataManager.load(DqIssue.class)
-                .query("select i from umida_DqIssue i" +
-                        " where i.rule = :rule and i.rule.dataSource = :dataSource and i.status = :status" +
-                        " order by i.createdAt desc")
-                .parameter("rule", rule)
-                .parameter("dataSource", rule.getDataSource())
-                .parameter("status", DqIssueStatus.OPEN.getId())
-                .maxResults(1)
-                .optional()
-                .orElseGet(() -> newIssue(rule));
-
-        issue.setCheckResult(result);
-        issue.setDescription(issueDescription(rule, result));
-        issue.setUpdatedAt(OffsetDateTime.now());
-        return issue;
-    }
-
-    private DqIssue newIssue(DqRule rule) {
-        DqIssue issue = dataManager.create(DqIssue.class);
-        issue.setRule(rule);
-        issue.setStatus(DqIssueStatus.OPEN);
-        issue.setCreatedAt(OffsetDateTime.now());
-        return issue;
-    }
-
-    private String issueTitle(DqRule rule) {
-        return messages.formatMessage(DqCheckExecutorService.class, "dqCheckExecutor.issueTitle",
-                rule.getName(), target(rule));
     }
 
     private String issueDescription(DqRule rule, DqCheckRunResult result) {

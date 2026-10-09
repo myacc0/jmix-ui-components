@@ -7,11 +7,21 @@
         <collection id="dqIssuesDc"
                     class="uz.kapitalbank.umida.entity.dq.DqIssue">
             <fetchPlan extends="_base">
-                <property name="rule" fetchPlan="_instance_name"/>
+                <property name="rule" fetchPlan="_instance_name">
+                    <property name="code"/>
+                    <property name="dataSource"/>
+                    <property name="severity"/>
+                </property>
+                <!-- the status and the query decide whether the violating rows can be shown -->
+                <property name="checkResult">
+                    <property name="status"/>
+                    <property name="failedRecords"/>
+                    <property name="violationsQuery"/>
+                </property>
             </fetchPlan>
             <loader id="dqIssuesDl" readOnly="true">
                 <query>
-                    <![CDATA[select e from umida_DqIssue e]]>
+                    <![CDATA[select e from umida_DqIssue e order by e.createdAt desc]]>
                 </query>
             </loader>
         </collection>
@@ -35,8 +45,8 @@
         <hbox id="buttonsPanel" classNames="buttons-panel">
             <startSlot>
                 <button id="readButton" action="dqIssuesDataGrid.readAction"/>
-                <button id="setAssigneeButton" action="dqIssuesDataGrid.setAssigneeAction"/>
                 <button id="closeIssueButton" action="dqIssuesDataGrid.closeIssueAction"/>
+                <button id="violationsButton" action="dqIssuesDataGrid.violationsAction"/>
             </startSlot>
             <endSlot>
                 <simplePagination id="pagination" dataLoader="dqIssuesDl"/>
@@ -50,22 +60,42 @@
             <actions>
                 <action id="readAction" type="list_read"/>
                 <!-- itemTracking: enabled only while a row is selected -->
-                <action id="setAssigneeAction"
-                        type="list_itemTracking"
-                        text="msg://dqIssueListView.setAssigneeAction"
-                        icon="vaadin:user"/>
                 <action id="closeIssueAction"
                         type="list_itemTracking"
                         text="msg://dqIssueListView.closeIssueAction"
                         icon="vaadin:check"/>
+                <action id="violationsAction"
+                        type="list_itemTracking"
+                        text="msg://dqIssueListView.violationsAction"
+                        icon="vaadin:file-search"/>
             </actions>
             <columns resizable="true">
-                <column property="rule" autoWidth="true" flexGrow="0"/>
+                <column property="code" autoWidth="true" flexGrow="0"/>
+                <column key="ruleCode"
+                        property="rule.code"
+                        header="msg://uz.kapitalbank.umida.entity.dq/DqIssue.rule"
+                        autoWidth="true"
+                        flexGrow="0"/>
+                <column key="dataSource"
+                        property="rule.dataSource"
+                        header="msg://uz.kapitalbank.umida.entity.dq/DqRule.dataSource"
+                        autoWidth="true"
+                        flexGrow="0"/>
+                <column key="severity"
+                        property="rule.severity"
+                        header="msg://uz.kapitalbank.umida.entity.dq/DqRule.severity"
+                        autoWidth="true"
+                        flexGrow="0"/>
+                <column key="affectedRows"
+                        property="checkResult.failedRecords"
+                        header="msg://dqIssue.affectedRows"
+                        autoWidth="true"
+                        flexGrow="0"/>
                 <column property="status" autoWidth="true" flexGrow="0"/>
                 <column property="dueDate" autoWidth="true" flexGrow="0"/>
                 <column property="resolvedAt" autoWidth="true" flexGrow="0"/>
                 <column property="createdAt" autoWidth="true" flexGrow="0"/>
-                <column property="updatedAt" autoWidth="true" flexGrow="0"/>
+                <column property="updatedAt" autoWidth="true" flexGrow="1"/>
             </columns>
         </dataGrid>
         <hbox id="lookupActions" visible="false">

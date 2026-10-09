@@ -4,19 +4,8 @@
     <actions>
         <action id="closeAction" type="view_close" text="msg:///actions.Close" icon="vaadin:close"/>
     </actions>
-    <layout>
-        <hbox id="paginationPanel" classNames="buttons-panel" alignItems="CENTER" padding="false">
-            <button id="firstPageButton" icon="vaadin:angle-double-left" themeNames="tertiary-inline"
-                    enabled="false"/>
-            <button id="previousPageButton" icon="vaadin:angle-left" themeNames="tertiary-inline"
-                    enabled="false"/>
-            <span id="pageStatusLabel"/>
-            <button id="nextPageButton" icon="vaadin:angle-right" themeNames="tertiary-inline"
-                    enabled="false"/>
-            <button id="lastPageButton" icon="vaadin:angle-double-right" themeNames="tertiary-inline"
-                    enabled="false"/>
-        </hbox>
-        <vbox id="violationsGridBox" width="100%" height="100%" padding="false"/>
+    <layout expand="violationsFragment">
+        <fragment id="violationsFragment" class="uz.kapitalbank.umida.view.dq.DqViolationsFragment"/>
         <hbox id="dialogActions">
             <button id="closeButton" action="closeAction"/>
         </hbox>

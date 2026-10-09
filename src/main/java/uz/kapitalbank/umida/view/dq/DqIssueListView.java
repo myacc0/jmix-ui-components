@@ -2,7 +2,7 @@ package uz.kapitalbank.umida.view.dq;
 
 import uz.kapitalbank.umida.service.dq.DqBadges;
 import uz.kapitalbank.umida.entity.dq.DqIssue;
-import uz.kapitalbank.umida.enums.dq.DqIssueStatus;
+import uz.kapitalbank.umida.service.dq.DqIssueService;
 import uz.kapitalbank.umida.view.main.MainView;
 import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.router.Route;
@@ -33,6 +33,9 @@ public class DqIssueListView extends StandardListView<DqIssue> {
     @Autowired
     private DqBadges dqBadges;
 
+    @Autowired
+    private DqIssueService dqIssueService;
+
     @Supply(to = "dqIssuesDataGrid.status", subject = "renderer")
     private Renderer<DqIssue> dqIssuesDataGridStatusRenderer() {
         return dqBadges.renderer(DqBadges.ISSUE_STATUS, DqIssue::getStatus);
@@ -43,42 +46,16 @@ public class DqIssueListView extends StandardListView<DqIssue> {
         return dqBadges.renderer(DqBadges.SEVERITY, dqIssue -> dqIssue.getRule().getSeverity());
     }
 
-    /** Only an open issue can be assigned: once it is resolved or closed, the assignee is history. */
-    @Install(to = "dqIssuesDataGrid.setAssigneeAction", subject = "enabledRule")
-    private boolean setAssigneeActionEnabledRule() {
-        DqIssue issue = dqIssuesDataGrid.getSingleSelectedItem();
-        return issue != null && issue.getStatus() == DqIssueStatus.OPEN;
-    }
-
-    @Subscribe("dqIssuesDataGrid.setAssigneeAction")
-    public void onDqIssuesDataGridSetAssignee(final ActionPerformedEvent event) {
-        DqIssue issue = dqIssuesDataGrid.getSingleSelectedItem();
-        if (issue == null || issue.getStatus() != DqIssueStatus.OPEN) {
-            return;
-        }
-
-        dialogWindows.detail(this, DqIssue.class)
-                .editEntity(issue)
-                .withViewClass(DqIssueAssigneeView.class)
-                .withAfterCloseListener(closeEvent -> {
-                    if (closeEvent.closedWith(StandardOutcome.SAVE)) {
-                        dqIssuesDl.load();
-                    }
-                })
-                .open();
-    }
-
-    /** Only an open issue can be closed; a closed one has an outcome already. */
+    /** Only an open issue can be closed, and only by a user of the subdivision its rule is assigned to. */
     @Install(to = "dqIssuesDataGrid.closeIssueAction", subject = "enabledRule")
     private boolean closeIssueActionEnabledRule() {
-        DqIssue issue = dqIssuesDataGrid.getSingleSelectedItem();
-        return issue != null && issue.getStatus() == DqIssueStatus.OPEN;
+        return dqIssueService.canClose(dqIssuesDataGrid.getSingleSelectedItem());
     }
 
     @Subscribe("dqIssuesDataGrid.closeIssueAction")
     public void onDqIssuesDataGridCloseIssue(final ActionPerformedEvent event) {
         DqIssue issue = dqIssuesDataGrid.getSingleSelectedItem();
-        if (issue == null || issue.getStatus() != DqIssueStatus.OPEN) {
+        if (!dqIssueService.canClose(issue)) {
             return;
         }
 
@@ -90,6 +67,23 @@ public class DqIssueListView extends StandardListView<DqIssue> {
                         dqIssuesDl.load();
                     }
                 })
+                .open();
+    }
+
+    @Install(to = "dqIssuesDataGrid.violationsAction", subject = "enabledRule")
+    private boolean violationsActionEnabledRule() {
+        DqIssue issue = dqIssuesDataGrid.getSingleSelectedItem();
+        return issue != null && DqViolationsFragment.hasViolations(issue.getCheckResult());
+    }
+
+    @Subscribe("dqIssuesDataGrid.violationsAction")
+    public void onDqIssuesDataGridViolations(final ActionPerformedEvent event) {
+        DqIssue issue = dqIssuesDataGrid.getSingleSelectedItem();
+        if (issue == null || issue.getCheckResult() == null) {
+            return;
+        }
+        dialogWindows.view(this, DqCheckRunViolationsView.class)
+                .withViewConfigurer(view -> view.setCheckResult(issue.getCheckResult()))
                 .open();
     }
 }

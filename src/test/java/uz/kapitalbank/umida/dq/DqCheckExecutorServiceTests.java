@@ -5,7 +5,6 @@ import io.jmix.core.FetchPlan;
 import io.jmix.core.Metadata;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +14,7 @@ import uz.kapitalbank.umida.entity.dict.DictDataDomain;
 import uz.kapitalbank.umida.entity.dq.*;
 import uz.kapitalbank.umida.enums.dq.*;
 import uz.kapitalbank.umida.service.dq.DqCheckExecutorService;
+import uz.kapitalbank.umida.service.dq.DqIssueService;
 import uz.kapitalbank.umida.service.dq.DqViolationsService;
 import uz.kapitalbank.umida.service.dq.DqViolationsService.ViolationsPage;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
@@ -22,6 +22,8 @@ import uz.kapitalbank.umida.test_support.DqTestData;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -145,44 +147,79 @@ public class DqCheckExecutorServiceTests {
         assertEquals(firstRow.columns(), pastTheEnd.columns(), "an empty page still reports its columns");
     }
 
-    @Disabled("issues are not raised until DqIssue is reworked, see DqCheckExecutorService.saveResult")
     @Test
     void opensAnIssueForAFailedRuleOnly() {
         DqCheckRun run = awaitFinished(checkExecutorService.startCheckRun(filter()));
 
         assertTrue(loadIssues(passingRule).isEmpty());
+        assertTrue(loadIssues(unsupportedRule).isEmpty(), "a skipped rule says nothing about the data");
 
         List<DqIssue> issues = loadIssues(failingRule);
         assertEquals(1, issues.size());
 
         DqIssue issue = issues.get(0);
         assertEquals(DqIssueStatus.OPEN, issue.getStatus());
-//        assertEquals(DqSeverity.HIGH, issue.getSeverity());
-//        assertEquals("main", issue.getDataSource());
+        assertTrue(issue.getCode().startsWith(DqIssueService.CODE_PREFIX), issue.getCode());
         assertNotNull(issue.getCreatedAt());
-//        assertTrue(issue.getTitle().contains(failingRule.getName()));
         assertNotNull(issue.getDescription());
+        // HIGH severity: the rule got the due period of its severity on save
+        assertEquals(LocalDate.now().plusDays(DqSeverity.HIGH.getDayCost()), issue.getDueDate());
 
         DqCheckRunResult failed = resultOf(loadResults(run), failingRule);
-//        assertEquals(failed.getFailedRecords(), issue.getAffectedRows());
         assertEquals(failed.getId(), issue.getCheckResult().getId());
     }
 
-    @Disabled("issues are not raised until DqIssue is reworked, see DqCheckExecutorService.saveResult")
     @Test
     void reusesTheOpenIssueOnTheNextRun() {
         awaitFinished(checkExecutorService.startCheckRun(filter()));
-        UUID firstIssueId = loadIssues(failingRule).get(0).getId();
+        DqIssue firstIssue = loadIssues(failingRule).get(0);
 
         DqCheckRun secondRun = awaitFinished(checkExecutorService.startCheckRun(filter()));
 
         List<DqIssue> issues = loadIssues(failingRule);
         assertEquals(1, issues.size(), "the rule keeps failing, so the open issue must be reused");
-        assertEquals(firstIssueId, issues.get(0).getId());
+        assertEquals(firstIssue.getId(), issues.get(0).getId());
+        assertEquals(firstIssue.getCode(), issues.get(0).getCode());
         // the issue now points at the newest result
         assertEquals(resultOf(loadResults(secondRun), failingRule).getId(),
                 issues.get(0).getCheckResult().getId());
         assertNotNull(issues.get(0).getUpdatedAt());
+    }
+
+    @Test
+    void resolvesTheOpenIssueOnceTheRulePasses() {
+        awaitFinished(checkExecutorService.startCheckRun(filter()));
+        assertEquals(DqIssueStatus.OPEN, loadIssues(failingRule).get(0).getStatus());
+
+        // a zero threshold stands for the data being fixed: the same violations no longer fail the rule
+        failingRule = updateRuleConfig(failingRule, "{\"threshold\": 0}");
+        awaitFinished(checkExecutorService.startCheckRun(filter()));
+
+        List<DqIssue> issues = loadIssues(failingRule);
+        assertEquals(1, issues.size());
+        assertEquals(DqIssueStatus.RESOLVED, issues.get(0).getStatus());
+        assertNotNull(issues.get(0).getResolvedAt());
+    }
+
+    @Test
+    void aDismissedIssueSuppressesNewOnesUntilTheKeyFieldsChange() {
+        awaitFinished(checkExecutorService.startCheckRun(filter()));
+        DqIssue issue = loadIssues(failingRule).get(0);
+        issue.setStatus(DqIssueStatus.WONTFIX);
+        issue.setResolvedAt(OffsetDateTime.now());
+        dataManager.save(issue);
+
+        awaitFinished(checkExecutorService.startCheckRun(filter()));
+        List<DqIssue> issues = loadIssues(failingRule);
+        assertEquals(1, issues.size(), "the failure was dismissed, so it opens no new issue");
+        assertEquals(DqIssueStatus.WONTFIX, issues.get(0).getStatus());
+
+        // another config makes it another check, whose failures are worth an issue again
+        failingRule = updateRuleConfig(failingRule, "{\"threshold\": 100}");
+        awaitFinished(checkExecutorService.startCheckRun(filter()));
+        assertEquals(1, loadIssues(failingRule).stream()
+                .filter(i -> i.getStatus() == DqIssueStatus.OPEN)
+                .count());
     }
 
     @Test
@@ -256,6 +293,12 @@ public class DqCheckExecutorServiceTests {
                 .parameter("rule", rule)
                 .fetchPlan(FetchPlan.BASE)
                 .list();
+    }
+
+    private DqRule updateRuleConfig(DqRule rule, String ruleConfig) {
+        DqRule loaded = dataManager.load(DqRule.class).id(rule.getId()).one();
+        loaded.setRuleConfig(ruleConfig);
+        return dataManager.save(loaded);
     }
 
     private DqCheckRunResult resultOf(List<DqCheckRunResult> results, DqRule rule) {

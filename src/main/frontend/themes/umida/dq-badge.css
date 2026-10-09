@@ -10,7 +10,7 @@
  * Prefix per enum:
  *     DqSeverity           dq-severity-*        low medium high critical
  *     DqDimension          dq-dimension-*       completeness accuracy uniqueness validity timeliness consistency
- *     DqIssueStatus        dq-issue-status-*    open resolved wontfix false_positive
+ *     DqIssueStatus        dq-issue-status-*    open resolved wontfix false_positive rule_data_source_changed
  *     DqCheckRunStatus     dq-run-status-*      running success failed cancelled
  *     DqCheckResultStatus  dq-result-status-*   passed failed warning skipped
  *
@@ -87,11 +87,13 @@ html[theme~="dark"] .dq-badge.dq-severity-high {
 /*
  * Values that are neither good nor bad keep the neutral base: dq-severity-low,
  * dq-issue-status-wontfix, dq-issue-status-false_positive,
+ * dq-issue-status-rule_data_source_changed,
  * dq-run-status-cancelled, dq-result-status-skipped. They are listed here so a
  * reader can see the mapping is deliberate rather than missing.
  */
 .dq-badge.dq-issue-status-wontfix,
 .dq-badge.dq-issue-status-false_positive,
+.dq-badge.dq-issue-status-rule_data_source_changed,
 .dq-badge.dq-run-status-cancelled,
 .dq-badge.dq-result-status-skipped {
     /* a closed-without-a-fix outcome reads as retired, not as a result */

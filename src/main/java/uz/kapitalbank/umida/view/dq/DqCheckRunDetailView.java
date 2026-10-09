@@ -3,7 +3,6 @@ package uz.kapitalbank.umida.view.dq;
 import uz.kapitalbank.umida.service.dq.DqBadges;
 import uz.kapitalbank.umida.entity.dq.DqCheckRun;
 import uz.kapitalbank.umida.entity.dq.DqCheckRunResult;
-import uz.kapitalbank.umida.enums.dq.DqCheckResultStatus;
 import uz.kapitalbank.umida.view.main.MainView;
 import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.router.Route;
@@ -47,17 +46,9 @@ public class DqCheckRunDetailView extends StandardDetailView<DqCheckRun> {
         return dqBadges.renderer(DqBadges.RESULT_STATUS, DqCheckRunResult::getStatus);
     }
 
-    /**
-     * Only a rule that failed has violating rows to show, and only a rule type that can point at
-     * individual rows leaves a query to read them with.
-     */
     @Install(to = "checkResultsDataGrid.violationsAction", subject = "enabledRule")
     private boolean violationsActionEnabledRule() {
-        DqCheckRunResult result = checkResultsDataGrid.getSingleSelectedItem();
-        return result != null
-                && result.getStatus() == DqCheckResultStatus.FAILED
-                && result.getViolationsQuery() != null
-                && !result.getViolationsQuery().isBlank();
+        return DqViolationsFragment.hasViolations(checkResultsDataGrid.getSingleSelectedItem());
     }
 
     @Subscribe("checkResultsDataGrid.executedQueryAction")
