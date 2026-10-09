@@ -41,6 +41,11 @@ vaadin-grid-cell-content .dq-badge {
     vertical-align: middle;
 }
 
+/* nor push the value of a property-list row below its label */
+.property-list > dd > .dq-badge {
+    margin-block: -0.25em;
+}
+
 /* ---------------------------------------------------------------------------
  * Outcomes — the value carries good news, bad news, or a warning
  * ------------------------------------------------------------------------ */

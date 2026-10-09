@@ -4,6 +4,7 @@ import uz.kapitalbank.umida.service.dq.DqBadges;
 import uz.kapitalbank.umida.entity.dq.DqCheckRun;
 import uz.kapitalbank.umida.entity.dq.DqCheckRunResult;
 import uz.kapitalbank.umida.view.main.MainView;
+import com.vaadin.flow.component.html.DescriptionList;
 import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.router.Route;
 import io.jmix.flowui.DialogWindows;
@@ -13,6 +14,7 @@ import io.jmix.flowui.component.codeeditor.CodeEditor;
 import io.jmix.flowui.component.grid.DataGrid;
 import io.jmix.flowui.kit.action.ActionPerformedEvent;
 import io.jmix.flowui.kit.component.codeeditor.CodeEditorMode;
+import io.jmix.flowui.model.InstanceContainer;
 import io.jmix.flowui.view.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
@@ -40,6 +42,15 @@ public class DqCheckRunDetailView extends StandardDetailView<DqCheckRun> {
 
     @ViewComponent
     private DataGrid<DqCheckRunResult> checkResultsDataGrid;
+
+    @ViewComponent
+    private DescriptionList.Description statusValue;
+
+    @Subscribe(id = "dqCheckRunDc", target = Target.DATA_CONTAINER)
+    public void onDqCheckRunDcItemChange(final InstanceContainer.ItemChangeEvent<DqCheckRun> event) {
+        DqCheckRun checkRun = event.getItem();
+        dqBadges.show(statusValue, DqBadges.RUN_STATUS, checkRun != null ? checkRun.getStatus() : null);
+    }
 
     @Supply(to = "checkResultsDataGrid.status", subject = "renderer")
     private Renderer<DqCheckRunResult> checkResultsDataGridStatusRenderer() {

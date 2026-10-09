@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <view xmlns="http://jmix.io/schema/flowui/view"
-      title="msg://dqIssueDetailView.title"
-      focusComponent="form">
+      title="msg://dqIssueDetailView.title">
     <data>
         <instance id="dqIssueDc"
                   class="uz.kapitalbank.umida.entity.dq.DqIssue">
@@ -28,29 +27,32 @@
     </actions>
     <layout>
         <!-- an issue is maintained by the check runs: it is only ever closed here, never edited -->
-        <formLayout id="form" dataContainer="dqIssueDc" width="60%">
-            <responsiveSteps>
-                <responsiveStep minWidth="0" columns="1"/>
-                <responsiveStep minWidth="40em" columns="2"/>
-            </responsiveSteps>
-            <textField id="codeField" property="code" readOnly="true"/>
-            <select id="statusField" property="status" readOnly="true"/>
-            <textField id="ruleField" property="rule.code" readOnly="true"
-                       label="msg://uz.kapitalbank.umida.entity.dq/DqIssue.rule"/>
-            <textField id="dataSourceField" property="rule.dataSource" readOnly="true"
-                       label="msg://uz.kapitalbank.umida.entity.dq/DqRule.dataSource"/>
-            <select id="severityField" property="rule.severity" readOnly="true"
-                    label="msg://uz.kapitalbank.umida.entity.dq/DqRule.severity"/>
-            <textField id="affectedRowsField" property="checkResult.failedRecords" readOnly="true"
-                       label="msg://dqIssue.affectedRows"/>
-            <datePicker id="dueDateField" property="dueDate" readOnly="true"/>
-            <valuePicker id="resolvedAtField" property="resolvedAt" readOnly="true"/>
-            <valuePicker id="createdAtField" property="createdAt" readOnly="true"/>
-            <valuePicker id="updatedAtField" property="updatedAt" readOnly="true"/>
-            <textArea id="descriptionField" property="description" readOnly="true" minRows="3" colspan="2"/>
-            <textArea id="resolutionNotesField" property="resolutionNotes" readOnly="true" minRows="3"
-                      colspan="2"/>
-        </formLayout>
+        <descriptionList id="detailsList" classNames="property-list" width="100%" maxWidth="60em">
+            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.code"/>
+            <description id="codeValue" dataContainer="dqIssueDc" property="code"/>
+            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.status"/>
+            <description id="statusValue"/>
+            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.rule"/>
+            <description id="ruleValue" dataContainer="dqIssueDc" property="rule.code"/>
+            <term text="msg://uz.kapitalbank.umida.entity.dq/DqRule.dataSource"/>
+            <description id="dataSourceValue" dataContainer="dqIssueDc" property="rule.dataSource"/>
+            <term text="msg://uz.kapitalbank.umida.entity.dq/DqRule.severity"/>
+            <description id="severityValue"/>
+            <term text="msg://dqIssue.affectedRows"/>
+            <description id="affectedRowsValue" dataContainer="dqIssueDc" property="checkResult.failedRecords"/>
+            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.dueDate"/>
+            <description id="dueDateValue" dataContainer="dqIssueDc" property="dueDate"/>
+            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.resolvedAt"/>
+            <description id="resolvedAtValue" dataContainer="dqIssueDc" property="resolvedAt"/>
+            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.createdAt"/>
+            <description id="createdAtValue" dataContainer="dqIssueDc" property="createdAt"/>
+            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.updatedAt"/>
+            <description id="updatedAtValue" dataContainer="dqIssueDc" property="updatedAt"/>
+            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.description"/>
+            <description id="descriptionValue" dataContainer="dqIssueDc" property="description"/>
+            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.resolutionNotes"/>
+            <description id="resolutionNotesValue" dataContainer="dqIssueDc" property="resolutionNotes"/>
+        </descriptionList>
         <hbox id="detailActions" width="60%">
             <button id="closeIssueButton"
                     text="msg://dqIssueListView.closeIssueAction"

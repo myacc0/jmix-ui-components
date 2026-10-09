@@ -4,16 +4,16 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.DescriptionList;
 import com.vaadin.flow.component.html.Span;
 import io.jmix.core.DataManager;
 import io.jmix.core.FetchPlan;
+import io.jmix.core.Messages;
 import io.jmix.core.security.CurrentAuthentication;
 import io.jmix.flowui.ViewNavigators;
 import io.jmix.flowui.component.UiComponentUtils;
 import io.jmix.flowui.component.combobox.JmixComboBox;
 import io.jmix.flowui.component.grid.DataGrid;
-import io.jmix.flowui.component.valuepicker.JmixValuePicker;
-import io.jmix.flowui.component.textfield.TypedTextField;
 import io.jmix.flowui.kit.component.button.JmixButton;
 import io.jmix.flowui.testassist.FlowuiTestAssistConfiguration;
 import io.jmix.flowui.testassist.UiTest;
@@ -34,6 +34,7 @@ import uz.kapitalbank.umida.entity.dq.DqRule;
 import uz.kapitalbank.umida.entity.dq.DqRuleGroup;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.enums.dq.*;
+import uz.kapitalbank.umida.service.dq.DqBadges;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
 import uz.kapitalbank.umida.test_support.DqTestData;
 import uz.kapitalbank.umida.view.dq.DqCheckRunViolationsView;
@@ -72,6 +73,9 @@ public class DqIssueViewsUiTest {
 
     @Autowired
     CurrentAuthentication currentAuthentication;
+
+    @Autowired
+    Messages messages;
 
     private DqTestData testData;
     private DqRule rule;
@@ -178,13 +182,16 @@ public class DqIssueViewsUiTest {
                 .navigate();
         DqIssueDetailView view = UiTestUtils.getCurrentView();
 
-        TypedTextField<?> ruleField = UiTestUtils.getComponent(view, "ruleField");
-        TypedTextField<?> dataSourceField = UiTestUtils.getComponent(view, "dataSourceField");
-        TypedTextField<?> affectedRowsField = UiTestUtils.getComponent(view, "affectedRowsField");
-        assertEquals(rule.getCode(), ruleField.getTypedValue());
-        assertEquals("main", dataSourceField.getTypedValue());
-        assertEquals(BigInteger.valueOf(VIOLATING_ROWS), affectedRowsField.getTypedValue());
-        assertTrue(ruleField.isReadOnly());
+        assertEquals(rule.getCode(), valueText(view, "ruleValue"));
+        assertEquals("main", valueText(view, "dataSourceValue"));
+        assertEquals(String.valueOf(VIOLATING_ROWS), valueText(view, "affectedRowsValue"));
+
+        Span statusBadge = badge(view, "statusValue");
+        assertEquals(messages.getMessage(issue.getStatus()), statusBadge.getText());
+        assertTrue(statusBadge.hasClassName(DqBadges.ISSUE_STATUS + issue.getStatus().getId()));
+        Span severityBadge = badge(view, "severityValue");
+        assertEquals(messages.getMessage(rule.getSeverity()), severityBadge.getText());
+        assertTrue(severityBadge.hasClassName(DqBadges.SEVERITY + rule.getSeverity().getId()));
 
         JmixButton closeIssueButton = UiTestUtils.getComponent(view, "closeIssueButton");
         assertFalse(closeIssueButton.isEnabled(), "admin is not an employee of the assignee subdivision");
@@ -213,11 +220,9 @@ public class DqIssueViewsUiTest {
                 .navigate();
         DqIssueDetailView view = UiTestUtils.getCurrentView();
 
-        JmixValuePicker<?> createdAtField = UiTestUtils.getComponent(view, "createdAtField");
         String expected = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")
                 .format(createdAt.atZoneSameInstant(currentAuthentication.getTimeZone().toZoneId()));
-        assertEquals(expected, createdAtField.getElement().getProperty("value"));
-        assertTrue(createdAtField.isReadOnly());
+        assertEquals(expected, valueText(view, "createdAtValue"));
     }
 
     @Test
@@ -258,6 +263,22 @@ public class DqIssueViewsUiTest {
                 .filter(item -> issue.getId().equals(item.getId()))
                 .findFirst()
                 .orElseGet(() -> fail("the issue is not listed"));
+    }
+
+    /** The text a row of the detail's attribute list shows as the value. */
+    private String valueText(DqIssueDetailView view, String id) {
+        DescriptionList.Description value = UiTestUtils.getComponent(view, id);
+        return value.getText();
+    }
+
+    /** The badge a row of the detail's attribute list shows as the value. */
+    private Span badge(DqIssueDetailView view, String id) {
+        DescriptionList.Description value = UiTestUtils.getComponent(view, id);
+        return value.getChildren()
+                .filter(Span.class::isInstance)
+                .map(Span.class::cast)
+                .findFirst()
+                .orElseGet(() -> fail(id + " shows no badge"));
     }
 
     private static Stream<Component> selfAndDescendants(Component component) {

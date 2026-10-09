@@ -1,5 +1,6 @@
 package uz.kapitalbank.umida.service.dq;
 
+import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.Renderer;
@@ -51,5 +52,18 @@ public class DqBadges {
         Span badge = new Span(messages.getMessage(value));
         badge.addClassNames(BADGE, classPrefix + value.getId());
         return badge;
+    }
+
+    /**
+     * Shows the value as a badge in the given container, in place of whatever it held — for a detail
+     * view that lists the attributes of a record. The container is left empty when there is no value.
+     */
+    public <E extends Enum<E> & EnumClass<String>> void show(HasComponents container, String classPrefix,
+                                                            @Nullable E value) {
+        container.removeAll();
+        Span badge = badge(classPrefix, value);
+        if (badge != null) {
+            container.add(badge);
+        }
     }
 }

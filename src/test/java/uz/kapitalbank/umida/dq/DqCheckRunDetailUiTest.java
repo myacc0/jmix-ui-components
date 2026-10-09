@@ -3,8 +3,11 @@ package uz.kapitalbank.umida.dq;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.DescriptionList;
 import com.vaadin.flow.component.html.Span;
 import io.jmix.core.DataManager;
+import io.jmix.core.Messages;
+import io.jmix.core.security.CurrentAuthentication;
 import io.jmix.flowui.ViewNavigators;
 import io.jmix.flowui.component.UiComponentUtils;
 import io.jmix.flowui.component.grid.DataGrid;
@@ -24,6 +27,7 @@ import uz.kapitalbank.umida.entity.dq.DqCheckRun;
 import uz.kapitalbank.umida.entity.dq.DqCheckRunResult;
 import uz.kapitalbank.umida.entity.dq.DqRule;
 import uz.kapitalbank.umida.enums.dq.*;
+import uz.kapitalbank.umida.service.dq.DqBadges;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
 import uz.kapitalbank.umida.test_support.DqTestData;
 import uz.kapitalbank.umida.view.dq.DqCheckRunDetailView;
@@ -33,6 +37,8 @@ import uz.kapitalbank.umida.view.dq.DqViolationsFragment;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -58,6 +64,15 @@ public class DqCheckRunDetailUiTest {
     @Autowired
     ViewNavigators viewNavigators;
 
+    @Autowired
+    CurrentAuthentication currentAuthentication;
+
+    @Autowired
+    Messages messages;
+
+    /** Late in the evening in UTC, so that the user's time zone shifts it to another day. */
+    private static final OffsetDateTime STARTED_AT = OffsetDateTime.of(2026, 3, 5, 23, 30, 15, 0, ZoneOffset.UTC);
+
     private DqTestData testData;
     private DqRule rule;
     private DqCheckRun checkRun;
@@ -72,7 +87,7 @@ public class DqCheckRunDetailUiTest {
         checkRun = dataManager.create(DqCheckRun.class);
         checkRun.setDataSource("main");
         checkRun.setTriggered(DqCheckRunTrigger.SYSTEM);
-        checkRun.setStartedAt(OffsetDateTime.now());
+        checkRun.setStartedAt(STARTED_AT);
         checkRun.setFinishedAt(OffsetDateTime.now());
         checkRun.setStatus(DqCheckRunStatus.SUCCESS);
         checkRun.setRulesTotal(2);
@@ -82,6 +97,29 @@ public class DqCheckRunDetailUiTest {
 
         results.add(dataManager.save(newResult(DqCheckResultStatus.PASSED)));
         results.add(dataManager.save(newResult(DqCheckResultStatus.FAILED)));
+    }
+
+    @Test
+    void theRunIsShownAsALabelValueList() {
+        openResultsGrid();
+        DqCheckRunDetailView detailView = UiTestUtils.getCurrentView();
+
+        assertEquals("main", valueText(detailView, "dataSourceValue"));
+        assertEquals("2", valueText(detailView, "rulesTotalValue"));
+        assertEquals("1", valueText(detailView, "rulesFailedValue"));
+        assertEquals("", valueText(detailView, "rulesSkippedValue"), "an unset attribute shows nothing");
+        assertEquals(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")
+                        .format(STARTED_AT.atZoneSameInstant(currentAuthentication.getTimeZone().toZoneId())),
+                valueText(detailView, "startedAtValue"), "the start is shown in the user's time zone");
+
+        DescriptionList.Description statusValue = UiTestUtils.getComponent(detailView, "statusValue");
+        Span badge = statusValue.getChildren()
+                .filter(Span.class::isInstance)
+                .map(Span.class::cast)
+                .findFirst()
+                .orElseGet(() -> fail("the status is shown as a badge"));
+        assertEquals(messages.getMessage(DqCheckRunStatus.SUCCESS), badge.getText());
+        assertTrue(badge.hasClassName(DqBadges.RUN_STATUS + DqCheckRunStatus.SUCCESS.getId()));
     }
 
     @Test
@@ -216,6 +254,12 @@ public class DqCheckRunDetailUiTest {
                 .navigate();
         DqCheckRunDetailView detailView = UiTestUtils.getCurrentView();
         return UiTestUtils.getComponent(detailView, "checkResultsDataGrid");
+    }
+
+    /** The text a row of the run's attribute list shows as the value. */
+    private String valueText(DqCheckRunDetailView view, String id) {
+        DescriptionList.Description value = UiTestUtils.getComponent(view, id);
+        return value.getText();
     }
 
     /** The grid's own instance of the given result — the one its selection model can match. */

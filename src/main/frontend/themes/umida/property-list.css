@@ -1,0 +1,55 @@
+/*
+ * The attributes of a record as "label: value" rows, like the specification table of a product
+ * card in an online shop. Used by the read-only detail views instead of a form of read-only fields:
+ *
+ *     <descriptionList classNames="property-list">
+ *         <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.code"/>
+ *         <description dataContainer="dqIssueDc" property="code"/>
+ *         ...
+ *     </descriptionList>
+ *
+ * A <description> may also hold a component instead of text, e.g. a dq-badge.
+ */
+
+.property-list {
+    display: grid;
+    grid-template-columns: minmax(10em, max-content) minmax(0, 1fr);
+    margin: 0;
+    font-size: var(--lumo-font-size-s);
+    line-height: var(--lumo-line-height-s);
+}
+
+.property-list > dt,
+.property-list > dd {
+    margin: 0;
+    padding: var(--lumo-space-s) 0;
+    border-bottom: 1px solid var(--lumo-contrast-10pct);
+}
+
+/* the last row closes the list without a rule under it */
+.property-list > dt:nth-last-child(2),
+.property-list > dd:last-child {
+    border-bottom: none;
+}
+
+.property-list > dt {
+    padding-inline-end: var(--lumo-space-l);
+    color: var(--lumo-secondary-text-color);
+}
+
+.property-list > dt::after {
+    content: ":";
+}
+
+.property-list > dd {
+    color: var(--lumo-body-text-color);
+    /* long texts such as an error message keep their line breaks */
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+
+/* an attribute without a value still shows its row */
+.property-list > dd:empty::before {
+    content: "—";
+    color: var(--lumo-tertiary-text-color);
+}
