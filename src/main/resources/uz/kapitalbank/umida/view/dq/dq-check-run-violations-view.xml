@@ -3,7 +3,7 @@
     <actions>
         <action id="closeAction" type="view_close" text="msg:///actions.Close" icon="vaadin:close"/>
     </actions>
-    <layout expand="violationsFragment">
+    <layout expand="violationsFragment" classNames="dq-check-run-violations-view">
         <fragment id="violationsFragment" class="uz.kapitalbank.umida.view.dq.DqViolationsFragment"/>
         <hbox id="dialogActions">
             <button id="closeButton" themeNames="primary" action="closeAction"/>

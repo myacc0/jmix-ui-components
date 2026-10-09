@@ -23,7 +23,7 @@
         <dataLoadCoordinator auto="true"/>
     </facets>
     <actions>
-        <action id="closeAction" type="detail_close"/>
+        <action id="closeAction" type="detail_close" text="msg://backAction" icon="vaadin:arrow-left"/>
     </actions>
     <layout>
         <!-- an issue is maintained by the check runs: it is only ever closed here, never edited -->

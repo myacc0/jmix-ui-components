@@ -1,0 +1,8 @@
+/*
+ * Violating records dialog (DqCheckRunViolationsView). The view has no title, so the generated
+ * header holds only the close 'x'; the header wrapper is stretched to the full header width so the
+ * 'x' lands in the top-right corner instead of the top-left one.
+ */
+vaadin-dialog-overlay:has(.dq-check-run-violations-view) .jmix-dialog-window-header-wrapper {
+    width: 100%;
+}
