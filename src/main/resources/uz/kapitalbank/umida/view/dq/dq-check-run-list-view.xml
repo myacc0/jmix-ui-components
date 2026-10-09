@@ -44,7 +44,7 @@
         <hbox id="buttonsPanel" classNames="buttons-panel">
             <button id="runCheckButton" themeNames="primary" icon="vaadin:plus" text="msg://dqCheckRunListView.runCheckButton"/>
         </hbox>
-        <tabSheet id="checkRunsTabSheet" width="100%" height="100%">
+        <tabSheet id="checkRunsTabSheet" classNames="page-tab-sheet" width="100%" height="100%">
             <tab id="journalTab" label="msg://dqCheckRunListView.journalTab">
                 <vbox id="journalTabContent" width="100%" height="100%" padding="false">
                     <hbox id="journalButtonsPanel" classNames="buttons-panel" width="100%">
