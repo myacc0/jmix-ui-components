@@ -17,7 +17,6 @@
     <facets>
         <dataLoadCoordinator auto="true"/>
         <urlQueryParameters>
-            <genericFilter component="genericFilter"/>
             <pagination component="pagination"/>
         </urlQueryParameters>
     </facets>
@@ -26,10 +25,6 @@
         <action id="discardAction" type="lookup_discard"/>
     </actions>
     <layout>
-        <genericFilter id="genericFilter"
-                       dataLoader="dqCheckRunsDl">
-            <properties include=".*"/>
-        </genericFilter>
         <hbox id="buttonsPanel" classNames="buttons-panel">
             <startSlot>
                 <button id="readButton" action="dqCheckRunsDataGrid.readAction"/>
