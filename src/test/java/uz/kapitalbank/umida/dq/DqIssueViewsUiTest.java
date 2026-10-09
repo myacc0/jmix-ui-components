@@ -7,10 +7,12 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Span;
 import io.jmix.core.DataManager;
 import io.jmix.core.FetchPlan;
+import io.jmix.core.security.CurrentAuthentication;
 import io.jmix.flowui.ViewNavigators;
 import io.jmix.flowui.component.UiComponentUtils;
 import io.jmix.flowui.component.combobox.JmixComboBox;
 import io.jmix.flowui.component.grid.DataGrid;
+import io.jmix.flowui.component.valuepicker.JmixValuePicker;
 import io.jmix.flowui.component.textfield.TypedTextField;
 import io.jmix.flowui.kit.component.button.JmixButton;
 import io.jmix.flowui.testassist.FlowuiTestAssistConfiguration;
@@ -43,6 +45,8 @@ import uz.kapitalbank.umida.view.dq.DqViolationsFragment;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -65,6 +69,9 @@ public class DqIssueViewsUiTest {
 
     @Autowired
     ViewNavigators viewNavigators;
+
+    @Autowired
+    CurrentAuthentication currentAuthentication;
 
     private DqTestData testData;
     private DqRule rule;
@@ -187,6 +194,30 @@ public class DqIssueViewsUiTest {
         Span pageStatusLabel = (Span) UiComponentUtils.getComponent(fragment, "pageStatusLabel");
         assertEquals(VIOLATING_ROWS, violationsGrid.getGenericDataView().getItems().count());
         assertTrue(pageStatusLabel.getText().contains(String.valueOf(VIOLATING_ROWS)), pageStatusLabel.getText());
+    }
+
+    @Test
+    void theDetailShowsTheDatesInTheUserTimeZoneWithoutTheOffset() {
+        // the creation time cannot be changed later, so a new issue is created at a known instant
+        OffsetDateTime createdAt = OffsetDateTime.of(2026, 3, 5, 23, 30, 15, 0, ZoneOffset.UTC);
+        DqIssue newIssue = dataManager.create(DqIssue.class);
+        newIssue.setRule(rule);
+        newIssue.setCheckResult(result);
+        newIssue.setStatus(DqIssueStatus.RESOLVED);
+        newIssue.setCreatedAt(createdAt);
+        DqIssue datedIssue = testData.track(dataManager.save(newIssue));
+
+        viewNavigators.detailView(UiTestUtils.getCurrentView(), DqIssue.class)
+                .editEntity(datedIssue)
+                .withViewClass(DqIssueDetailView.class)
+                .navigate();
+        DqIssueDetailView view = UiTestUtils.getCurrentView();
+
+        JmixValuePicker<?> createdAtField = UiTestUtils.getComponent(view, "createdAtField");
+        String expected = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")
+                .format(createdAt.atZoneSameInstant(currentAuthentication.getTimeZone().toZoneId()));
+        assertEquals(expected, createdAtField.getElement().getProperty("value"));
+        assertTrue(createdAtField.isReadOnly());
     }
 
     @Test

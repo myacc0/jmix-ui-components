@@ -6,6 +6,7 @@ import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.Route;
 import io.jmix.core.metamodel.datatype.DatatypeFormatter;
+import io.jmix.core.security.CurrentAuthentication;
 import io.jmix.flowui.UiComponents;
 import io.jmix.flowui.component.image.JmixImage;
 import io.jmix.flowui.view.*;
@@ -66,6 +67,8 @@ public class DataAssetCardView extends StandardView {
     @Autowired
     private DatatypeFormatter datatypeFormatter;
     @Autowired
+    private CurrentAuthentication currentAuthentication;
+    @Autowired
     private UiComponents uiComponents;
 
     public void setNode(DataAssetChartNode node) {
@@ -112,9 +115,11 @@ public class DataAssetCardView extends StandardView {
     private void setDetails(DataAssetChartNode node) {
         longNameValue.setText(StringUtils.defaultIfBlank(node.getLongName(), EMPTY_VALUE));
         descriptionValue.setText(StringUtils.defaultIfBlank(node.getDescription(), EMPTY_VALUE));
-        // the date only, in the same format as the assign date below
+        // date and time in the user's time zone, as the date-time columns of the grids show it
         createdDateValue.setText(node.getCreatedDate() != null
-                ? datatypeFormatter.formatLocalDate(node.getCreatedDate().toLocalDate())
+                ? datatypeFormatter.formatLocalDateTime(node.getCreatedDate()
+                        .atZoneSameInstant(currentAuthentication.getTimeZone().toZoneId())
+                        .toLocalDateTime())
                 : EMPTY_VALUE);
         assignDateValue.setText(node.getAssignDate() != null
                 ? datatypeFormatter.formatLocalDate(node.getAssignDate())

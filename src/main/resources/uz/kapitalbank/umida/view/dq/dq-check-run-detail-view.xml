@@ -28,8 +28,8 @@
                 <responsiveStep minWidth="0" columns="1"/>
             </responsiveSteps>
             <textField id="dataSourceField" property="dataSource"/>
-            <dateTimePicker id="startedAtField" property="startedAt"/>
-            <dateTimePicker id="finishedAtField" property="finishedAt"/>
+            <valuePicker id="startedAtField" property="startedAt" readOnly="true"/>
+            <valuePicker id="finishedAtField" property="finishedAt" readOnly="true"/>
             <select id="statusField" property="status"/>
             <textField id="rulesTotalField" property="rulesTotal"/>
             <textField id="rulesPassedField" property="rulesPassed"/>

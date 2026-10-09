@@ -44,9 +44,9 @@
             <textField id="affectedRowsField" property="checkResult.failedRecords" readOnly="true"
                        label="msg://dqIssue.affectedRows"/>
             <datePicker id="dueDateField" property="dueDate" readOnly="true"/>
-            <dateTimePicker id="resolvedAtField" property="resolvedAt" readOnly="true"/>
-            <dateTimePicker id="createdAtField" property="createdAt" readOnly="true"/>
-            <dateTimePicker id="updatedAtField" property="updatedAt" readOnly="true"/>
+            <valuePicker id="resolvedAtField" property="resolvedAt" readOnly="true"/>
+            <valuePicker id="createdAtField" property="createdAt" readOnly="true"/>
+            <valuePicker id="updatedAtField" property="updatedAt" readOnly="true"/>
             <textArea id="descriptionField" property="description" readOnly="true" minRows="3" colspan="2"/>
             <textArea id="resolutionNotesField" property="resolutionNotes" readOnly="true" minRows="3"
                       colspan="2"/>
