@@ -37,15 +37,13 @@
         </urlQueryParameters>
     </facets>
     <layout>
-        <hbox id="buttonsPanel" classNames="buttons-panel">
-            <button id="runCheckButton" themeNames="primary" icon="vaadin:plus" text="msg://dqCheckRunListView.runCheckButton"/>
-        </hbox>
         <tabSheet id="checkRunsTabSheet" classNames="page-tab-sheet" width="100%" height="100%">
             <tab id="journalTab" label="msg://dqCheckRunListView.journalTab">
                 <vbox id="journalTabContent" width="100%" height="100%" padding="false">
                     <hbox id="journalButtonsPanel" classNames="buttons-panel" width="100%">
                         <startSlot>
-                            <button id="readButton" action="dqCheckRunsDataGrid.readAction"/>
+                            <button id="readButton" themeNames="primary" action="dqCheckRunsDataGrid.readAction"/>
+                            <button id="runCheckButton" themeNames="primary" icon="vaadin:plus" text="msg://dqCheckRunListView.runCheckButton"/>
                         </startSlot>
                         <endSlot>
                             <simplePagination id="pagination" dataLoader="dqCheckRunsDl"/>
@@ -80,7 +78,7 @@
             <tab id="runningTab" label="msg://dqCheckRunListView.runningTab">
                 <vbox id="runningTabContent" width="100%" height="100%" padding="false">
                     <hbox id="runningButtonsPanel" classNames="buttons-panel">
-                        <button id="refreshRunningButton" action="runningCheckRunsDataGrid.refreshAction"/>
+                        <button id="refreshRunningButton" themeNames="primary" action="runningCheckRunsDataGrid.refreshAction"/>
                     </hbox>
                     <dataGrid id="runningCheckRunsDataGrid"
                               width="100%"

@@ -36,9 +36,9 @@
     <layout>
         <hbox id="buttonsPanel" classNames="buttons-panel">
             <startSlot>
-                <button id="createButton" action="dqRulesDataGrid.createAction"/>
-                <button id="editButton" action="dqRulesDataGrid.editAction"/>
-                <button id="removeButton" action="dqRulesDataGrid.removeAction"/>
+                <button id="createButton" themeNames="primary" action="dqRulesDataGrid.createAction"/>
+                <button id="editButton" themeNames="primary" action="dqRulesDataGrid.editAction"/>
+                <button id="removeButton" themeNames="primary" action="dqRulesDataGrid.removeAction"/>
             </startSlot>
             <endSlot>
                 <checkbox id="mineField" label="msg://mineField.label" css="display: flex; align-items: center"/>
@@ -73,8 +73,8 @@
             </columns>
         </dataGrid>
         <hbox id="lookupActions" visible="false">
-            <button id="selectButton" action="selectAction"/>
-            <button id="discardButton" action="discardAction"/>
+            <button id="selectButton" themeNames="primary" action="selectAction"/>
+            <button id="discardButton" themeNames="primary" action="discardAction"/>
         </hbox>
     </layout>
 </view>

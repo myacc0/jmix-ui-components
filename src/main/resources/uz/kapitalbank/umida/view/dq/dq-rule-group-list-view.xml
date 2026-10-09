@@ -29,9 +29,9 @@
     <layout>
         <hbox id="buttonsPanel" classNames="buttons-panel">
             <startSlot>
-                <button id="createButton" action="dqRuleGroupsDataGrid.createAction"/>
-                <button id="editButton" action="dqRuleGroupsDataGrid.editAction"/>
-                <button id="removeButton" action="dqRuleGroupsDataGrid.removeAction"/>
+                <button id="createButton" themeNames="primary" action="dqRuleGroupsDataGrid.createAction"/>
+                <button id="editButton" themeNames="primary" action="dqRuleGroupsDataGrid.editAction"/>
+                <button id="removeButton" themeNames="primary" action="dqRuleGroupsDataGrid.removeAction"/>
             </startSlot>
             <endSlot>
                 <checkbox id="mineField" label="msg://mineField.label" css="display: flex; align-items: center"/>

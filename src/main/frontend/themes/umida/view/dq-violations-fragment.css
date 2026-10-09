@@ -1,0 +1,15 @@
+.violations-fragment-container {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    gap: 5px;
+}
+.violations-fragment-container .title-with-button-panel {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+}
+.title-with-button-panel .buttons-panel {
+    width: 50%
+}

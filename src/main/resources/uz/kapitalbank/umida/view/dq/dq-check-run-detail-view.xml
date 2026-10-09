@@ -45,6 +45,7 @@
             <description id="errorMessageValue" dataContainer="dqCheckRunDc" property="errorMessage"/>
         </descriptionList>
         <hbox id="checkResultsButtonsPanel" classNames="buttons-panel">
+            <button id="closeButton" themeNames="primary" action="closeAction"/>
             <button id="executedQueryButton" themeNames="primary" action="checkResultsDataGrid.executedQueryAction"/>
             <button id="violationsButton" themeNames="primary" action="checkResultsDataGrid.violationsAction"/>
         </hbox>
@@ -77,8 +78,5 @@
                 <column property="errorMessage" autoWidth="true" flexGrow="1"/>
             </columns>
         </dataGrid>
-        <hbox id="detailActions" width="60%" css="padding-bottom: 40px">
-            <button id="closeButton" action="closeAction"/>
-        </hbox>
     </layout>
 </view>

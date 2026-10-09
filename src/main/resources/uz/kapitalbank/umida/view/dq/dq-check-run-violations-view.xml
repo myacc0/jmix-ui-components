@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<view xmlns="http://jmix.io/schema/flowui/view"
-      title="msg://dqCheckRunViolationsView.title">
+<view xmlns="http://jmix.io/schema/flowui/view" title="">
     <actions>
         <action id="closeAction" type="view_close" text="msg:///actions.Close" icon="vaadin:close"/>
     </actions>
     <layout expand="violationsFragment">
         <fragment id="violationsFragment" class="uz.kapitalbank.umida.view.dq.DqViolationsFragment"/>
         <hbox id="dialogActions">
-            <button id="closeButton" action="closeAction"/>
+            <button id="closeButton" themeNames="primary" action="closeAction"/>
         </hbox>
     </layout>
 </view>
