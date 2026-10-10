@@ -11,7 +11,9 @@
             <loader id="dqCheckRunsDl" readOnly="true">
                 <query>
                     <![CDATA[select e from umida_DqCheckRun e
-                    where e.status in ('success', 'failed', 'cancelled')
+                    where e.status in (@enum(uz.kapitalbank.umida.enums.dq.DqCheckRunStatus.SUCCESS),
+                                       @enum(uz.kapitalbank.umida.enums.dq.DqCheckRunStatus.FAILED),
+                                       @enum(uz.kapitalbank.umida.enums.dq.DqCheckRunStatus.CANCELLED))
                     order by e.startedAt desc, e.dataSource asc]]>
                 </query>
             </loader>
@@ -24,7 +26,7 @@
             <loader id="runningCheckRunsDl" readOnly="true">
                 <query>
                     <![CDATA[select e from umida_DqCheckRun e
-                    where e.status = 'running'
+                    where e.status = @enum(uz.kapitalbank.umida.enums.dq.DqCheckRunStatus.RUNNING)
                     order by e.startedAt desc, e.dataSource asc]]>
                 </query>
             </loader>
