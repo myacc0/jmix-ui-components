@@ -32,6 +32,8 @@
             <description id="codeValue" dataContainer="dqIssueDc" property="code"/>
             <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.status"/>
             <description id="statusValue"/>
+            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.closingReason"/>
+            <description id="closingReasonValue"/>
             <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.rule"/>
             <description id="ruleValue" dataContainer="dqIssueDc" property="rule.code"/>
             <term text="msg://uz.kapitalbank.umida.entity.dq/DqRule.dataSource"/>
@@ -42,16 +44,16 @@
             <description id="affectedRowsValue" dataContainer="dqIssueDc" property="checkResult.failedRecords"/>
             <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.dueDate"/>
             <description id="dueDateValue" dataContainer="dqIssueDc" property="dueDate"/>
-            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.resolvedAt"/>
-            <description id="resolvedAtValue" dataContainer="dqIssueDc" property="resolvedAt"/>
+            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.closedAt"/>
+            <description id="closedAtValue" dataContainer="dqIssueDc" property="closedAt"/>
             <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.createdAt"/>
             <description id="createdAtValue" dataContainer="dqIssueDc" property="createdAt"/>
             <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.updatedAt"/>
             <description id="updatedAtValue" dataContainer="dqIssueDc" property="updatedAt"/>
             <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.description"/>
             <description id="descriptionValue" dataContainer="dqIssueDc" property="description"/>
-            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.resolutionNotes"/>
-            <description id="resolutionNotesValue" dataContainer="dqIssueDc" property="resolutionNotes"/>
+            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.closingNotes"/>
+            <description id="closingNotesValue" dataContainer="dqIssueDc" property="closingNotes"/>
         </descriptionList>
         <hbox id="detailActions" width="60%">
             <button id="closeButton" themeNames="primary" action="closeAction"/>

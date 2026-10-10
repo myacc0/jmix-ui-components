@@ -16,6 +16,7 @@ import uz.kapitalbank.umida.entity.dq.DqRule;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructurePosition;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
+import uz.kapitalbank.umida.enums.dq.DqIssueClosingReason;
 import uz.kapitalbank.umida.enums.dq.DqIssueStatus;
 import uz.kapitalbank.umida.enums.dq.DqRuleType;
 import uz.kapitalbank.umida.service.dq.DqIssueService;
@@ -30,7 +31,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * The issue bookkeeping that does not need a check run: the generated code, who may close an issue,
- * and the issues a rule closes when it is moved to other data.
+ * the issues a rule closes when it is moved to other data, and that a closed issue always carries
+ * its closing reason and time.
  */
 @SpringBootTest
 @ExtendWith(AuthenticatedAsAdmin.class)
@@ -63,8 +65,8 @@ public class DqIssueServiceTests {
 
     @Test
     void aNewIssueGetsTheNextCode() {
-        DqIssue first = createIssue(DqIssueStatus.OPEN);
-        DqIssue second = createIssue(DqIssueStatus.OPEN);
+        DqIssue first = createOpenIssue();
+        DqIssue second = createOpenIssue();
 
         assertTrue(first.getCode().matches("DQI-\\d+"), first.getCode());
         assertTrue(second.getCode().matches("DQI-\\d+"), second.getCode());
@@ -75,7 +77,7 @@ public class DqIssueServiceTests {
 
     @Test
     void onlyAUserOfTheAssigneeSubdivisionMayCloseAnOpenIssue() {
-        DqIssue issue = createIssue(DqIssueStatus.OPEN);
+        DqIssue issue = createOpenIssue();
 
         User member = createUserIn(assignee);
         User outsider = createUserIn(createSubdivision());
@@ -86,14 +88,14 @@ public class DqIssueServiceTests {
         assertFalse(canClose(withoutEmployee, issue), "a user without an employee may not");
         assertFalse(issueService.canClose(issue), "admin has no employee, so it may not either");
 
-        DqIssue closed = createIssue(DqIssueStatus.WONTFIX);
+        DqIssue closed = createClosedIssue(DqIssueClosingReason.WONTFIX);
         assertFalse(canClose(member, closed), "a closed issue cannot be closed again");
     }
 
     @Test
     void movingTheRuleToOtherDataClosesItsOpenIssues() {
-        DqIssue open = createIssue(DqIssueStatus.OPEN);
-        DqIssue dismissed = createIssue(DqIssueStatus.FALSE_POSITIVE);
+        DqIssue open = createOpenIssue();
+        DqIssue dismissed = createClosedIssue(DqIssueClosingReason.FALSE_POSITIVE);
 
         DqRule renamed = reloadRule();
         renamed.setName(renamed.getName() + " renamed");
@@ -107,10 +109,43 @@ public class DqIssueServiceTests {
         rule = dataManager.save(moved);
 
         DqIssue closed = reload(open);
-        assertEquals(DqIssueStatus.RULE_DATA_SOURCE_CHANGED, closed.getStatus());
-        assertNotNull(closed.getResolvedAt());
-        assertEquals(DqIssueStatus.FALSE_POSITIVE, reload(dismissed).getStatus(),
-                "an issue closed already keeps its outcome");
+        assertEquals(DqIssueStatus.CLOSED, closed.getStatus());
+        assertEquals(DqIssueClosingReason.RULE_DATA_SOURCE_CHANGED, closed.getClosingReason());
+        assertNotNull(closed.getClosedAt());
+        assertEquals(DqIssueClosingReason.FALSE_POSITIVE, reload(dismissed).getClosingReason(),
+                "an issue closed already keeps its reason");
+    }
+
+    @Test
+    void aNewIssueIsOpenWithoutAClosingReason() {
+        DqIssue issue = dataManager.create(DqIssue.class);
+        issue.setRule(rule);
+        DqIssue saved = testData.track(dataManager.save(issue));
+
+        assertEquals(DqIssueStatus.OPEN, saved.getStatus());
+        assertNull(saved.getClosingReason());
+        assertNull(saved.getClosedAt());
+    }
+
+    @Test
+    void theDatabaseRejectsAClosingWithoutItsReasonOrTime() {
+        DqIssue withoutReason = dataManager.create(DqIssue.class);
+        withoutReason.setRule(rule);
+        withoutReason.setStatus(DqIssueStatus.CLOSED);
+        withoutReason.setClosedAt(OffsetDateTime.now());
+        assertThrows(RuntimeException.class, () -> dataManager.save(withoutReason));
+
+        DqIssue withoutTime = dataManager.create(DqIssue.class);
+        withoutTime.setRule(rule);
+        withoutTime.setStatus(DqIssueStatus.CLOSED);
+        withoutTime.setClosingReason(DqIssueClosingReason.WONTFIX);
+        assertThrows(RuntimeException.class, () -> dataManager.save(withoutTime));
+
+        DqIssue openWithReason = dataManager.create(DqIssue.class);
+        openWithReason.setRule(rule);
+        openWithReason.setStatus(DqIssueStatus.OPEN);
+        openWithReason.setClosingReason(DqIssueClosingReason.FIXED);
+        assertThrows(RuntimeException.class, () -> dataManager.save(openWithReason));
     }
 
     // ---------------------------------------------------------------------
@@ -121,13 +156,18 @@ public class DqIssueServiceTests {
         return systemAuthenticator.withUser(user.getUsername(), () -> issueService.canClose(issue));
     }
 
-    private DqIssue createIssue(DqIssueStatus status) {
+    private DqIssue createOpenIssue() {
         DqIssue issue = dataManager.create(DqIssue.class);
         issue.setRule(rule);
-        issue.setStatus(status);
-        if (status != DqIssueStatus.OPEN) {
-            issue.setResolvedAt(OffsetDateTime.now());
-        }
+        issue.setStatus(DqIssueStatus.OPEN);
+        return testData.track(dataManager.save(issue));
+    }
+
+    private DqIssue createClosedIssue(DqIssueClosingReason reason) {
+        DqIssue issue = dataManager.create(DqIssue.class);
+        issue.setRule(rule);
+        issue.setClosingReason(reason);
+        issueService.markClosed(issue);
         return testData.track(dataManager.save(issue));
     }
 

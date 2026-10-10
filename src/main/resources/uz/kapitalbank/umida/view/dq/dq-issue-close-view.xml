@@ -23,16 +23,16 @@
             <responsiveSteps>
                 <responsiveStep minWidth="0" columns="1"/>
             </responsiveSteps>
-            <!-- the outcomes are narrowed to the closing ones in the controller -->
-            <select id="statusField"
-                    property="status"
+            <!-- the reasons are narrowed to the ones a user may choose in the controller -->
+            <select id="closingReasonField"
+                    property="closingReason"
                     required="true"
-                    requiredMessage="msg://dqIssueCloseView.statusRequired"/>
-            <textArea id="resolutionNotesField" property="resolutionNotes" minRows="5"/>
+                    requiredMessage="msg://dqIssueCloseView.closingReasonRequired"/>
+            <textArea id="closingNotesField" property="closingNotes" minRows="5"/>
         </formLayout>
-        <hbox id="detailActions" width="100%" justifyContent="START">
-            <button id="saveButton" action="saveAction" themeNames="primary"/>
+        <hbox id="detailActions" width="100%" justifyContent="CENTER">
             <button id="cancelButton" action="closeAction" themeNames="primary"/>
+            <button id="saveButton" action="saveAction" themeNames="primary"/>
         </hbox>
     </layout>
 </view>

@@ -4,13 +4,11 @@ import io.jmix.core.metamodel.datatype.EnumClass;
 
 import org.springframework.lang.Nullable;
 
+/** Whether an issue is open. Why a closed one was closed is its {@link DqIssueClosingReason}. */
 public enum DqIssueStatus implements EnumClass<String> {
 
     OPEN("open"),
-    RESOLVED("resolved"),
-    WONTFIX("wontfix"),
-    FALSE_POSITIVE("false_positive"),
-    RULE_DATA_SOURCE_CHANGED("rule_data_source_changed");
+    CLOSED("closed");
 
     private final String id;
 

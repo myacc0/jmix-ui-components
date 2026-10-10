@@ -23,7 +23,6 @@ import uz.kapitalbank.umida.test_support.DqTestData;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -57,6 +56,9 @@ public class DqCheckExecutorServiceTests {
 
     @Autowired
     DqViolationsService violationsService;
+
+    @Autowired
+    DqIssueService issueService;
 
     private final List<DqCheckRun> checkRuns = new ArrayList<>();
     private DqTestData testData;
@@ -187,7 +189,7 @@ public class DqCheckExecutorServiceTests {
     }
 
     @Test
-    void resolvesTheOpenIssueOnceTheRulePasses() {
+    void closesTheOpenIssueAsFixedOnceTheRulePasses() {
         awaitFinished(checkExecutorService.startCheckRun(filter()));
         assertEquals(DqIssueStatus.OPEN, loadIssues(failingRule).get(0).getStatus());
 
@@ -197,22 +199,23 @@ public class DqCheckExecutorServiceTests {
 
         List<DqIssue> issues = loadIssues(failingRule);
         assertEquals(1, issues.size());
-        assertEquals(DqIssueStatus.RESOLVED, issues.get(0).getStatus());
-        assertNotNull(issues.get(0).getResolvedAt());
+        assertEquals(DqIssueStatus.CLOSED, issues.get(0).getStatus());
+        assertEquals(DqIssueClosingReason.FIXED, issues.get(0).getClosingReason());
+        assertNotNull(issues.get(0).getClosedAt());
     }
 
     @Test
     void aDismissedIssueSuppressesNewOnesUntilTheKeyFieldsChange() {
         awaitFinished(checkExecutorService.startCheckRun(filter()));
         DqIssue issue = loadIssues(failingRule).get(0);
-        issue.setStatus(DqIssueStatus.WONTFIX);
-        issue.setResolvedAt(OffsetDateTime.now());
+        issue.setClosingReason(DqIssueClosingReason.WONTFIX);
+        issueService.markClosed(issue);
         dataManager.save(issue);
 
         awaitFinished(checkExecutorService.startCheckRun(filter()));
         List<DqIssue> issues = loadIssues(failingRule);
         assertEquals(1, issues.size(), "the failure was dismissed, so it opens no new issue");
-        assertEquals(DqIssueStatus.WONTFIX, issues.get(0).getStatus());
+        assertEquals(DqIssueClosingReason.WONTFIX, issues.get(0).getClosingReason());
 
         // another config makes it another check, whose failures are worth an issue again
         failingRule = updateRuleConfig(failingRule, "{\"threshold\": 100}");

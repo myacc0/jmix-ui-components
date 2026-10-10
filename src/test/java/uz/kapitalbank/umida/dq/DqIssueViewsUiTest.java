@@ -14,6 +14,7 @@ import io.jmix.flowui.ViewNavigators;
 import io.jmix.flowui.component.UiComponentUtils;
 import io.jmix.flowui.component.combobox.JmixComboBox;
 import io.jmix.flowui.component.grid.DataGrid;
+import io.jmix.flowui.component.select.JmixSelect;
 import io.jmix.flowui.kit.component.button.JmixButton;
 import io.jmix.flowui.testassist.FlowuiTestAssistConfiguration;
 import io.jmix.flowui.testassist.UiTest;
@@ -35,9 +36,11 @@ import uz.kapitalbank.umida.entity.dq.DqRuleGroup;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.enums.dq.*;
 import uz.kapitalbank.umida.service.dq.DqBadges;
+import uz.kapitalbank.umida.service.dq.DqIssueService;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
 import uz.kapitalbank.umida.test_support.DqTestData;
 import uz.kapitalbank.umida.view.dq.DqCheckRunViolationsView;
+import uz.kapitalbank.umida.view.dq.DqIssueCloseView;
 import uz.kapitalbank.umida.view.dq.DqIssueDetailView;
 import uz.kapitalbank.umida.view.dq.DqIssueListView;
 import uz.kapitalbank.umida.view.dq.DqRuleDetailView;
@@ -134,7 +137,8 @@ public class DqIssueViewsUiTest {
     void theListShowsWhatTheIssueTakesFromItsRuleAndCheck() {
         DataGrid<DqIssue> grid = openList();
 
-        for (String key : new String[]{"code", "ruleCode", "dataSource", "severity", "affectedRows", "status"}) {
+        for (String key : new String[]{"code", "ruleCode", "dataSource", "severity", "affectedRows", "status",
+                "closingReason", "closedAt"}) {
             assertNotNull(grid.getColumnByKey(key), key + " is a column of the issue list");
         }
         DqIssue shown = gridItem(grid);
@@ -189,6 +193,8 @@ public class DqIssueViewsUiTest {
         Span statusBadge = badge(view, "statusValue");
         assertEquals(messages.getMessage(issue.getStatus()), statusBadge.getText());
         assertTrue(statusBadge.hasClassName(DqBadges.ISSUE_STATUS + issue.getStatus().getId()));
+        DescriptionList.Description closingReasonValue = UiTestUtils.getComponent(view, "closingReasonValue");
+        assertEquals(0, closingReasonValue.getChildren().count(), "an open issue has no closing reason");
         Span severityBadge = badge(view, "severityValue");
         assertEquals(messages.getMessage(rule.getSeverity()), severityBadge.getText());
         assertTrue(severityBadge.hasClassName(DqBadges.SEVERITY + rule.getSeverity().getId()));
@@ -210,7 +216,9 @@ public class DqIssueViewsUiTest {
         DqIssue newIssue = dataManager.create(DqIssue.class);
         newIssue.setRule(rule);
         newIssue.setCheckResult(result);
-        newIssue.setStatus(DqIssueStatus.RESOLVED);
+        newIssue.setStatus(DqIssueStatus.CLOSED);
+        newIssue.setClosingReason(DqIssueClosingReason.FIXED);
+        newIssue.setClosedAt(createdAt.plusDays(1));
         newIssue.setCreatedAt(createdAt);
         DqIssue datedIssue = testData.track(dataManager.save(newIssue));
 
@@ -223,6 +231,26 @@ public class DqIssueViewsUiTest {
         String expected = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")
                 .format(createdAt.atZoneSameInstant(currentAuthentication.getTimeZone().toZoneId()));
         assertEquals(expected, valueText(view, "createdAtValue"));
+
+        Span reasonBadge = badge(view, "closingReasonValue");
+        assertEquals(messages.getMessage(DqIssueClosingReason.FIXED), reasonBadge.getText());
+        assertTrue(reasonBadge.hasClassName(DqBadges.ISSUE_CLOSING_REASON + DqIssueClosingReason.FIXED.getId()));
+    }
+
+    @Test
+    void theCloseDialogOffersOnlyTheReasonsAUserMayChoose() {
+        viewNavigators.detailView(UiTestUtils.getCurrentView(), DqIssue.class)
+                .editEntity(issue)
+                .withViewClass(DqIssueCloseView.class)
+                .navigate();
+        DqIssueCloseView view = UiTestUtils.getCurrentView();
+        JmixSelect<DqIssueClosingReason> closingReasonField = UiTestUtils.getComponent(view, "closingReasonField");
+
+        assertEquals(DqIssueService.MANUAL_CLOSING_REASONS,
+                closingReasonField.getListDataView().getItems().toList());
+        assertNull(closingReasonField.getValue(), "an open issue arrives without a reason");
+        assertNotNull(UiTestUtils.getComponent(view, "closingNotesField"));
+        assertFalse(UiTestUtils.validateView(view).isEmpty(), "a closing without a reason is rejected");
     }
 
     @Test
@@ -245,7 +273,9 @@ public class DqIssueViewsUiTest {
         Button yes = dialog.getButtons().get(0);
         yes.click();
 
-        assertEquals(DqIssueStatus.RULE_DATA_SOURCE_CHANGED, reloadIssue().getStatus());
+        DqIssue closed = reloadIssue();
+        assertEquals(DqIssueStatus.CLOSED, closed.getStatus());
+        assertEquals(DqIssueClosingReason.RULE_DATA_SOURCE_CHANGED, closed.getClosingReason());
         assertEquals("code", dataManager.load(DqRule.class).id(rule.getId()).one().getColumnName());
     }
 

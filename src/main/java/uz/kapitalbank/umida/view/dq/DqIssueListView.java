@@ -41,6 +41,11 @@ public class DqIssueListView extends StandardListView<DqIssue> {
         return dqBadges.renderer(DqBadges.ISSUE_STATUS, DqIssue::getStatus);
     }
 
+    @Supply(to = "dqIssuesDataGrid.closingReason", subject = "renderer")
+    private Renderer<DqIssue> dqIssuesDataGridClosingReasonRenderer() {
+        return dqBadges.renderer(DqBadges.ISSUE_CLOSING_REASON, DqIssue::getClosingReason);
+    }
+
     @Supply(to = "dqIssuesDataGrid.severity", subject = "renderer")
     private Renderer<DqIssue> dqIssuesDataGridSeverityRenderer() {
         return dqBadges.renderer(DqBadges.SEVERITY, dqIssue -> dqIssue.getRule().getSeverity());

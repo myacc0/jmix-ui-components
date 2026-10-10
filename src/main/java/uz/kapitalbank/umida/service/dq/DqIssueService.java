@@ -14,6 +14,7 @@ import uz.kapitalbank.umida.entity.dq.DqIssue;
 import uz.kapitalbank.umida.entity.dq.DqRule;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructurePosition;
 import uz.kapitalbank.umida.enums.dq.DqCheckResultStatus;
+import uz.kapitalbank.umida.enums.dq.DqIssueClosingReason;
 import uz.kapitalbank.umida.enums.dq.DqIssueStatus;
 
 import java.time.LocalDate;
@@ -25,13 +26,16 @@ import java.util.Optional;
  * The lifecycle of a {@link DqIssue}.
  * <ul>
  *     <li>A check run opens an issue for a rule that failed, keeps refreshing it while the rule keeps
- *     failing, and closes it as {@link DqIssueStatus#RESOLVED} once the rule passes again.</li>
+ *     failing, and closes it as {@link DqIssueClosingReason#FIXED} once the rule passes again.</li>
  *     <li>A user of the subdivision the rule is assigned to closes it by hand as
- *     {@link DqIssueStatus#WONTFIX} or {@link DqIssueStatus#FALSE_POSITIVE}; until the key fields of
- *     the rule change, its failures then open no new issue.</li>
+ *     {@link DqIssueClosingReason#WONTFIX} or {@link DqIssueClosingReason#FALSE_POSITIVE}; until the
+ *     key fields of the rule change, its failures then open no new issue.</li>
  *     <li>Moving a rule to another data source, schema, table or column closes its open issues as
- *     {@link DqIssueStatus#RULE_DATA_SOURCE_CHANGED}: they describe data the rule no longer checks.</li>
+ *     {@link DqIssueClosingReason#RULE_DATA_SOURCE_CHANGED}: they describe data the rule no longer
+ *     checks.</li>
  * </ul>
+ * Every closing goes through {@link #markClosed}: a closed issue always has its closing reason and
+ * time, an open one neither (the database checks it too).
  * Reads are unconstrained: this is bookkeeping of the check runs and of the issue screens, whatever
  * the current user may browse of rules, users and positions.
  */
@@ -40,9 +44,9 @@ public class DqIssueService {
 
     public static final String CODE_PREFIX = "DQI-";
 
-    /** The outcomes a user may close an issue with. */
-    public static final List<DqIssueStatus> MANUAL_CLOSING_STATUSES =
-            List.of(DqIssueStatus.WONTFIX, DqIssueStatus.FALSE_POSITIVE);
+    /** The reasons a user may close an issue with. */
+    public static final List<DqIssueClosingReason> MANUAL_CLOSING_REASONS =
+            List.of(DqIssueClosingReason.WONTFIX, DqIssueClosingReason.FALSE_POSITIVE);
 
     /** Created by Liquibase; the start value here only matters if the sequence is missing. */
     private static final Sequence CODE_SEQUENCE = Sequence.withName("UMIDA_DQ_ISSUE_CODE_SEQ")
@@ -86,9 +90,13 @@ public class DqIssueService {
         }
     }
 
-    /** Records that the issue was just closed. Called before the change is written. */
+    /**
+     * Records that the issue was just closed, for the closing reason it carries. Called before the
+     * change is written.
+     */
     public void markClosed(DqIssue issue) {
-        issue.setResolvedAt(OffsetDateTime.now());
+        issue.setStatus(DqIssueStatus.CLOSED);
+        issue.setClosedAt(OffsetDateTime.now());
     }
 
     // ---------------------------------------------------------------------
@@ -100,7 +108,7 @@ public class DqIssueService {
      * <ul>
      *     <li>a failed result refreshes the open issue of the rule, or opens a new one — unless the
      *     rule failures were dismissed by hand since its key fields last changed;</li>
-     *     <li>a passed result resolves the open issues of the rule: the data is fixed;</li>
+     *     <li>a passed result closes the open issues of the rule as fixed;</li>
      *     <li>a skipped one says nothing about the data and changes nothing.</li>
      * </ul>
      *
@@ -121,9 +129,9 @@ public class DqIssueService {
             return List.of(issue);
         }
         if (status == DqCheckResultStatus.PASSED) {
-            List<DqIssue> resolved = findOpenIssues(rule);
-            resolved.forEach(issue -> close(issue, DqIssueStatus.RESOLVED));
-            return resolved;
+            List<DqIssue> fixed = findOpenIssues(rule);
+            fixed.forEach(issue -> close(issue, DqIssueClosingReason.FIXED));
+            return fixed;
         }
         return List.of();
     }
@@ -135,16 +143,16 @@ public class DqIssueService {
     public boolean isSuppressed(DqRule rule) {
         Optional<DqIssue> lastDismissed = dataManager.load(DqIssue.class)
                 .query("select i from umida_DqIssue i" +
-                        " where i.rule = :rule and i.status in :statuses and i.resolvedAt is not null" +
-                        " order by i.resolvedAt desc")
+                        " where i.rule = :rule and i.closingReason in :reasons and i.closedAt is not null" +
+                        " order by i.closedAt desc")
                 .parameter("rule", rule)
-                .parameter("statuses", MANUAL_CLOSING_STATUSES.stream().map(DqIssueStatus::getId).toList())
-                .fetchPlanProperties("resolvedAt")
+                .parameter("reasons", MANUAL_CLOSING_REASONS.stream().map(DqIssueClosingReason::getId).toList())
+                .fetchPlanProperties("closedAt")
                 .maxResults(1)
                 .optional();
         return lastDismissed.isPresent()
                 && (rule.getKeyFieldsChangedAt() == null
-                || lastDismissed.get().getResolvedAt().isAfter(rule.getKeyFieldsChangedAt()));
+                || lastDismissed.get().getClosedAt().isAfter(rule.getKeyFieldsChangedAt()));
     }
 
     /** A new open issue of the rule, due {@code DqRule.dueDays} days from today. */
@@ -185,12 +193,12 @@ public class DqIssueService {
             return;
         }
         SaveContext saveContext = new SaveContext();
-        issues.forEach(issue -> saveContext.saving(close(issue, DqIssueStatus.RULE_DATA_SOURCE_CHANGED)));
+        issues.forEach(issue -> saveContext.saving(close(issue, DqIssueClosingReason.RULE_DATA_SOURCE_CHANGED)));
         dataManager.save(saveContext);
     }
 
-    private DqIssue close(DqIssue issue, DqIssueStatus status) {
-        issue.setStatus(status);
+    private DqIssue close(DqIssue issue, DqIssueClosingReason reason) {
+        issue.setClosingReason(reason);
         markClosed(issue);
         return issue;
     }

@@ -42,6 +42,9 @@ public class DqIssueDetailView extends StandardDetailView<DqIssue> {
     private DescriptionList.Description statusValue;
 
     @ViewComponent
+    private DescriptionList.Description closingReasonValue;
+
+    @ViewComponent
     private DescriptionList.Description severityValue;
 
     @Subscribe
@@ -53,6 +56,8 @@ public class DqIssueDetailView extends StandardDetailView<DqIssue> {
     public void onDqIssueDcItemChange(final InstanceContainer.ItemChangeEvent<DqIssue> event) {
         DqIssue issue = event.getItem();
         dqBadges.show(statusValue, DqBadges.ISSUE_STATUS, issue != null ? issue.getStatus() : null);
+        dqBadges.show(closingReasonValue, DqBadges.ISSUE_CLOSING_REASON,
+                issue != null ? issue.getClosingReason() : null);
         dqBadges.show(severityValue, DqBadges.SEVERITY,
                 issue != null && issue.getRule() != null ? issue.getRule().getSeverity() : null);
     }

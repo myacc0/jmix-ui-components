@@ -6,6 +6,7 @@ import io.jmix.core.entity.annotation.OnDeleteInverse;
 import io.jmix.core.metamodel.annotation.JmixEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import uz.kapitalbank.umida.enums.dq.DqIssueClosingReason;
 import uz.kapitalbank.umida.enums.dq.DqIssueStatus;
 
 import java.time.LocalDate;
@@ -39,9 +40,13 @@ public class DqIssue {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private DqRule rule;
 
+    /** An open issue has no closing reason and no closing time; a closed one has both. */
     @NotNull
-    @Column(name = "STATUS", nullable = false, length = 40, columnDefinition = "VARCHAR(40) DEFAULT 'OPEN'")
+    @Column(name = "STATUS", nullable = false, length = 40, columnDefinition = "VARCHAR(40) DEFAULT 'open'")
     private String status;
+
+    @Column(name = "CLOSING_REASON", length = 40)
+    private String closingReason;
 
     @Column(name = "DESCRIPTION", length = 1000, columnDefinition = "text")
     private String description;
@@ -49,11 +54,11 @@ public class DqIssue {
     @Column(name = "DUE_DATE")
     private LocalDate dueDate;
 
-    @Column(name = "RESOLVED_AT", columnDefinition = "TIMESTAMP")
-    private OffsetDateTime resolvedAt;
+    @Column(name = "CLOSED_AT", columnDefinition = "TIMESTAMP")
+    private OffsetDateTime closedAt;
 
-    @Column(name = "RESOLUTION_NOTES", columnDefinition = "text")
-    private String resolutionNotes;
+    @Column(name = "CLOSING_NOTES", columnDefinition = "text")
+    private String closingNotes;
 
     @NotNull
     @Column(name = "CREATED_AT", nullable = false, updatable = false, columnDefinition = "TIMESTAMP")
@@ -62,12 +67,12 @@ public class DqIssue {
     @Column(name = "UPDATED_AT", columnDefinition = "TIMESTAMP")
     private OffsetDateTime updatedAt;
 
-    public void setResolvedAt(OffsetDateTime resolvedAt) {
-        this.resolvedAt = resolvedAt;
+    public void setClosedAt(OffsetDateTime closedAt) {
+        this.closedAt = closedAt;
     }
 
-    public OffsetDateTime getResolvedAt() {
-        return resolvedAt;
+    public OffsetDateTime getClosedAt() {
+        return closedAt;
     }
 
     public String getCode() {
@@ -94,12 +99,12 @@ public class DqIssue {
         return createdAt;
     }
 
-    public String getResolutionNotes() {
-        return resolutionNotes;
+    public String getClosingNotes() {
+        return closingNotes;
     }
 
-    public void setResolutionNotes(String resolutionNotes) {
-        this.resolutionNotes = resolutionNotes;
+    public void setClosingNotes(String closingNotes) {
+        this.closingNotes = closingNotes;
     }
 
     public LocalDate getDueDate() {
@@ -124,6 +129,14 @@ public class DqIssue {
 
     public void setStatus(DqIssueStatus status) {
         this.status = status == null ? null : status.getId();
+    }
+
+    public DqIssueClosingReason getClosingReason() {
+        return closingReason == null ? null : DqIssueClosingReason.fromId(closingReason);
+    }
+
+    public void setClosingReason(DqIssueClosingReason closingReason) {
+        this.closingReason = closingReason == null ? null : closingReason.getId();
     }
 
     public DqRule getRule() {

@@ -23,6 +23,7 @@ public class DqBadges {
     public static final String SEVERITY = "dq-severity-";
     public static final String DIMENSION = "dq-dimension-";
     public static final String ISSUE_STATUS = "dq-issue-status-";
+    public static final String ISSUE_CLOSING_REASON = "dq-issue-closing-reason-";
     public static final String RUN_STATUS = "dq-run-status-";
     public static final String RESULT_STATUS = "dq-result-status-";
 

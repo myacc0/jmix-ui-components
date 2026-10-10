@@ -86,8 +86,9 @@
                         autoWidth="true"
                         flexGrow="0"/>
                 <column property="status" filterable="true" autoWidth="true" flexGrow="0"/>
+                <column property="closingReason" filterable="true" autoWidth="true" flexGrow="0"/>
                 <column property="dueDate" filterable="true" autoWidth="true" flexGrow="0"/>
-                <column property="resolvedAt" filterable="true" autoWidth="true" flexGrow="0"/>
+                <column property="closedAt" filterable="true" autoWidth="true" flexGrow="0"/>
                 <column property="createdAt" filterable="true" autoWidth="true" flexGrow="0"/>
                 <column property="updatedAt" filterable="true" autoWidth="true" flexGrow="1"/>
             </columns>

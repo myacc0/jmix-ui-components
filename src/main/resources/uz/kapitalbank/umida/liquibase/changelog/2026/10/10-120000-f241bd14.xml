@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd"
+        objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+        logicalFilePath="uz/kapitalbank/umida/liquibase/changelog/2026/10/10-120000-f241bd14.xml">
+    <!--
+        DqIssue.status keeps only 'open' and 'closed'; why an issue was closed moves to CLOSING_REASON.
+        The closing columns are named after the closing, as it is not always a fix.
+    -->
+    <changeSet id="1" author="umida">
+        <renameColumn tableName="UMIDA_DQ_ISSUE" oldColumnName="RESOLVED_AT" newColumnName="CLOSED_AT"
+                      columnDataType="TIMESTAMP"/>
+        <renameColumn tableName="UMIDA_DQ_ISSUE" oldColumnName="RESOLUTION_NOTES" newColumnName="CLOSING_NOTES"
+                      columnDataType="text"/>
+    </changeSet>
+    <changeSet id="2" author="umida">
+        <addColumn tableName="UMIDA_DQ_ISSUE">
+            <column name="CLOSING_REASON" type="VARCHAR(40)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet id="3" author="umida">
+        <modifyDataType tableName="UMIDA_DQ_ISSUE" columnName="STATUS" newDataType="VARCHAR(40)"/>
+        <addDefaultValue tableName="UMIDA_DQ_ISSUE" columnName="STATUS" columnDataType="VARCHAR(40)"
+                         defaultValue="open"/>
+    </changeSet>
+    <!-- the old closing statuses become reasons; 'resolved' is now 'fixed' -->
+    <changeSet id="4" author="umida">
+        <update tableName="UMIDA_DQ_ISSUE">
+            <column name="CLOSING_REASON" valueComputed="CASE WHEN STATUS = 'resolved' THEN 'fixed' ELSE STATUS END"/>
+            <column name="STATUS" value="closed"/>
+            <where>STATUS &lt;&gt; 'open'</where>
+        </update>
+        <update tableName="UMIDA_DQ_ISSUE">
+            <column name="CLOSED_AT" valueComputed="COALESCE(UPDATED_AT, CREATED_AT)"/>
+            <where>STATUS = 'closed' AND CLOSED_AT IS NULL</where>
+        </update>
+    </changeSet>
+    <!-- a closed issue has a reason and a closing time, an open one neither -->
+    <changeSet id="5" author="umida">
+        <sql>
+            ALTER TABLE UMIDA_DQ_ISSUE ADD CONSTRAINT CK_UMIDA_DQ_ISSUE_CLOSING CHECK (
+                (CLOSING_REASON IS NULL) = (CLOSED_AT IS NULL)
+                AND (STATUS = 'closed') = (CLOSING_REASON IS NOT NULL)
+            )
+        </sql>
+        <rollback>
+            <sql>ALTER TABLE UMIDA_DQ_ISSUE DROP CONSTRAINT CK_UMIDA_DQ_ISSUE_CLOSING</sql>
+        </rollback>
+    </changeSet>
+</databaseChangeLog>
