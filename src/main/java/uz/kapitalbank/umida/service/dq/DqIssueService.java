@@ -28,8 +28,9 @@ import java.util.Optional;
  *     <li>A check run opens an issue for a rule that failed, keeps refreshing it while the rule keeps
  *     failing, and closes it as {@link DqIssueClosingReason#FIXED} once the rule passes again.</li>
  *     <li>A user of the subdivision the rule is assigned to closes it by hand as
- *     {@link DqIssueClosingReason#WONTFIX} or {@link DqIssueClosingReason#FALSE_POSITIVE}; until the
- *     key fields of the rule change, its failures then open no new issue.</li>
+ *     {@link DqIssueClosingReason#WONTFIX} or {@link DqIssueClosingReason#FALSE_POSITIVE}, and the
+ *     issue records the employee who did ({@code DqIssue.closedBy}); until the key fields of the rule
+ *     change, its failures then open no new issue.</li>
  *     <li>Moving a rule to another data source, schema, table or column closes its open issues as
  *     {@link DqIssueClosingReason#RULE_DATA_SOURCE_CHANGED}: they describe data the rule no longer
  *     checks.</li>
@@ -56,13 +57,16 @@ public class DqIssueService {
     private final UnconstrainedDataManager dataManager;
     private final Sequences sequences;
     private final CurrentAuthentication currentAuthentication;
+    private final DqCheckRunService checkRunService;
 
     public DqIssueService(UnconstrainedDataManager dataManager,
                           Sequences sequences,
-                          CurrentAuthentication currentAuthentication) {
+                          CurrentAuthentication currentAuthentication,
+                          DqCheckRunService checkRunService) {
         this.dataManager = dataManager;
         this.sequences = sequences;
         this.currentAuthentication = currentAuthentication;
+        this.checkRunService = checkRunService;
     }
 
     /** The next free issue code: {@code DQI-100}, {@code DQI-101}, … */
@@ -233,5 +237,15 @@ public class DqIssueService {
                 .maxResults(1)
                 .optional()
                 .isPresent();
+    }
+
+    /**
+     * Records that the current user just closed the issue by hand, for the closing reason it carries:
+     * the closing, and the employee the user is linked to. Called before the change is written.
+     */
+    public void markAsManualClosed(DqIssue issue) {
+        markClosed(issue);
+        issue.setClosedBy(checkRunService.findEmployeeOfUser(currentAuthentication.getUser().getUsername())
+                .orElse(null));
     }
 }

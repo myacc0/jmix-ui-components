@@ -6,6 +6,7 @@ import io.jmix.core.entity.annotation.OnDeleteInverse;
 import io.jmix.core.metamodel.annotation.JmixEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
 import uz.kapitalbank.umida.enums.dq.DqIssueClosingReason;
 import uz.kapitalbank.umida.enums.dq.DqIssueStatus;
 
@@ -16,7 +17,8 @@ import java.util.UUID;
 @JmixEntity
 @Table(name = "UMIDA_DQ_ISSUE", indexes = {
         @Index(name = "IDX_UMIDA_DQ_ISSUE_CHECK_RESULT", columnList = "CHECK_RESULT_ID"),
-        @Index(name = "IDX_UMIDA_DQ_ISSUE_RULE", columnList = "RULE_ID")
+        @Index(name = "IDX_UMIDA_DQ_ISSUE_RULE", columnList = "RULE_ID"),
+        @Index(name = "IDX_UMIDA_DQ_ISSUE_CLOSED_BY", columnList = "CLOSED_BY_ID")
 })
 @Entity(name = "umida_DqIssue")
 public class DqIssue {
@@ -57,6 +59,15 @@ public class DqIssue {
     @Column(name = "CLOSED_AT", columnDefinition = "TIMESTAMP")
     private OffsetDateTime closedAt;
 
+    /**
+     * The employee who closed the issue by hand. None for the closings of the check runs and of the rule
+     * changes, for the issues closed by hand before it was recorded, and once HR removes the employee.
+     */
+    @OnDeleteInverse(DeletePolicy.UNLINK)
+    @JoinColumn(name = "CLOSED_BY_ID")
+    @ManyToOne(fetch = FetchType.LAZY)
+    private OrgStructureEmployee closedBy;
+
     @Column(name = "CLOSING_NOTES", columnDefinition = "text")
     private String closingNotes;
 
@@ -73,6 +84,14 @@ public class DqIssue {
 
     public OffsetDateTime getClosedAt() {
         return closedAt;
+    }
+
+    public OrgStructureEmployee getClosedBy() {
+        return closedBy;
+    }
+
+    public void setClosedBy(OrgStructureEmployee closedBy) {
+        this.closedBy = closedBy;
     }
 
     public String getCode() {

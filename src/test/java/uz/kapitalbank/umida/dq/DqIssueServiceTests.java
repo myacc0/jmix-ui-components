@@ -30,9 +30,9 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * The issue bookkeeping that does not need a check run: the generated code, who may close an issue,
- * the issues a rule closes when it is moved to other data, and that a closed issue always carries
- * its closing reason and time.
+ * The issue bookkeeping that does not need a check run: the generated code, who may close an issue
+ * and who is recorded as having closed it, the issues a rule closes when it is moved to other data,
+ * and that a closed issue always carries its closing reason and time.
  */
 @SpringBootTest
 @ExtendWith(AuthenticatedAsAdmin.class)
@@ -93,6 +93,24 @@ public class DqIssueServiceTests {
     }
 
     @Test
+    void closingByHandRecordsTheEmployeeOfTheUser() {
+        DqIssue issue = createOpenIssue();
+        User member = createUserIn(assignee);
+
+        issue.setClosingReason(DqIssueClosingReason.FALSE_POSITIVE);
+        // only the closing is the member's; the test user has no roles to save with
+        systemAuthenticator.runWithUser(member.getUsername(), () -> issueService.markAsManualClosed(issue));
+        dataManager.save(issue);
+
+        DqIssue closed = reloadWithClosedBy(issue);
+        assertEquals(DqIssueStatus.CLOSED, closed.getStatus());
+        assertEquals(DqIssueClosingReason.FALSE_POSITIVE, closed.getClosingReason());
+        assertNotNull(closed.getClosedAt());
+        assertNotNull(closed.getClosedBy(), "a closing by hand records who closed the issue");
+        assertEquals(member.getEmployee().getId(), closed.getClosedBy().getId());
+    }
+
+    @Test
     void movingTheRuleToOtherDataClosesItsOpenIssues() {
         DqIssue open = createOpenIssue();
         DqIssue dismissed = createClosedIssue(DqIssueClosingReason.FALSE_POSITIVE);
@@ -108,10 +126,11 @@ public class DqIssueServiceTests {
         assertTrue(ruleService.isDataSourceChanged(moved));
         rule = dataManager.save(moved);
 
-        DqIssue closed = reload(open);
+        DqIssue closed = reloadWithClosedBy(open);
         assertEquals(DqIssueStatus.CLOSED, closed.getStatus());
         assertEquals(DqIssueClosingReason.RULE_DATA_SOURCE_CHANGED, closed.getClosingReason());
         assertNotNull(closed.getClosedAt());
+        assertNull(closed.getClosedBy(), "a closing that is not by hand records no one");
         assertEquals(DqIssueClosingReason.FALSE_POSITIVE, reload(dismissed).getClosingReason(),
                 "an issue closed already keeps its reason");
     }
@@ -209,6 +228,12 @@ public class DqIssueServiceTests {
 
     private DqIssue reload(DqIssue issue) {
         return dataManager.load(DqIssue.class).id(issue.getId()).fetchPlan(FetchPlan.BASE).one();
+    }
+
+    private DqIssue reloadWithClosedBy(DqIssue issue) {
+        return dataManager.load(DqIssue.class).id(issue.getId())
+                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE).add("closedBy", FetchPlan.BASE))
+                .one();
     }
 
     private static long number(DqIssue issue) {

@@ -33,7 +33,7 @@ public class DqIssueCloseView extends StandardDetailView<DqIssue> {
     /** The save that carries the reason is the moment the issue is closed. */
     @Subscribe
     public void onBeforeSave(final BeforeSaveEvent event) {
-        dqIssueService.markClosed(getEditedEntity());
+        dqIssueService.markAsManualClosed(getEditedEntity());
     }
 
     @Subscribe

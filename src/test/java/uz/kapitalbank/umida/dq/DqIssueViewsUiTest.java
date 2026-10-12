@@ -33,6 +33,7 @@ import uz.kapitalbank.umida.entity.dq.DqCheckRunResult;
 import uz.kapitalbank.umida.entity.dq.DqIssue;
 import uz.kapitalbank.umida.entity.dq.DqRule;
 import uz.kapitalbank.umida.entity.dq.DqRuleGroup;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.enums.dq.*;
 import uz.kapitalbank.umida.service.dq.DqBadges;
@@ -138,7 +139,7 @@ public class DqIssueViewsUiTest {
         DataGrid<DqIssue> grid = openList();
 
         for (String key : new String[]{"code", "ruleCode", "dataSource", "severity", "affectedRows", "status",
-                "closingReason", "closedAt"}) {
+                "closingReason", "closedAt", "closedBy"}) {
             assertNotNull(grid.getColumnByKey(key), key + " is a column of the issue list");
         }
         DqIssue shown = gridItem(grid);
@@ -235,6 +236,34 @@ public class DqIssueViewsUiTest {
         Span reasonBadge = badge(view, "closingReasonValue");
         assertEquals(messages.getMessage(DqIssueClosingReason.FIXED), reasonBadge.getText());
         assertTrue(reasonBadge.hasClassName(DqBadges.ISSUE_CLOSING_REASON + DqIssueClosingReason.FIXED.getId()));
+    }
+
+    @Test
+    void theDetailShowsWhoClosedTheIssueByHand() {
+        OrgStructureEmployee employee = dataManager.create(OrgStructureEmployee.class);
+        employee.setId(UUID.randomUUID().toString());
+        employee.setFullName("DQ issue closer " + UUID.randomUUID().toString().substring(0, 8));
+        employee = testData.track(dataManager.save(employee));
+
+        DqIssue newIssue = dataManager.create(DqIssue.class);
+        newIssue.setRule(rule);
+        newIssue.setStatus(DqIssueStatus.CLOSED);
+        newIssue.setClosingReason(DqIssueClosingReason.WONTFIX);
+        newIssue.setClosedAt(OffsetDateTime.now());
+        newIssue.setClosedBy(employee);
+        DqIssue dismissed = testData.track(dataManager.save(newIssue));
+
+        viewNavigators.detailView(UiTestUtils.getCurrentView(), DqIssue.class)
+                .editEntity(dismissed)
+                .withViewClass(DqIssueDetailView.class)
+                .navigate();
+        assertEquals(employee.getFullName(), valueText(UiTestUtils.getCurrentView(), "closedByValue"));
+
+        viewNavigators.detailView(UiTestUtils.getCurrentView(), DqIssue.class)
+                .editEntity(issue)
+                .withViewClass(DqIssueDetailView.class)
+                .navigate();
+        assertEquals("", valueText(UiTestUtils.getCurrentView(), "closedByValue"), "an open issue was closed by no one");
     }
 
     @Test

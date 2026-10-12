@@ -18,6 +18,7 @@
                     <property name="failedRecords"/>
                     <property name="violationsQuery"/>
                 </property>
+                <property name="closedBy" fetchPlan="_instance_name"/>
             </fetchPlan>
             <loader id="dqIssuesDl" readOnly="true">
                 <query>
@@ -89,6 +90,7 @@
                 <column property="closingReason" filterable="true" autoWidth="true" flexGrow="0"/>
                 <column property="dueDate" filterable="true" autoWidth="true" flexGrow="0"/>
                 <column property="closedAt" filterable="true" autoWidth="true" flexGrow="0"/>
+                <column property="closedBy" autoWidth="true" flexGrow="0"/>
                 <column property="createdAt" filterable="true" autoWidth="true" flexGrow="0"/>
                 <column property="updatedAt" filterable="true" autoWidth="true" flexGrow="1"/>
             </columns>

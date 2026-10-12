@@ -7,6 +7,7 @@
                   class="uz.kapitalbank.umida.entity.dq.DqIssue">
             <fetchPlan extends="_base">
                 <property name="rule" fetchPlan="_instance_name"/>
+                <property name="closedBy" fetchPlan="_instance_name"/>
             </fetchPlan>
             <loader id="dqIssueDl"/>
         </instance>

@@ -15,6 +15,7 @@
                     <property name="failedRecords"/>
                     <property name="violationsQuery"/>
                 </property>
+                <property name="closedBy" fetchPlan="_instance_name"/>
             </fetchPlan>
             <loader id="dqIssueDl"/>
         </instance>
@@ -46,6 +47,8 @@
             <description id="dueDateValue" dataContainer="dqIssueDc" property="dueDate"/>
             <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.closedAt"/>
             <description id="closedAtValue" dataContainer="dqIssueDc" property="closedAt"/>
+            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.closedBy"/>
+            <description id="closedByValue" dataContainer="dqIssueDc" property="closedBy.fullName"/>
             <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.createdAt"/>
             <description id="createdAtValue" dataContainer="dqIssueDc" property="createdAt"/>
             <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.updatedAt"/>
