@@ -75,11 +75,6 @@
                 <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.dueDays">
                     <integerField id="dueDaysField" property="dueDays" required="true" stepButtonsVisible="true"/>
                 </formItem>
-            </hbox>
-
-            <hbox classNames="form-block">
-                <span classNames="form-block-title" text="Ответственное подразделение (за исправление ошибок, при обнаружении данным правилом)"/>
-
                 <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.assignee">
                     <entityPicker id="assigneeField" property="assignee" required="true">
                         <actions>
