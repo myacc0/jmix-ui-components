@@ -27,9 +27,9 @@
     <layout>
         <hbox id="buttonsPanel" classNames="buttons-panel">
             <startSlot>
-                <button id="createButton" action="tableSynchronizersDataGrid.createAction"/>
-                <button id="editButton" action="tableSynchronizersDataGrid.editAction"/>
-                <button id="removeButton" action="tableSynchronizersDataGrid.removeAction"/>
+                <button id="createButton" action="tableSynchronizersDataGrid.createAction" text="" title="msg:///actions.Create"/>
+                <button id="editButton" action="tableSynchronizersDataGrid.editAction" text="" title="msg:///actions.Edit"/>
+                <button id="removeButton" action="tableSynchronizersDataGrid.removeAction" text="" title="msg:///actions.Remove"/>
             </startSlot>
             <endSlot>
                 <simplePagination id="pagination" dataLoader="tableSynchronizersDl"/>

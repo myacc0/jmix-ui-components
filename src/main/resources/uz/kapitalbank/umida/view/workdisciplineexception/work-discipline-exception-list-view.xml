@@ -31,9 +31,9 @@
     <layout>
         <hbox id="buttonsPanel" classNames="buttons-panel">
             <startSlot>
-                <button id="createButton" action="workDisciplineExceptionsDataGrid.createAction"/>
-                <button id="editButton" action="workDisciplineExceptionsDataGrid.editAction"/>
-                <button id="removeButton" action="workDisciplineExceptionsDataGrid.removeAction"/>
+                <button id="createButton" action="workDisciplineExceptionsDataGrid.createAction" text="" title="msg:///actions.Create"/>
+                <button id="editButton" action="workDisciplineExceptionsDataGrid.editAction" text="" title="msg:///actions.Edit"/>
+                <button id="removeButton" action="workDisciplineExceptionsDataGrid.removeAction" text="" title="msg:///actions.Remove"/>
             </startSlot>
             <endSlot>
                 <simplePagination id="pagination" dataLoader="workDisciplineExceptionsDl"/>

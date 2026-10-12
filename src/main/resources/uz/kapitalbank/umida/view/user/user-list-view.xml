@@ -31,9 +31,9 @@
         </genericFilter>
         <hbox id="buttonsPanel" classNames="buttons-panel">
             <startSlot>
-                <button id="createButton" action="usersDataGrid.createAction"/>
-                <button id="editButton" action="usersDataGrid.editAction"/>
-                <button id="removeButton" action="usersDataGrid.removeAction"/>
+                <button id="createButton" action="usersDataGrid.createAction" text="" title="msg:///actions.Create"/>
+                <button id="editButton" action="usersDataGrid.editAction" text="" title="msg:///actions.Edit"/>
+                <button id="removeButton" action="usersDataGrid.removeAction" text="" title="msg:///actions.Remove"/>
                 <button id="showRoleAssignmentsButton" action="usersDataGrid.showRoleAssignmentsAction"/>
                 <dropdownButton id="additionalButton" text="msg://additionalMenu" icon="COG">
                     <items>

@@ -31,7 +31,7 @@
         </genericFilter>
         <hbox id="buttonsPanel" classNames="buttons-panel">
             <startSlot>
-                <button id="removeButton" action="quartzJobExecutionsDataGrid.removeAction"/>
+                <button id="removeButton" action="quartzJobExecutionsDataGrid.removeAction" text="" title="msg:///actions.Remove"/>
             </startSlot>
             <endSlot>
                 <simplePagination id="pagination" dataLoader="quartzJobExecutionsDl"/>
