@@ -77,6 +77,39 @@ public class DqSqlQueryBuilderTests {
         assertEquals(List.of(), queries.metrics().params());
     }
 
+    // ----- NOT_BLANK -----
+
+    @Test
+    void notBlankCountsNullsAndBlankStrings() {
+        DqRuleQueries queries = build(rule(DqRuleType.NOT_BLANK, "{}"), DqSqlDialect.POSTGRESQL);
+
+        assertEquals("SELECT COUNT(*) AS total_count," +
+                        " COUNT(CASE WHEN (t.\"first_name\" IS NULL OR TRIM(t.\"first_name\") = '') THEN 1 END)" +
+                        " AS failed_count FROM \"employee\" t",
+                queries.metrics().sql());
+        assertEquals("SELECT t.* FROM \"employee\" t" +
+                        " WHERE (t.\"first_name\" IS NULL OR TRIM(t.\"first_name\") = '')",
+                queries.violations().sql());
+        assertEquals(List.of(), queries.metrics().params());
+    }
+
+    @Test
+    void notBlankComparesWithTheEmptyStringInMysql() {
+        DqRuleQueries queries = build(rule(DqRuleType.NOT_BLANK, "{}"), DqSqlDialect.MYSQL);
+
+        assertEquals("SELECT t.* FROM `employee` t WHERE (t.`first_name` IS NULL OR TRIM(t.`first_name`) = '')",
+                queries.violations().sql());
+    }
+
+    @Test
+    void notBlankTestsTheTrimmedValueForNullInOracle() {
+        // Oracle stores '' as NULL, so a comparison with '' would never be true
+        DqRuleQueries queries = build(rule(DqRuleType.NOT_BLANK, "{}"), DqSqlDialect.ORACLE);
+
+        assertEquals("SELECT t.* FROM \"employee\" t WHERE (TRIM(t.\"first_name\") IS NULL)",
+                queries.violations().sql());
+    }
+
     @Test
     void schemaQualifiedTableIsQuotedPerPart() {
         DqRuleQueries queries = build(rule(DqRuleType.NOT_NULL, "{}", "public.employee", "first_name"),

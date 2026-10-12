@@ -70,10 +70,10 @@ public class DqRuleValidatorTests {
         assertTrue(fields(rule(DqRuleType.NOT_NULL, "{\"threshold\": 100}")).isEmpty());
     }
 
-    // ----- NOT_NULL / UNIQUENESS -----
+    // ----- NOT_NULL / NOT_BLANK / UNIQUENESS -----
 
     @ParameterizedTest
-    @EnumSource(value = DqRuleType.class, names = {"NOT_NULL", "UNIQUENESS"})
+    @EnumSource(value = DqRuleType.class, names = {"NOT_NULL", "NOT_BLANK", "UNIQUENESS"})
     void columnBoundTypesRequireTableAndColumn(DqRuleType type) {
         assertTrue(fields(rule(type, "{}")).isEmpty());
 

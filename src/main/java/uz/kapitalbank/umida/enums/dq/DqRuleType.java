@@ -8,6 +8,7 @@ import org.springframework.lang.Nullable;
 public enum DqRuleType implements EnumClass<String> {
 
     NOT_NULL("not_null"),
+    NOT_BLANK("not_blank"),
     UNIQUENESS("uniqueness"),
     REGEXP("regexp"),
     RANGE_NUMBER("range_number"),

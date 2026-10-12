@@ -209,6 +209,7 @@ public class DqCheckExecutorService {
         try {
             return switch (ruleType) {
                 case NOT_NULL -> executeCheckNotNull(run, rule);
+                case NOT_BLANK -> executeCheckNotBlank(run, rule);
                 case UNIQUENESS -> executeCheckUniqueness(run, rule);
                 case REGEXP -> executeCheckRegexp(run, rule);
                 case RANGE_NUMBER -> executeCheckRangeNumber(run, rule);
@@ -234,6 +235,11 @@ public class DqCheckExecutorService {
 
     /** Counts the rows whose column holds no value. */
     private DqCheckRunResult executeCheckNotNull(DqCheckRun run, DqRule rule) {
+        return executeRowLevelCheck(run, rule);
+    }
+
+    /** Counts the rows whose character column holds no value, an empty string, or only spaces. */
+    private DqCheckRunResult executeCheckNotBlank(DqCheckRun run, DqRule rule) {
         return executeRowLevelCheck(run, rule);
     }
 

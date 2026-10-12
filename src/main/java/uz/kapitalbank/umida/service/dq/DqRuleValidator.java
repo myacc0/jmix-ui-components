@@ -86,6 +86,7 @@ public class DqRuleValidator {
 
         switch (type) {
             case NOT_NULL -> validateNotNull(rule, config, errors);
+            case NOT_BLANK -> validateNotBlank(rule, config, errors);
             case UNIQUENESS -> validateUniqueness(rule, config, errors);
             case REGEXP -> validateRegexp(rule, config, errors);
             case RANGE_NUMBER -> validateRangeNumber(rule, config, errors);
@@ -115,6 +116,11 @@ public class DqRuleValidator {
     // ---------------------------------------------------------------------
 
     private void validateNotNull(DqRule rule, DqRuleConfig config, List<DqRuleValidationError> errors) {
+        requireTable(rule, errors);
+        requireColumn(rule, errors);
+    }
+
+    private void validateNotBlank(DqRule rule, DqRuleConfig config, List<DqRuleValidationError> errors) {
         requireTable(rule, errors);
         requireColumn(rule, errors);
     }

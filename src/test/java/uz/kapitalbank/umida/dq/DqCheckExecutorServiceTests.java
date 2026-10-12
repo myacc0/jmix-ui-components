@@ -67,6 +67,8 @@ public class DqCheckExecutorServiceTests {
     private DqRule passingRule;
     private DqRule failingRule;
     private DqRule unsupportedRule;
+    /** Rules a single test case adds on top of the three above, whose issues must go before they do. */
+    private final List<DqRule> extraRules = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
@@ -226,6 +228,34 @@ public class DqCheckExecutorServiceTests {
     }
 
     @Test
+    void notBlankFlagsAValueOfOnlySpacesButNotAFilledOne() {
+        DictDataDomain blankDomain = testData.createDomain();
+        blankDomain.setDescription("   ");
+        blankDomain = dataManager.save(blankDomain);
+        DictDataDomain filledDomain = testData.createDomain();
+        filledDomain.setDescription("filled");
+        filledDomain = dataManager.save(filledDomain);
+
+        DqRule notBlankRule = testData.createRule(blankDomain, "not blank", DqRuleType.NOT_BLANK, "description",
+                "{\"samplesQueryColumns\": [\"id\"]}");
+        extraRules.add(notBlankRule);
+
+        DqCheckRun run = awaitFinished(checkExecutorService.startCheckRun(filter(blankDomain)));
+        DqCheckRunResult result = resultOf(loadResults(run), notBlankRule);
+        assertEquals(DqCheckResultStatus.FAILED, result.getStatus(), result.getErrorMessage());
+
+        long count = violationsService.countViolations(result.getId());
+        List<String> violatingIds = violationsService.loadViolations(result.getId(), 0, Math.toIntExact(count))
+                .rows().stream()
+                .map(row -> String.valueOf(row.get(0)))
+                .toList();
+        assertTrue(violatingIds.contains(blankDomain.getId().toString()),
+                "a description of only spaces is blank");
+        assertFalse(violatingIds.contains(filledDomain.getId().toString()),
+                "a filled description is not blank");
+    }
+
+    @Test
     void rejectsAFilterThatMatchesNothing() {
         DqRuleFilter filter = filter();
         filter.setTableName("no_such_table_" + UUID.randomUUID().toString().replace("-", ""));
@@ -245,10 +275,14 @@ public class DqCheckExecutorServiceTests {
     // ---------------------------------------------------------------------
 
     private DqRuleFilter filter() {
+        return filter(domain);
+    }
+
+    private DqRuleFilter filter(DictDataDomain ruleDomain) {
         DqRuleFilter filter = metadata.create(DqRuleFilter.class);
         filter.setDataSource("main");
         // the domain is created by this test, so only its own rules are selected
-        filter.setDomain(domain);
+        filter.setDomain(ruleDomain);
         return filter;
     }
 
@@ -315,9 +349,12 @@ public class DqCheckExecutorServiceTests {
     void tearDown() {
         // issues first, then results, then the runs that own them: each step drops references the
         // next one would otherwise leave dangling
-        for (DqRule rule : List.of(passingRule, failingRule, unsupportedRule)) {
+        List<DqRule> rules = new ArrayList<>(List.of(passingRule, failingRule, unsupportedRule));
+        rules.addAll(extraRules);
+        for (DqRule rule : rules) {
             loadIssues(rule).forEach(dataManager::remove);
         }
+        extraRules.clear();
         for (DqCheckRun run : checkRuns) {
             loadResults(run).forEach(dataManager::remove);
         }

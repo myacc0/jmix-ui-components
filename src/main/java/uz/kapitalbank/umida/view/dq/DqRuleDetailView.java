@@ -365,7 +365,7 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
             }
             case REGEXP -> regexpField.setValue(config.getRegexp() != null ? config.getRegexp() : "");
             default -> {
-                // NOT_NULL and not-yet-implemented types have no editable fields.
+                // NOT_NULL, NOT_BLANK and not-yet-implemented types have no editable fields.
             }
         }
     }
@@ -391,7 +391,7 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
                 }
                 case REGEXP -> config.setRegexp(StringUtils.emptyToNull(regexpField.getValue()));
                 default -> {
-                    // NOT_NULL and not-yet-implemented types serialize to an empty object.
+                    // NOT_NULL, NOT_BLANK and not-yet-implemented types serialize to an empty object.
                 }
             }
         }

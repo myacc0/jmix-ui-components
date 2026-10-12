@@ -109,6 +109,7 @@ public class DqSqlQueryBuilder {
 
         return switch (ruleType) {
             case NOT_NULL -> buildNotNull(rule, config, dialect);
+            case NOT_BLANK -> buildNotBlank(rule, config, dialect);
             case UNIQUENESS -> buildUniqueness(rule, config, dialect);
             case REGEXP -> buildRegexp(rule, config, dialect);
             case RANGE_NUMBER -> buildRangeNumber(rule, config, dialect);
@@ -124,11 +125,23 @@ public class DqSqlQueryBuilder {
     // ---------------------------------------------------------------------
 
     /**
-     * Violating row: the column holds no value. Empty strings are values and pass.
+     * Violating row: the column holds no value. Empty strings are values and pass — use a NOT_BLANK
+     * rule to reject them too.
      */
     private DqRuleQueries buildNotNull(DqRule rule, DqRuleConfig config, DqSqlDialect dialect) {
         String column = columnRef(rule, dialect);
         return rowLevelQueries(rule, config, dialect, new Predicate(column + " IS NULL", List.of()), null);
+    }
+
+    /**
+     * Violating row: the character column holds no value, an empty string, or nothing but spaces —
+     * the completeness check of NOT_NULL for columns where an empty string stands in for a missing
+     * value. Meant for character columns: on any other column PostgreSQL rejects {@code TRIM} and the
+     * rule is skipped, while MySQL and Oracle convert the value to text and the rule acts as NOT_NULL.
+     */
+    private DqRuleQueries buildNotBlank(DqRule rule, DqRuleConfig config, DqSqlDialect dialect) {
+        String column = columnRef(rule, dialect);
+        return rowLevelQueries(rule, config, dialect, new Predicate(dialect.blankMatch(column), List.of()), null);
     }
 
     /**

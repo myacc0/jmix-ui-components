@@ -67,6 +67,22 @@ public enum DqSqlDialect {
     }
 
     /**
+     * Renders a "value is missing or holds nothing but spaces" predicate for a character column.
+     * <p>
+     * Oracle stores an empty {@code VARCHAR2} as {@code NULL}, so there {@code TRIM} of a blank value is
+     * {@code NULL} as well and a comparison with {@code ''} would never be true. Only spaces are
+     * trimmed: a value made of tabs or line breaks is not blank.
+     *
+     * @param columnExpression already-quoted column reference, e.g. {@code t."email"}
+     */
+    public String blankMatch(String columnExpression) {
+        return switch (this) {
+            case POSTGRESQL, MYSQL -> columnExpression + " IS NULL OR TRIM(" + columnExpression + ") = ''";
+            case ORACLE -> "TRIM(" + columnExpression + ") IS NULL";
+        };
+    }
+
+    /**
      * Renders the paging clause appended to the end of a {@code SELECT}. The numbers are inlined
      * rather than bound, because Oracle does not accept a bind variable in every position of
      * {@code OFFSET ... FETCH}.
