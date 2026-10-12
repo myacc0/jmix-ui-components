@@ -32,8 +32,8 @@
             <textArea id="closingNotesField" property="closingNotes" minRows="5"/>
         </formLayout>
         <hbox id="detailActions" width="100%" justifyContent="CENTER">
-            <button id="cancelButton" action="closeAction" themeNames="primary"/>
             <button id="saveButton" action="saveAction" themeNames="primary"/>
+            <button id="cancelButton" action="closeAction"/>
         </hbox>
     </layout>
 </view>

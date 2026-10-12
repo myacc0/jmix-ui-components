@@ -44,7 +44,7 @@
                 <vbox id="journalTabContent" width="100%" height="100%" padding="false">
                     <hbox id="journalButtonsPanel" classNames="buttons-panel" width="100%">
                         <startSlot>
-                            <button id="readButton" themeNames="primary" action="dqCheckRunsDataGrid.readAction"/>
+                            <button id="readButton" themeNames="primary" action="dqCheckRunsDataGrid.readAction" text="" title="msg:///actions.Read"/>
                             <button id="runCheckButton" themeNames="primary" icon="vaadin:plus" text="msg://dqCheckRunListView.runCheckButton"/>
                         </startSlot>
                         <endSlot>

@@ -36,12 +36,12 @@
     <layout>
         <hbox id="buttonsPanel" classNames="buttons-panel">
             <startSlot>
-                <button id="createButton" themeNames="primary" action="dqRulesDataGrid.createAction"/>
-                <button id="editButton" themeNames="primary" action="dqRulesDataGrid.editAction"/>
-                <button id="removeButton" themeNames="primary" action="dqRulesDataGrid.removeAction"/>
+                <button id="createButton" themeNames="primary" action="dqRulesDataGrid.createAction" text="" title="msg:///actions.Create"/>
+                <button id="editButton" action="dqRulesDataGrid.editAction" text="" title="msg:///actions.Edit"/>
+                <button id="removeButton" action="dqRulesDataGrid.removeAction" text="" title="msg:///actions.Remove"/>
+                <checkbox id="mineField" label="msg://mineField.label" css="display: flex; align-items: center"/>
             </startSlot>
             <endSlot>
-                <checkbox id="mineField" label="msg://mineField.label" css="display: flex; align-items: center"/>
                 <simplePagination id="pagination" dataLoader="dqRulesDl" itemsPerPageDefaultValue="20"/>
             </endSlot>
         </hbox>

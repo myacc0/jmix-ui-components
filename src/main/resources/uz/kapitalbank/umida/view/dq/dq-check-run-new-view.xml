@@ -92,8 +92,8 @@
         </formLayout>
 
         <hbox id="viewActions" width="100%" justifyContent="START">
-            <button id="cancelButton" themeNames="primary" action="closeAction"/>
             <button id="runButton" themeNames="primary" text="msg://dqCheckRunNewView.runButton" enabled="false"/>
+            <button id="cancelButton" action="closeAction"/>
         </hbox>
 
         <hbox id="rulesPanel" width="100%" justifyContent="BETWEEN" padding="false" css="margin-top: 20px">

@@ -37,7 +37,7 @@
     <layout>
         <hbox id="buttonsPanel" classNames="buttons-panel">
             <startSlot>
-                <button id="readButton" themeNames="primary" action="dqIssuesDataGrid.readAction"/>
+                <button id="readButton" themeNames="primary" action="dqIssuesDataGrid.readAction" text="" title="msg:///actions.Read"/>
                 <button id="violationsButton" themeNames="primary" action="dqIssuesDataGrid.violationsAction"/>
                 <button id="closeIssueButton" themeNames="primary" action="dqIssuesDataGrid.closeIssueAction"/>
             </startSlot>

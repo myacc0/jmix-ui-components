@@ -29,12 +29,12 @@
     <layout>
         <hbox id="buttonsPanel" classNames="buttons-panel">
             <startSlot>
-                <button id="createButton" themeNames="primary" action="dqRuleGroupsDataGrid.createAction"/>
-                <button id="editButton" themeNames="primary" action="dqRuleGroupsDataGrid.editAction"/>
-                <button id="removeButton" themeNames="primary" action="dqRuleGroupsDataGrid.removeAction"/>
+                <button id="createButton" themeNames="primary" action="dqRuleGroupsDataGrid.createAction" text="" title="msg:///actions.Create"/>
+                <button id="editButton" action="dqRuleGroupsDataGrid.editAction" text="" title="msg:///actions.Edit"/>
+                <button id="removeButton" action="dqRuleGroupsDataGrid.removeAction" text="" title="msg:///actions.Remove"/>
+                <checkbox id="mineField" label="msg://mineField.label" css="display: flex; align-items: center"/>
             </startSlot>
             <endSlot>
-                <checkbox id="mineField" label="msg://mineField.label" css="display: flex; align-items: center"/>
                 <simplePagination id="pagination" dataLoader="dqRuleGroupsDl"/>
             </endSlot>
         </hbox>

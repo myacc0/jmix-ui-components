@@ -158,8 +158,8 @@
         </formLayout>
 
         <hbox id="detailActions" width="50%" justifyContent="CENTER" css="padding-bottom: 40px">
-            <button id="closeButton" themeNames="primary" action="closeAction"/>
-            <button id="saveAndCloseButton" themeNames="primary" action="saveCloseAction"/>
+            <button id="saveAndCloseButton" themeNames="primary" action="saveCloseAction" text="msg:///actions.Save"/>
+            <button id="closeButton" action="closeAction"/>
         </hbox>
     </layout>
 </view>
