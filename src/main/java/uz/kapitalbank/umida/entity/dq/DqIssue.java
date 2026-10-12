@@ -7,6 +7,7 @@ import io.jmix.core.metamodel.annotation.JmixEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.enums.dq.DqIssueClosingReason;
 import uz.kapitalbank.umida.enums.dq.DqIssueStatus;
 
@@ -18,6 +19,7 @@ import java.util.UUID;
 @Table(name = "UMIDA_DQ_ISSUE", indexes = {
         @Index(name = "IDX_UMIDA_DQ_ISSUE_CHECK_RESULT", columnList = "CHECK_RESULT_ID"),
         @Index(name = "IDX_UMIDA_DQ_ISSUE_RULE", columnList = "RULE_ID"),
+        @Index(name = "IDX_UMIDA_DQ_ISSUE_ASSIGNEE", columnList = "ASSIGNEE_ID"),
         @Index(name = "IDX_UMIDA_DQ_ISSUE_CLOSED_BY", columnList = "CLOSED_BY_ID")
 })
 @Entity(name = "umida_DqIssue")
@@ -41,6 +43,16 @@ public class DqIssue {
     @JoinColumn(name = "RULE_ID", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private DqRule rule;
+
+    /**
+     * The subdivision responsible for fixing the issue: {@code DqRule.assignee} when the issue was
+     * opened, so a later change of the rule leaves the closed issues as they were. Reassigning the
+     * rule moves its open issues to the new subdivision. None once HR removes the subdivision.
+     */
+    @OnDeleteInverse(DeletePolicy.UNLINK)
+    @JoinColumn(name = "ASSIGNEE_ID")
+    @ManyToOne(fetch = FetchType.LAZY)
+    private OrgStructureSubdivision assignee;
 
     /** An open issue has no closing reason and no closing time; a closed one has both. */
     @NotNull
@@ -84,6 +96,14 @@ public class DqIssue {
 
     public OffsetDateTime getClosedAt() {
         return closedAt;
+    }
+
+    public OrgStructureSubdivision getAssignee() {
+        return assignee;
+    }
+
+    public void setAssignee(OrgStructureSubdivision assignee) {
+        this.assignee = assignee;
     }
 
     public OrgStructureEmployee getClosedBy() {

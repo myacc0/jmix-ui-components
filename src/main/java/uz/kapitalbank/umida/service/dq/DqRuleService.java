@@ -4,8 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jmix.core.UnconstrainedDataManager;
 import io.jmix.data.Sequence;
 import io.jmix.data.Sequences;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import uz.kapitalbank.umida.entity.dq.DqRule;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.utils.JsonUtils;
 
 import java.time.OffsetDateTime;
@@ -36,6 +38,12 @@ public class DqRuleService {
      * of the rule as {@code RULE_DATA_SOURCE_CHANGED}, see {@link DqIssueService}.
      */
     public static final String[] DATA_SOURCE_FIELDS = {"dataSource", "dbSchema", "tableName", "columnName"};
+
+    /**
+     * The subdivision responsible for the issues of a rule. Changing it moves the open issues of the
+     * rule to the new one, see {@link DqIssueService}.
+     */
+    public static final String ASSIGNEE_FIELD = "assignee";
 
     /** Unconstrained: the bookkeeping reads what the rule holds, whatever the current user may see of it. */
     private final UnconstrainedDataManager dataManager;
@@ -79,6 +87,18 @@ public class DqRuleService {
         return loadStored(rule, DATA_SOURCE_FIELDS)
                 .map(original -> isDataSourceChanged(original, rule))
                 .orElse(false);
+    }
+
+    /** Whether a stored rule is about to be assigned to another subdivision. */
+    public boolean isAssigneeChanged(DqRule rule) {
+        return loadStored(rule, new String[]{ASSIGNEE_FIELD})
+                .map(original -> !Objects.equals(idOf(original.getAssignee()), idOf(rule.getAssignee())))
+                .orElse(false);
+    }
+
+    @Nullable
+    private static String idOf(@Nullable OrgStructureSubdivision subdivision) {
+        return subdivision != null ? subdivision.getId() : null;
     }
 
     /**

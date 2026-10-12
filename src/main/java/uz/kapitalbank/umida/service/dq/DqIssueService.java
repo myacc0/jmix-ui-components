@@ -1,6 +1,8 @@
 package uz.kapitalbank.umida.service.dq;
 
+import io.jmix.core.EntityStates;
 import io.jmix.core.FetchPlan;
+import io.jmix.core.FetchPlanBuilder;
 import io.jmix.core.Id;
 import io.jmix.core.SaveContext;
 import io.jmix.core.UnconstrainedDataManager;
@@ -13,6 +15,7 @@ import uz.kapitalbank.umida.entity.dq.DqCheckRunResult;
 import uz.kapitalbank.umida.entity.dq.DqIssue;
 import uz.kapitalbank.umida.entity.dq.DqRule;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructurePosition;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.enums.dq.DqCheckResultStatus;
 import uz.kapitalbank.umida.enums.dq.DqIssueClosingReason;
 import uz.kapitalbank.umida.enums.dq.DqIssueStatus;
@@ -21,13 +24,17 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * The lifecycle of a {@link DqIssue}.
  * <ul>
  *     <li>A check run opens an issue for a rule that failed, keeps refreshing it while the rule keeps
  *     failing, and closes it as {@link DqIssueClosingReason#FIXED} once the rule passes again.</li>
- *     <li>A user of the subdivision the rule is assigned to closes it by hand as
+ *     <li>An issue is assigned to the subdivision its rule is assigned to when it opens
+ *     ({@code DqIssue.assignee}); reassigning the rule moves its open issues to the new subdivision,
+ *     keeping their due date, while the closed ones stay with the subdivision they had.</li>
+ *     <li>A user of the subdivision the issue is assigned to closes it by hand as
  *     {@link DqIssueClosingReason#WONTFIX} or {@link DqIssueClosingReason#FALSE_POSITIVE}, and the
  *     issue records the employee who did ({@code DqIssue.closedBy}); until the key fields of the rule
  *     change, its failures then open no new issue.</li>
@@ -58,15 +65,18 @@ public class DqIssueService {
     private final Sequences sequences;
     private final CurrentAuthentication currentAuthentication;
     private final DqCheckRunService checkRunService;
+    private final EntityStates entityStates;
 
     public DqIssueService(UnconstrainedDataManager dataManager,
                           Sequences sequences,
                           CurrentAuthentication currentAuthentication,
-                          DqCheckRunService checkRunService) {
+                          DqCheckRunService checkRunService,
+                          EntityStates entityStates) {
         this.dataManager = dataManager;
         this.sequences = sequences;
         this.currentAuthentication = currentAuthentication;
         this.checkRunService = checkRunService;
+        this.entityStates = entityStates;
     }
 
     /** The next free issue code: {@code DQI-100}, {@code DQI-101}, … */
@@ -75,8 +85,8 @@ public class DqIssueService {
     }
 
     /**
-     * Fills in what an issue is not asked for: a new one gets its code, creation time and the open
-     * status, a stored one the time of the change.
+     * Fills in what an issue is not asked for: a new one gets its code, creation time, the open
+     * status and the assignee of its rule, a stored one the time of the change.
      */
     public void prepareForSave(DqIssue issue, boolean isNew) {
         if (isNew) {
@@ -88,6 +98,9 @@ public class DqIssueService {
             }
             if (issue.getStatus() == null) {
                 issue.setStatus(DqIssueStatus.OPEN);
+            }
+            if (issue.getAssignee() == null && issue.getRule() != null) {
+                issue.setAssignee(findAssignee(issue.getRule()));
             }
         } else {
             issue.setUpdatedAt(OffsetDateTime.now());
@@ -177,12 +190,16 @@ public class DqIssueService {
 
     /** The open issues of the rule, the newest first. */
     public List<DqIssue> findOpenIssues(DqRule rule) {
+        return findOpenIssues(rule, fp -> fp.addFetchPlan(FetchPlan.BASE));
+    }
+
+    private List<DqIssue> findOpenIssues(DqRule rule, Consumer<FetchPlanBuilder> fetchPlan) {
         return dataManager.load(DqIssue.class)
                 .query("select i from umida_DqIssue i where i.rule = :rule and i.status = :status" +
                         " order by i.createdAt desc")
                 .parameter("rule", rule)
                 .parameter("status", DqIssueStatus.OPEN.getId())
-                .fetchPlan(FetchPlan.BASE)
+                .fetchPlan(fetchPlan)
                 .list();
     }
 
@@ -201,6 +218,42 @@ public class DqIssueService {
         dataManager.save(saveContext);
     }
 
+    /**
+     * Moves the open issues of a rule whose assignee has changed to its new assignee; their due date
+     * stays, so a reassignment does not give the issue more time. The closed issues keep the assignee
+     * they had. Runs within the transaction that saves the rule.
+     */
+    public void reassignOnRuleAssigneeChanged(Id<DqRule> ruleId) {
+        DqRule rule = dataManager.load(ruleId)
+                .fetchPlan(fp -> fp.add("assignee", FetchPlan.INSTANCE_NAME))
+                .one();
+        List<DqIssue> issues = findOpenIssues(rule,
+                fp -> fp.addFetchPlan(FetchPlan.BASE).add("assignee", FetchPlan.INSTANCE_NAME));
+        if (issues.isEmpty()) {
+            return;
+        }
+        SaveContext saveContext = new SaveContext();
+        issues.forEach(issue -> {
+            issue.setAssignee(rule.getAssignee());
+            saveContext.saving(issue);
+        });
+        dataManager.save(saveContext);
+    }
+
+    /** The current assignee of the rule, read from the database when the rule was loaded without it. */
+    @Nullable
+    private OrgStructureSubdivision findAssignee(DqRule rule) {
+        if (entityStates.isLoaded(rule, "assignee")) {
+            return rule.getAssignee();
+        }
+        return dataManager.load(DqRule.class)
+                .id(rule.getId())
+                .fetchPlan(fp -> fp.add("assignee", FetchPlan.INSTANCE_NAME))
+                .optional()
+                .map(DqRule::getAssignee)
+                .orElse(null);
+    }
+
     private DqIssue close(DqIssue issue, DqIssueClosingReason reason) {
         issue.setClosingReason(reason);
         markClosed(issue);
@@ -211,7 +264,7 @@ public class DqIssueService {
     // closing by hand
     // ---------------------------------------------------------------------
 
-    /** Whether the current user may close the issue: it is open, and the user is of its rule assignee. */
+    /** Whether the current user may close the issue: it is open, and the user is of its assignee. */
     public boolean canClose(@Nullable DqIssue issue) {
         return issue != null
                 && issue.getStatus() == DqIssueStatus.OPEN
@@ -219,9 +272,9 @@ public class DqIssueService {
     }
 
     /**
-     * Whether the employee linked to the current user holds a position in the subdivision the rule of
-     * the issue is assigned to ({@code DqRule.assignee}). A user without an employee, such as
-     * {@code admin}, or a rule without an assignee, never qualifies.
+     * Whether the employee linked to the current user holds a position in the subdivision the issue
+     * is assigned to ({@code DqIssue.assignee}). A user without an employee, such as {@code admin},
+     * or an issue without an assignee, never qualifies.
      */
     public boolean isInAssigneeSubdivision(DqIssue issue) {
         if (issue.getId() == null) {
@@ -230,7 +283,7 @@ public class DqIssueService {
         return dataManager.load(OrgStructurePosition.class)
                 .query("select p from umida_OrgStructurePosition p, umida_User u, umida_DqIssue i" +
                         " where i.id = :issueId and u.username = :username" +
-                        " and p.subdivision = i.rule.assignee and p.employee = u.employee")
+                        " and p.subdivision = i.assignee and p.employee = u.employee")
                 .parameter("issueId", issue.getId())
                 .parameter("username", currentAuthentication.getUser().getUsername())
                 .fetchPlanProperties("id")

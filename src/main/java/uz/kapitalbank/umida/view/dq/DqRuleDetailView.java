@@ -456,13 +456,19 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
     }
 
     /**
-     * Moving a stored rule to another data source, schema, table or column closes its open issues
-     * (see {@link DqIssueService}), so the user confirms that first, seeing the issues it closes.
+     * Moving a stored rule to another data source, schema, table or column closes its open issues,
+     * and assigning it to another subdivision moves them to that one (see {@link DqIssueService}),
+     * so the user confirms that first, seeing the issues it changes. A rule both moved and reassigned
+     * only asks about the closing: no issue is left open to move.
      */
     @Subscribe
     public void onBeforeSave(final BeforeSaveEvent event) {
         DqRule rule = getEditedEntity();
-        if (entityStates.isNew(rule) || !ruleService.isDataSourceChanged(rule)) {
+        if (entityStates.isNew(rule)) {
+            return;
+        }
+        boolean dataSourceChanged = ruleService.isDataSourceChanged(rule);
+        if (!dataSourceChanged && !ruleService.isAssigneeChanged(rule)) {
             return;
         }
         List<DqIssue> openIssues = issueService.findOpenIssues(rule);
@@ -472,9 +478,19 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
 
         event.preventSave();
         String codes = openIssues.stream().map(DqIssue::getCode).collect(Collectors.joining(", "));
+        String header;
+        String text;
+        if (dataSourceChanged) {
+            header = messageBundle.getMessage("dqRuleDetailView.dataSourceChangedHeader");
+            text = messageBundle.formatMessage("dqRuleDetailView.dataSourceChangedText", codes);
+        } else {
+            header = messageBundle.getMessage("dqRuleDetailView.assigneeChangedHeader");
+            text = messageBundle.formatMessage("dqRuleDetailView.assigneeChangedText", codes,
+                    rule.getAssignee() != null ? rule.getAssignee().getName() : "");
+        }
         dialogs.createOptionDialog()
-                .withHeader(messageBundle.getMessage("dqRuleDetailView.dataSourceChangedHeader"))
-                .withText(messageBundle.formatMessage("dqRuleDetailView.dataSourceChangedText", codes))
+                .withHeader(header)
+                .withText(text)
                 .withActions(
                         new DialogAction(DialogAction.Type.YES).withHandler(e -> event.resume()),
                         new DialogAction(DialogAction.Type.NO))

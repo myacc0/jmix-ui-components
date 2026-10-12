@@ -24,6 +24,7 @@ import uz.kapitalbank.umida.service.dq.DqRuleService;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
 import uz.kapitalbank.umida.test_support.DqTestData;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -31,7 +32,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * The issue bookkeeping that does not need a check run: the generated code, who may close an issue
- * and who is recorded as having closed it, the issues a rule closes when it is moved to other data,
+ * and who is recorded as having closed it, the subdivision an issue is assigned to, the issues a
+ * rule closes when it is moved to other data or reassigns when it is assigned to another subdivision,
  * and that a closed issue always carries its closing reason and time.
  */
 @SpringBootTest
@@ -136,6 +138,59 @@ public class DqIssueServiceTests {
     }
 
     @Test
+    void aNewIssueTakesTheAssigneeOfItsRule() {
+        assertEquals(assignee.getId(), reloadWithAssignee(createOpenIssue()).getAssignee().getId());
+
+        // a check run holds its rule loaded without the assignee
+        DqIssue issue = dataManager.create(DqIssue.class);
+        issue.setRule(dataManager.load(DqRule.class).id(rule.getId()).fetchPlan(FetchPlan.BASE).one());
+        DqIssue saved = testData.track(dataManager.save(issue));
+        assertEquals(assignee.getId(), reloadWithAssignee(saved).getAssignee().getId());
+    }
+
+    @Test
+    void reassigningTheRuleMovesItsOpenIssuesAndKeepsTheirDueDate() {
+        OrgStructureSubdivision newAssignee = createSubdivision();
+        User oldMember = createUserIn(assignee);
+        User newMember = createUserIn(newAssignee);
+        LocalDate dueDate = LocalDate.now().minusDays(3);
+        DqIssue open = createOpenIssue(dueDate);
+        DqIssue dismissed = createClosedIssue(DqIssueClosingReason.WONTFIX);
+
+        DqRule reassigned = reloadRule();
+        reassigned.setAssignee(newAssignee);
+        assertTrue(ruleService.isAssigneeChanged(reassigned));
+        assertFalse(ruleService.isDataSourceChanged(reassigned));
+        rule = dataManager.save(reassigned);
+
+        DqIssue moved = reloadWithAssignee(open);
+        assertEquals(DqIssueStatus.OPEN, moved.getStatus(), "a reassignment leaves the issue open");
+        assertEquals(newAssignee.getId(), moved.getAssignee().getId());
+        assertEquals(dueDate, moved.getDueDate(), "a reassignment does not give the issue more time");
+        assertEquals(assignee.getId(), reloadWithAssignee(dismissed).getAssignee().getId(),
+                "a closed issue keeps the subdivision it had");
+
+        assertTrue(canClose(newMember, moved), "the new subdivision may close the issue");
+        assertFalse(canClose(oldMember, moved), "the former one may not any more");
+    }
+
+    @Test
+    void movingAndReassigningTheRuleAtOnceClosesItsIssuesUnderTheFormerAssignee() {
+        DqIssue open = createOpenIssue();
+
+        DqRule changed = reloadRule();
+        changed.setAssignee(createSubdivision());
+        changed.setColumnName("code");
+        assertTrue(ruleService.isAssigneeChanged(changed));
+        rule = dataManager.save(changed);
+
+        DqIssue closed = reloadWithAssignee(open);
+        assertEquals(DqIssueClosingReason.RULE_DATA_SOURCE_CHANGED, closed.getClosingReason());
+        assertEquals(assignee.getId(), closed.getAssignee().getId(),
+                "the closing goes first, so the closed issue stays with the former assignee");
+    }
+
+    @Test
     void aNewIssueIsOpenWithoutAClosingReason() {
         DqIssue issue = dataManager.create(DqIssue.class);
         issue.setRule(rule);
@@ -176,9 +231,14 @@ public class DqIssueServiceTests {
     }
 
     private DqIssue createOpenIssue() {
+        return createOpenIssue(null);
+    }
+
+    private DqIssue createOpenIssue(LocalDate dueDate) {
         DqIssue issue = dataManager.create(DqIssue.class);
         issue.setRule(rule);
         issue.setStatus(DqIssueStatus.OPEN);
+        issue.setDueDate(dueDate);
         return testData.track(dataManager.save(issue));
     }
 
@@ -233,6 +293,12 @@ public class DqIssueServiceTests {
     private DqIssue reloadWithClosedBy(DqIssue issue) {
         return dataManager.load(DqIssue.class).id(issue.getId())
                 .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE).add("closedBy", FetchPlan.BASE))
+                .one();
+    }
+
+    private DqIssue reloadWithAssignee(DqIssue issue) {
+        return dataManager.load(DqIssue.class).id(issue.getId())
+                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE).add("assignee", FetchPlan.BASE))
                 .one();
     }
 

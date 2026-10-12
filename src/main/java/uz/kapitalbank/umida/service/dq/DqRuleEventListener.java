@@ -30,8 +30,9 @@ public class DqRuleEventListener {
     }
 
     /**
-     * A rule moved to other data closes its open issues, in the transaction that saves the rule:
-     * they describe data the rule no longer checks.
+     * In the transaction that saves the rule: a rule moved to other data closes its open issues, as
+     * they describe data the rule no longer checks; a reassigned rule moves the issues still open to
+     * its new assignee. The closing goes first, so the issues it closes keep the assignee they had.
      */
     @EventListener
     public void onDqRuleChanged(final EntityChangedEvent<DqRule> event) {
@@ -41,6 +42,9 @@ public class DqRuleEventListener {
         AttributeChanges changes = event.getChanges();
         if (Arrays.stream(DqRuleService.DATA_SOURCE_FIELDS).anyMatch(changes::isChanged)) {
             issueService.closeOnRuleDataSourceChanged(event.getEntityId());
+        }
+        if (changes.isChanged(DqRuleService.ASSIGNEE_FIELD)) {
+            issueService.reassignOnRuleAssigneeChanged(event.getEntityId());
         }
     }
 }

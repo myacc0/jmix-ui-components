@@ -13,6 +13,7 @@ import io.jmix.core.security.CurrentAuthentication;
 import io.jmix.flowui.ViewNavigators;
 import io.jmix.flowui.component.UiComponentUtils;
 import io.jmix.flowui.component.combobox.JmixComboBox;
+import io.jmix.flowui.component.valuepicker.EntityPicker;
 import io.jmix.flowui.component.grid.DataGrid;
 import io.jmix.flowui.component.select.JmixSelect;
 import io.jmix.flowui.kit.component.button.JmixButton;
@@ -60,7 +61,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * The issue screens show what an issue takes from its rule and its latest failed check, offer its
  * violating rows, and offer closing only to the assignee subdivision — which {@code admin}, having no
- * employee, is not part of. The rule editor asks before moving a rule with open issues.
+ * employee, is not part of. The rule editor asks before moving or reassigning a rule with open issues.
  */
 @UiTest
 @SpringBootTest(classes = {UmidaApplication.class, FlowuiTestAssistConfiguration.class})
@@ -82,6 +83,7 @@ public class DqIssueViewsUiTest {
     Messages messages;
 
     private DqTestData testData;
+    private OrgStructureSubdivision assignee;
     private DqRule rule;
     private DqCheckRunResult result;
     private DqIssue issue;
@@ -95,6 +97,7 @@ public class DqIssueViewsUiTest {
         assignee.setId(UUID.randomUUID().toString());
         assignee.setName("DQ issue views " + UUID.randomUUID().toString().substring(0, 8));
         OrgStructureSubdivision savedAssignee = testData.track(dataManager.save(assignee));
+        this.assignee = savedAssignee;
 
         // the editor asks for a group, which the rule of a check run need not have
         DqRuleGroup group = dataManager.create(DqRuleGroup.class);
@@ -139,7 +142,7 @@ public class DqIssueViewsUiTest {
         DataGrid<DqIssue> grid = openList();
 
         for (String key : new String[]{"code", "ruleCode", "dataSource", "severity", "affectedRows", "status",
-                "closingReason", "closedAt", "closedBy"}) {
+                "closingReason", "assignee", "closedAt", "closedBy"}) {
             assertNotNull(grid.getColumnByKey(key), key + " is a column of the issue list");
         }
         DqIssue shown = gridItem(grid);
@@ -148,6 +151,7 @@ public class DqIssueViewsUiTest {
         assertEquals("main", shown.getRule().getDataSource());
         assertEquals(DqSeverity.CRITICAL, shown.getRule().getSeverity());
         assertEquals(BigInteger.valueOf(VIOLATING_ROWS), shown.getCheckResult().getFailedRecords());
+        assertEquals(assignee.getId(), shown.getAssignee().getId(), "the issue took the assignee of its rule");
 
         DqIssueListView view = UiTestUtils.getCurrentView();
         assertThrows(IllegalArgumentException.class, () -> UiTestUtils.getComponent(view, "setAssigneeButton"),
@@ -190,6 +194,7 @@ public class DqIssueViewsUiTest {
         assertEquals(rule.getCode(), valueText(view, "ruleValue"));
         assertEquals("main", valueText(view, "dataSourceValue"));
         assertEquals(String.valueOf(VIOLATING_ROWS), valueText(view, "affectedRowsValue"));
+        assertEquals(assignee.getName(), valueText(view, "assigneeValue"));
 
         Span statusBadge = badge(view, "statusValue");
         assertEquals(messages.getMessage(issue.getStatus()), statusBadge.getText());
@@ -308,6 +313,37 @@ public class DqIssueViewsUiTest {
         assertEquals("code", dataManager.load(DqRule.class).id(rule.getId()).one().getColumnName());
     }
 
+    @Test
+    void reassigningARuleWithOpenIssuesAsksFirstAndMovesThem() {
+        OrgStructureSubdivision newAssignee = dataManager.create(OrgStructureSubdivision.class);
+        newAssignee.setId(UUID.randomUUID().toString());
+        newAssignee.setName("DQ issue views new " + UUID.randomUUID().toString().substring(0, 8));
+        OrgStructureSubdivision savedNewAssignee = testData.track(dataManager.save(newAssignee));
+
+        viewNavigators.detailView(UiTestUtils.getCurrentView(), DqRule.class)
+                .editEntity(rule)
+                .withViewClass(DqRuleDetailView.class)
+                .navigate();
+        DqRuleDetailView view = UiTestUtils.getCurrentView();
+        EntityPicker<OrgStructureSubdivision> assigneeField = UiTestUtils.getComponent(view, "assigneeField");
+        assigneeField.setValue(savedNewAssignee);
+
+        assertTrue(UiTestUtils.validateView(view).isEmpty());
+        view.save();
+
+        DialogInfo dialog = UiTestUtils.getLastOpenedDialog();
+        assertNotNull(dialog, "the user is asked before the open issues are reassigned");
+        assertEquals(assignee.getId(), reloadIssueWithAssignee().getAssignee().getId(),
+                "nothing is saved until the user agrees");
+
+        Button yes = dialog.getButtons().get(0);
+        yes.click();
+
+        DqIssue moved = reloadIssueWithAssignee();
+        assertEquals(DqIssueStatus.OPEN, moved.getStatus(), "a reassigned issue stays open");
+        assertEquals(savedNewAssignee.getId(), moved.getAssignee().getId());
+    }
+
     // ---------------------------------------------------------------------
     // helpers
     // ---------------------------------------------------------------------
@@ -343,6 +379,12 @@ public class DqIssueViewsUiTest {
     private static Stream<Component> selfAndDescendants(Component component) {
         return Stream.concat(Stream.of(component),
                 component.getChildren().flatMap(DqIssueViewsUiTest::selfAndDescendants));
+    }
+
+    private DqIssue reloadIssueWithAssignee() {
+        return dataManager.load(DqIssue.class).id(issue.getId())
+                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE).add("assignee", FetchPlan.BASE))
+                .one();
     }
 
     private DqIssue reloadIssue() {
