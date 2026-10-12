@@ -15,6 +15,9 @@ public enum DqSqlDialect {
     MYSQL,
     ORACLE;
 
+    /** A value made of whitespace only, or of nothing at all. */
+    private static final String BLANK_PATTERN = "^[[:space:]]*$";
+
     /**
      * Maps a JDBC {@code DatabaseMetaData.getDatabaseProductName()} value onto a dialect.
      *
@@ -67,18 +70,24 @@ public enum DqSqlDialect {
     }
 
     /**
-     * Renders a "value is missing or holds nothing but spaces" predicate for a character column.
+     * Renders a "value is missing or holds nothing but whitespace" predicate for a character column.
      * <p>
-     * Oracle stores an empty {@code VARCHAR2} as {@code NULL}, so there {@code TRIM} of a blank value is
-     * {@code NULL} as well and a comparison with {@code ''} would never be true. Only spaces are
-     * trimmed: a value made of tabs or line breaks is not blank.
+     * Whitespace is the POSIX {@code [[:space:]]} class, understood by all three databases: space, tab,
+     * line feed, carriage return, vertical tab and form feed. Whether it also covers the no-break
+     * space (U+00A0) is up to the database and its character set.
+     * <p>
+     * The empty string matches the pattern, except in Oracle, which stores it as {@code NULL} — and a
+     * pattern test of {@code NULL} is never true, so {@code IS NULL} is tested on its own everywhere.
+     * The pattern is a constant, so it is inlined rather than bound.
      *
      * @param columnExpression already-quoted column reference, e.g. {@code t."email"}
      */
     public String blankMatch(String columnExpression) {
-        return switch (this) {
-            case POSTGRESQL, MYSQL -> columnExpression + " IS NULL OR TRIM(" + columnExpression + ") = ''";
-            case ORACLE -> "TRIM(" + columnExpression + ") IS NULL";
+        String blank = "'" + BLANK_PATTERN + "'";
+        return columnExpression + " IS NULL OR " + switch (this) {
+            case POSTGRESQL -> columnExpression + " ~ " + blank;
+            case MYSQL -> columnExpression + " REGEXP " + blank;
+            case ORACLE -> "REGEXP_LIKE(" + columnExpression + ", " + blank + ")";
         };
     }
 

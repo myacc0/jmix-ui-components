@@ -238,7 +238,7 @@ public class DqCheckExecutorService {
         return executeRowLevelCheck(run, rule);
     }
 
-    /** Counts the rows whose character column holds no value, an empty string, or only spaces. */
+    /** Counts the rows whose character column holds no value, an empty string, or only whitespace. */
     private DqCheckRunResult executeCheckNotBlank(DqCheckRun run, DqRule rule) {
         return executeRowLevelCheck(run, rule);
     }

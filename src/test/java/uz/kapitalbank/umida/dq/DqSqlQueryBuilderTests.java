@@ -80,33 +80,36 @@ public class DqSqlQueryBuilderTests {
     // ----- NOT_BLANK -----
 
     @Test
-    void notBlankCountsNullsAndBlankStrings() {
+    void notBlankCountsNullsAndWhitespaceOnlyStrings() {
         DqRuleQueries queries = build(rule(DqRuleType.NOT_BLANK, "{}"), DqSqlDialect.POSTGRESQL);
 
         assertEquals("SELECT COUNT(*) AS total_count," +
-                        " COUNT(CASE WHEN (t.\"first_name\" IS NULL OR TRIM(t.\"first_name\") = '') THEN 1 END)" +
-                        " AS failed_count FROM \"employee\" t",
+                        " COUNT(CASE WHEN (t.\"first_name\" IS NULL OR t.\"first_name\" ~ '^[[:space:]]*$')" +
+                        " THEN 1 END) AS failed_count FROM \"employee\" t",
                 queries.metrics().sql());
         assertEquals("SELECT t.* FROM \"employee\" t" +
-                        " WHERE (t.\"first_name\" IS NULL OR TRIM(t.\"first_name\") = '')",
+                        " WHERE (t.\"first_name\" IS NULL OR t.\"first_name\" ~ '^[[:space:]]*$')",
                 queries.violations().sql());
+        // the pattern is a constant and is inlined, so nothing is bound
         assertEquals(List.of(), queries.metrics().params());
     }
 
     @Test
-    void notBlankComparesWithTheEmptyStringInMysql() {
+    void notBlankUsesTheMysqlOperator() {
         DqRuleQueries queries = build(rule(DqRuleType.NOT_BLANK, "{}"), DqSqlDialect.MYSQL);
 
-        assertEquals("SELECT t.* FROM `employee` t WHERE (t.`first_name` IS NULL OR TRIM(t.`first_name`) = '')",
+        assertEquals("SELECT t.* FROM `employee` t" +
+                        " WHERE (t.`first_name` IS NULL OR t.`first_name` REGEXP '^[[:space:]]*$')",
                 queries.violations().sql());
     }
 
     @Test
-    void notBlankTestsTheTrimmedValueForNullInOracle() {
-        // Oracle stores '' as NULL, so a comparison with '' would never be true
+    void notBlankTestsNullSeparatelyInOracle() {
+        // Oracle stores '' as NULL, and REGEXP_LIKE of NULL is never true
         DqRuleQueries queries = build(rule(DqRuleType.NOT_BLANK, "{}"), DqSqlDialect.ORACLE);
 
-        assertEquals("SELECT t.* FROM \"employee\" t WHERE (TRIM(t.\"first_name\") IS NULL)",
+        assertEquals("SELECT t.* FROM \"employee\" t" +
+                        " WHERE (t.\"first_name\" IS NULL OR REGEXP_LIKE(t.\"first_name\", '^[[:space:]]*$'))",
                 queries.violations().sql());
     }
 

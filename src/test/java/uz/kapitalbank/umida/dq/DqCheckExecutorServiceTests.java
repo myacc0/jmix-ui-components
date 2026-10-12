@@ -228,12 +228,15 @@ public class DqCheckExecutorServiceTests {
     }
 
     @Test
-    void notBlankFlagsAValueOfOnlySpacesButNotAFilledOne() {
+    void notBlankFlagsAWhitespaceOnlyValueButNotAFilledOne() {
         DictDataDomain blankDomain = testData.createDomain();
         blankDomain.setDescription("   ");
         blankDomain = dataManager.save(blankDomain);
+        DictDataDomain controlCharsDomain = testData.createDomain();
+        controlCharsDomain.setDescription(" \t\r\n ");
+        controlCharsDomain = dataManager.save(controlCharsDomain);
         DictDataDomain filledDomain = testData.createDomain();
-        filledDomain.setDescription("filled");
+        filledDomain.setDescription("\tfilled\n");
         filledDomain = dataManager.save(filledDomain);
 
         DqRule notBlankRule = testData.createRule(blankDomain, "not blank", DqRuleType.NOT_BLANK, "description",
@@ -251,6 +254,8 @@ public class DqCheckExecutorServiceTests {
                 .toList();
         assertTrue(violatingIds.contains(blankDomain.getId().toString()),
                 "a description of only spaces is blank");
+        assertTrue(violatingIds.contains(controlCharsDomain.getId().toString()),
+                "a description of tabs and line breaks is blank");
         assertFalse(violatingIds.contains(filledDomain.getId().toString()),
                 "a filled description is not blank");
     }

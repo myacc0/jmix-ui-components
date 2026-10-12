@@ -134,10 +134,11 @@ public class DqSqlQueryBuilder {
     }
 
     /**
-     * Violating row: the character column holds no value, an empty string, or nothing but spaces —
-     * the completeness check of NOT_NULL for columns where an empty string stands in for a missing
-     * value. Meant for character columns: on any other column PostgreSQL rejects {@code TRIM} and the
-     * rule is skipped, while MySQL and Oracle convert the value to text and the rule acts as NOT_NULL.
+     * Violating row: the character column holds no value, an empty string, or nothing but whitespace
+     * (spaces, tabs, line breaks) — the completeness check of NOT_NULL for columns where an empty
+     * string stands in for a missing value. Meant for character columns: on any other column
+     * PostgreSQL rejects the pattern match and the rule is skipped, while MySQL and Oracle convert the
+     * value to text and the rule acts as NOT_NULL.
      */
     private DqRuleQueries buildNotBlank(DqRule rule, DqRuleConfig config, DqSqlDialect dialect) {
         String column = columnRef(rule, dialect);
