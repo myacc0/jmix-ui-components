@@ -37,12 +37,9 @@ public class DqRuleConfig {
     private String sql;
 
     // ----- CROSS_SOURCE -----
-    private String secondaryDataSourceId;
-
-    private String crossSourceSql;
-    private String crossSourceTable;
-    private String crossSourceColumn;
-    private String crossSourceAllowNull;
+    private String crossPrimarySql;
+    private String crossDataSource;
+    private String crossDataSourceSql;
 
     public Double getThreshold() {
         return threshold;
@@ -140,44 +137,28 @@ public class DqRuleConfig {
         this.sql = sql;
     }
 
-    public String getSecondaryDataSourceId() {
-        return secondaryDataSourceId;
+    public String getCrossPrimarySql() {
+        return crossPrimarySql;
     }
 
-    public void setSecondaryDataSourceId(String secondaryDataSourceId) {
-        this.secondaryDataSourceId = secondaryDataSourceId;
+    public void setCrossPrimarySql(String crossPrimarySql) {
+        this.crossPrimarySql = crossPrimarySql;
     }
 
-    public String getCrossSourceSql() {
-        return crossSourceSql;
+    public String getCrossDataSource() {
+        return crossDataSource;
     }
 
-    public void setCrossSourceSql(String crossSourceSql) {
-        this.crossSourceSql = crossSourceSql;
+    public void setCrossDataSource(String crossDataSource) {
+        this.crossDataSource = crossDataSource;
     }
 
-    public String getCrossSourceTable() {
-        return crossSourceTable;
+    public String getCrossDataSourceSql() {
+        return crossDataSourceSql;
     }
 
-    public void setCrossSourceTable(String crossSourceTable) {
-        this.crossSourceTable = crossSourceTable;
-    }
-
-    public String getCrossSourceColumn() {
-        return crossSourceColumn;
-    }
-
-    public void setCrossSourceColumn(String crossSourceColumn) {
-        this.crossSourceColumn = crossSourceColumn;
-    }
-
-    public String getCrossSourceAllowNull() {
-        return crossSourceAllowNull;
-    }
-
-    public void setCrossSourceAllowNull(String crossSourceAllowNull) {
-        this.crossSourceAllowNull = crossSourceAllowNull;
+    public void setCrossDataSourceSql(String crossDataSourceSql) {
+        this.crossDataSourceSql = crossDataSourceSql;
     }
 
     @Override
