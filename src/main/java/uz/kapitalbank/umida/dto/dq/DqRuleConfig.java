@@ -24,10 +24,14 @@ public class DqRuleConfig {
     // ----- REGEXP_PATTERN -----
     private String regexp;
 
-    // ----- REFERENCE_TABLE -----
+    // ----- REFERENTIAL -----
+    // The reference ("dictionary") table the column values are looked up in; it lives in the same
+    // data source as the checked table.
+    private String refSchema;
     private String refTable;
     private String refColumn;
-    private String allowNull;
+    // whether NULL in the checked column is a valid value; absent means true
+    private Boolean allowNull;
 
     // ----- CUSTOM_SQL -----
     private String sql;
@@ -96,6 +100,14 @@ public class DqRuleConfig {
         this.regexp = regexp;
     }
 
+    public String getRefSchema() {
+        return refSchema;
+    }
+
+    public void setRefSchema(String refSchema) {
+        this.refSchema = refSchema;
+    }
+
     public String getRefTable() {
         return refTable;
     }
@@ -112,11 +124,11 @@ public class DqRuleConfig {
         this.refColumn = refColumn;
     }
 
-    public String getAllowNull() {
+    public Boolean getAllowNull() {
         return allowNull;
     }
 
-    public void setAllowNull(String allowNull) {
+    public void setAllowNull(Boolean allowNull) {
         this.allowNull = allowNull;
     }
 
@@ -178,9 +190,10 @@ public class DqRuleConfig {
                 ", minIncluded=" + minIncluded +
                 ", maxIncluded=" + maxIncluded +
                 ", regexp='" + regexp + '\'' +
+                ", refSchema='" + refSchema + '\'' +
                 ", refTable='" + refTable + '\'' +
                 ", refColumn='" + refColumn + '\'' +
-                ", allowNull='" + allowNull + '\'' +
+                ", allowNull=" + allowNull +
                 ", sql='" + sql + '\'' +
                 '}';
     }

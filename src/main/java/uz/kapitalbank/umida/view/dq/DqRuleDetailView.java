@@ -120,6 +120,8 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
     private VerticalLayout rangeBox;
     @ViewComponent
     private HorizontalLayout regexpBox;
+    @ViewComponent
+    private VerticalLayout referentialBox;
 
 
     // ----- dynamic ruleConfig fields -----
@@ -137,6 +139,14 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
     private JmixCheckbox maxIncludedField;
     @ViewComponent
     private TypedTextField<String> regexpField;
+    @ViewComponent
+    private JmixComboBox<String> refSchemaField;
+    @ViewComponent
+    private JmixComboBox<String> refTableField;
+    @ViewComponent
+    private JmixComboBox<String> refColumnField;
+    @ViewComponent
+    private JmixCheckbox allowNullField;
 
     // ----- always-visible config fields (independent of rule type) -----
     @ViewComponent
@@ -187,16 +197,23 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         // made by the user also drops their values, which no longer belong to the new parent.
         dataSourceField.addValueChangeListener(e -> {
             String dataSource = e.getValue();
-            dbSchemaField.setItems(dataSource != null
+            List<String> schemas = dataSource != null
                     ? dataSourceProvider.getDataSourceSchemas(dataSource)
-                    : List.of());
+                    : List.of();
+            dbSchemaField.setItems(schemas);
+            // the reference table of a REFERENTIAL rule is looked up in the same data source
+            refSchemaField.setItems(schemas);
             if (e.isFromClient()) {
                 dbSchemaField.setValue(null);
                 tableNameField.setValue(null);
                 columnNameField.setValue(null);
                 samplesQueryColumnsField.clear();
+                refSchemaField.setValue(null);
+                refTableField.setValue(null);
+                refColumnField.setValue(null);
             }
             reloadTables();
+            reloadRefTables();
         });
 
         dbSchemaField.addValueChangeListener(e -> {
@@ -216,6 +233,25 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
             reloadColumns();
         });
 
+        // The reference location of a REFERENTIAL rule is the same kind of chain, within the rule's
+        // data source.
+        refSchemaField.addValueChangeListener(e -> {
+            if (e.isFromClient()) {
+                refTableField.setValue(null);
+                refColumnField.setValue(null);
+            }
+            reloadRefTables();
+            onDynamicFieldChange();
+        });
+
+        refTableField.addValueChangeListener(e -> {
+            if (e.isFromClient()) {
+                refColumnField.setValue(null);
+            }
+            reloadRefColumns();
+            onDynamicFieldChange();
+        });
+
         // Render the config fields matching the selected rule type.
         ruleTypeField.addValueChangeListener(e -> {
             if (populating) {
@@ -227,6 +263,10 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
                 populating = true;
                 try {
                     clearDynamicFields();
+                    if (e.getValue() == DqRuleType.REFERENTIAL) {
+                        // a reference table is most often found next to the checked one
+                        refSchemaField.setValue(dbSchemaField.getValue());
+                    }
                 } finally {
                     populating = false;
                 }
@@ -242,6 +282,8 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         minIncludedField.addValueChangeListener(e -> onDynamicFieldChange());
         maxIncludedField.addValueChangeListener(e -> onDynamicFieldChange());
         regexpField.addValueChangeListener(e -> onDynamicFieldChange());
+        refColumnField.addValueChangeListener(e -> onDynamicFieldChange());
+        allowNullField.addValueChangeListener(e -> onDynamicFieldChange());
         thresholdField.addValueChangeListener(e -> onDynamicFieldChange());
         samplesQueryColumnsField.addValueChangeListener(e -> onDynamicFieldChange());
     }
@@ -304,6 +346,28 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         samplesQueryColumnsField.setItems(columns);
     }
 
+    /**
+     * The tables offered for the reference schema. Unlike the rule's own table, a reference table
+     * is always picked from an explicitly selected schema.
+     */
+    private void reloadRefTables() {
+        String dataSource = dataSourceField.getValue();
+        String refSchema = refSchemaField.getValue();
+        refTableField.setItems(dataSource != null && refSchema != null
+                ? dataSourceProvider.getDataSourceTables(dataSource, refSchema)
+                : List.of());
+        reloadRefColumns();
+    }
+
+    private void reloadRefColumns() {
+        String dataSource = dataSourceField.getValue();
+        String refSchema = refSchemaField.getValue();
+        String refTable = refTableField.getValue();
+        refColumnField.setItems(dataSource != null && refSchema != null && refTable != null
+                ? dataSourceProvider.getTableColumns(dataSource, refSchema, refTable)
+                : List.of());
+    }
+
     private void onDynamicFieldChange() {
         if (populating) {
             return;
@@ -320,6 +384,7 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         minDateField.setVisible(rangeDate);
         maxDateField.setVisible(rangeDate);
         regexpBox.setVisible(type == DqRuleType.REGEXP);
+        referentialBox.setVisible(type == DqRuleType.REFERENTIAL);
     }
 
     private void clearDynamicFields() {
@@ -330,6 +395,10 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         minIncludedField.setValue(Boolean.FALSE);
         maxIncludedField.setValue(Boolean.FALSE);
         regexpField.clear();
+        refSchemaField.clear();
+        refTableField.clear();
+        refColumnField.clear();
+        allowNullField.setValue(Boolean.TRUE);
     }
 
     private void populateFieldsFromConfig(DqRuleType type) {
@@ -364,6 +433,13 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
                 maxIncludedField.setValue(Boolean.TRUE.equals(config.getMaxIncluded()));
             }
             case REGEXP -> regexpField.setValue(config.getRegexp() != null ? config.getRegexp() : "");
+            case REFERENTIAL -> {
+                // in chain order: each value reloads the items the next one is picked from
+                refSchemaField.setValue(config.getRefSchema());
+                refTableField.setValue(config.getRefTable());
+                refColumnField.setValue(config.getRefColumn());
+                allowNullField.setValue(!Boolean.FALSE.equals(config.getAllowNull()));
+            }
             default -> {
                 // NOT_NULL, NOT_BLANK and not-yet-implemented types have no editable fields.
             }
@@ -390,6 +466,12 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
                     config.setMaxIncluded(maxIncludedField.getValue());
                 }
                 case REGEXP -> config.setRegexp(StringUtils.emptyToNull(regexpField.getValue()));
+                case REFERENTIAL -> {
+                    config.setRefSchema(refSchemaField.getValue());
+                    config.setRefTable(refTableField.getValue());
+                    config.setRefColumn(refColumnField.getValue());
+                    config.setAllowNull(allowNullField.getValue());
+                }
                 default -> {
                     // NOT_NULL, NOT_BLANK and not-yet-implemented types serialize to an empty object.
                 }
@@ -451,6 +533,9 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
             case DqRuleValidationError.FIELD_REGEXP -> regexpField;
             case DqRuleValidationError.FIELD_MIN -> rangeDate ? minDateField : minNumberField;
             case DqRuleValidationError.FIELD_MAX -> rangeDate ? maxDateField : maxNumberField;
+            case DqRuleValidationError.FIELD_REF_SCHEMA -> refSchemaField;
+            case DqRuleValidationError.FIELD_REF_TABLE -> refTableField;
+            case DqRuleValidationError.FIELD_REF_COLUMN -> refColumnField;
             default -> null;
         };
     }

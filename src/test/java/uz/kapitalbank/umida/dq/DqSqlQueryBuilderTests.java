@@ -406,11 +406,105 @@ public class DqSqlQueryBuilderTests {
                         DqSqlDialect.POSTGRESQL));
     }
 
+    // ----- REFERENTIAL -----
+
+    private static final String REGION_REFERENCE =
+            "{\"refSchema\": \"dict\", \"refTable\": \"region\", \"refColumn\": \"code\"}";
+
+    @Test
+    void referentialFlagsValuesMissingFromTheReferenceAndIgnoresNullsByDefault() {
+        DqRuleQueries queries = build(rule(DqRuleType.REFERENTIAL, REGION_REFERENCE, "client", "region_code"),
+                DqSqlDialect.POSTGRESQL);
+
+        String from = " FROM \"client\" t" +
+                " LEFT JOIN (SELECT DISTINCT \"code\" FROM \"dict\".\"region\") r" +
+                " ON r.\"code\" = t.\"region_code\"";
+        String missing = "t.\"region_code\" IS NOT NULL AND r.\"code\" IS NULL";
+        assertEquals("SELECT COUNT(*) AS total_count," +
+                        " COUNT(CASE WHEN (" + missing + ") THEN 1 END) AS failed_count" + from,
+                queries.metrics().sql());
+        // the projection keeps to the checked table, and rows sharing a value stay adjacent
+        assertEquals("SELECT t.*" + from + " WHERE (" + missing + ") ORDER BY t.\"region_code\"",
+                queries.violations().sql());
+        assertEquals(List.of(), queries.metrics().params());
+    }
+
+    @Test
+    void referentialFlagsNullsWhenTheyAreNotAllowed() {
+        DqRuleQueries queries = build(rule(DqRuleType.REFERENTIAL,
+                        "{\"refSchema\": \"dict\", \"refTable\": \"region\", \"refColumn\": \"code\"," +
+                                " \"allowNull\": false}", "client", "region_code"),
+                DqSqlDialect.POSTGRESQL);
+
+        assertTrue(queries.violations().sql().contains(
+                        " WHERE (t.\"region_code\" IS NULL OR r.\"code\" IS NULL)"),
+                queries.violations().sql());
+    }
+
+    @Test
+    void referentialCanReferToTheCheckedTableItself() {
+        DqRule rule = rule(DqRuleType.REFERENTIAL,
+                "{\"refSchema\": \"public\", \"refTable\": \"department\", \"refColumn\": \"id\"}",
+                "department", "parent_id");
+        rule.setDbSchema("public");
+
+        DqRuleQueries queries = build(rule, DqSqlDialect.POSTGRESQL);
+
+        assertEquals("SELECT t.* FROM \"public\".\"department\" t" +
+                        " LEFT JOIN (SELECT DISTINCT \"id\" FROM \"public\".\"department\") r" +
+                        " ON r.\"id\" = t.\"parent_id\"" +
+                        " WHERE (t.\"parent_id\" IS NOT NULL AND r.\"id\" IS NULL) ORDER BY t.\"parent_id\"",
+                queries.violations().sql());
+    }
+
+    @Test
+    void referentialUsesBacktickQuotingInMysql() {
+        DqRuleQueries queries = build(rule(DqRuleType.REFERENTIAL, REGION_REFERENCE, "client", "region_code"),
+                DqSqlDialect.MYSQL);
+
+        assertEquals("SELECT t.* FROM `client` t" +
+                        " LEFT JOIN (SELECT DISTINCT `code` FROM `dict`.`region`) r ON r.`code` = t.`region_code`" +
+                        " WHERE (t.`region_code` IS NOT NULL AND r.`code` IS NULL) ORDER BY t.`region_code`",
+                queries.violations().sql());
+    }
+
+    @Test
+    void referentialAliasesTheReferenceWithoutAsInOracle() {
+        // Oracle rejects AS in front of a table alias
+        DqRuleQueries queries = build(rule(DqRuleType.REFERENTIAL, REGION_REFERENCE, "client", "region_code"),
+                DqSqlDialect.ORACLE);
+
+        assertTrue(queries.metrics().sql().endsWith(
+                        " FROM \"client\" t LEFT JOIN (SELECT DISTINCT \"code\" FROM \"dict\".\"region\") r" +
+                                " ON r.\"code\" = t.\"region_code\""),
+                queries.metrics().sql());
+    }
+
+    @Test
+    void referentialWithoutReferenceTableOrColumnIsRejected() {
+        assertThrows(IllegalArgumentException.class,
+                () -> build(rule(DqRuleType.REFERENTIAL, "{\"refColumn\": \"code\"}"), DqSqlDialect.POSTGRESQL));
+        assertThrows(IllegalArgumentException.class,
+                () -> build(rule(DqRuleType.REFERENTIAL, "{\"refTable\": \"region\"}"), DqSqlDialect.POSTGRESQL));
+    }
+
+    @Test
+    void referenceNamesThatAreNotPlainIdentifiersAreRejected() {
+        assertThrows(IllegalArgumentException.class,
+                () -> build(rule(DqRuleType.REFERENTIAL,
+                        "{\"refTable\": \"region r; DROP TABLE client\", \"refColumn\": \"code\"}"),
+                        DqSqlDialect.POSTGRESQL));
+        assertThrows(IllegalArgumentException.class,
+                () -> build(rule(DqRuleType.REFERENTIAL,
+                        "{\"refTable\": \"region\", \"refColumn\": \"code) r\"}"),
+                        DqSqlDialect.POSTGRESQL));
+    }
+
     // ----- not implemented yet -----
 
     @ParameterizedTest
     @EnumSource(value = DqRuleType.class,
-            names = {"REFERENTIAL", "CUSTOM_SQL", "CROSS_SOURCE_AGGREGATED"})
+            names = {"CUSTOM_SQL", "CROSS_SOURCE_AGGREGATED"})
     void pendingRuleTypesFailExplicitly(DqRuleType type) {
         assertThrows(UnsupportedOperationException.class,
                 () -> build(rule(type, "{}"), DqSqlDialect.POSTGRESQL));

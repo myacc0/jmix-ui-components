@@ -8,12 +8,17 @@ import uz.kapitalbank.umida.utils.DateUtils;
 import uz.kapitalbank.umida.utils.NumberUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jmix.core.Messages;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.sql.Types;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -28,6 +33,7 @@ import static uz.kapitalbank.umida.dto.dq.DqRuleValidationError.*;
  */
 @Service
 public class DqRuleValidator {
+    private static final Logger log = LoggerFactory.getLogger(DqRuleValidator.class);
 
     private static final int MIN_THRESHOLD = 0;
     private static final int MAX_THRESHOLD = 100;
@@ -37,10 +43,12 @@ public class DqRuleValidator {
     public static final int MAX_DUE_DAYS = 365;
 
     private final Messages messages;
+    private final DqDataSourceProvider dataSourceProvider;
     private final ObjectMapper objectMapper;
 
-    public DqRuleValidator(Messages messages) {
+    public DqRuleValidator(Messages messages, DqDataSourceProvider dataSourceProvider) {
         this.messages = messages;
+        this.dataSourceProvider = dataSourceProvider;
         this.objectMapper = new ObjectMapper();
     }
 
@@ -197,7 +205,25 @@ public class DqRuleValidator {
     }
 
     private void validateReferential(DqRule rule, DqRuleConfig config, List<DqRuleValidationError> errors) {
-        // TODO not implemented yet
+        requireTable(rule, errors);
+        requireColumn(rule, errors);
+
+        boolean complete = true;
+        if (!StringUtils.hasText(config.getRefSchema())) {
+            errors.add(error(FIELD_REF_SCHEMA, "dqRuleValidation.refSchemaRequired"));
+            complete = false;
+        }
+        if (!StringUtils.hasText(config.getRefTable())) {
+            errors.add(error(FIELD_REF_TABLE, "dqRuleValidation.refTableRequired"));
+            complete = false;
+        }
+        if (!StringUtils.hasText(config.getRefColumn())) {
+            errors.add(error(FIELD_REF_COLUMN, "dqRuleValidation.refColumnRequired"));
+            complete = false;
+        }
+        if (complete && StringUtils.hasText(rule.getTableName()) && StringUtils.hasText(rule.getColumnName())) {
+            validateReferenceTypes(rule, config, errors);
+        }
     }
 
     private void validateCustomSql(DqRule rule, DqRuleConfig config, List<DqRuleValidationError> errors) {
@@ -206,6 +232,67 @@ public class DqRuleValidator {
 
     private void validateCrossSourceAggregated(DqRule rule, DqRuleConfig config, List<DqRuleValidationError> errors) {
         // TODO not implemented yet
+    }
+
+    /**
+     * Rejects a reference column the checked column cannot be compared with: the database would
+     * only fail on it when the check runs ({@code operator does not exist: character varying =
+     * integer}). The types are read from the data source; when either cannot be read — the data
+     * source is unreachable, or a column is gone — the comparison is left to the run.
+     */
+    private void validateReferenceTypes(DqRule rule, DqRuleConfig config, List<DqRuleValidationError> errors) {
+        DqDataSourceProvider.ColumnType columnType;
+        DqDataSourceProvider.ColumnType refColumnType;
+        try {
+            columnType = dataSourceProvider.getColumnType(rule.getDataSource(), rule.getDbSchema(),
+                    rule.getTableName().trim(), rule.getColumnName().trim());
+            refColumnType = dataSourceProvider.getColumnType(rule.getDataSource(), config.getRefSchema().trim(),
+                    config.getRefTable().trim(), config.getRefColumn().trim());
+        } catch (RuntimeException e) {
+            log.warn("Column types of rule '{}' could not be read, the reference column type is not checked",
+                    rule.getName(), e);
+            return;
+        }
+        if (columnType == null || refColumnType == null) {
+            return;
+        }
+        if (!areComparable(columnType, refColumnType)) {
+            errors.add(formatError(FIELD_REF_COLUMN, "dqRuleValidation.refColumnTypeMismatch",
+                    refColumnType.typeName(), columnType.typeName()));
+        }
+    }
+
+    /**
+     * Columns of one type family compare without a cast: any two strings, any two numbers, a date
+     * with a timestamp. Types outside the families (uuid, json, …) must be the same type.
+     */
+    private boolean areComparable(DqDataSourceProvider.ColumnType a, DqDataSourceProvider.ColumnType b) {
+        TypeFamily family = typeFamily(a.jdbcType());
+        if (family != null) {
+            return family == typeFamily(b.jdbcType());
+        }
+        return typeFamily(b.jdbcType()) == null
+                && a.typeName() != null
+                && a.typeName().toLowerCase(Locale.ROOT).equals(
+                        b.typeName() == null ? null : b.typeName().toLowerCase(Locale.ROOT));
+    }
+
+    @Nullable
+    private TypeFamily typeFamily(int jdbcType) {
+        return switch (jdbcType) {
+            case Types.CHAR, Types.VARCHAR, Types.LONGVARCHAR,
+                 Types.NCHAR, Types.NVARCHAR, Types.LONGNVARCHAR -> TypeFamily.STRING;
+            case Types.TINYINT, Types.SMALLINT, Types.INTEGER, Types.BIGINT,
+                 Types.DECIMAL, Types.NUMERIC, Types.REAL, Types.FLOAT, Types.DOUBLE -> TypeFamily.NUMBER;
+            case Types.DATE, Types.TIMESTAMP, Types.TIMESTAMP_WITH_TIMEZONE -> TypeFamily.DATE_TIME;
+            case Types.TIME, Types.TIME_WITH_TIMEZONE -> TypeFamily.TIME;
+            case Types.BIT, Types.BOOLEAN -> TypeFamily.BOOLEAN;
+            default -> null;
+        };
+    }
+
+    private enum TypeFamily {
+        STRING, NUMBER, DATE_TIME, TIME, BOOLEAN
     }
 
     // ---------------------------------------------------------------------

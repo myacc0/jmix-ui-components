@@ -133,6 +133,38 @@ public class DqDataSourceProvider {
     }
 
     /**
+     * The type of one column of a table, as the JDBC driver reports it.
+     *
+     * @param schema the schema the table belongs to, or null for the connection's default schema
+     * @return the column type, or null when the table has no such column
+     */
+    @Nullable
+    public ColumnType getColumnType(String dataSourceName, @Nullable String schema, String tableName,
+                                    String columnName) {
+        DataSource dataSource = resolveDataSource(dataSourceName);
+        try (Connection connection = dataSource.getConnection()) {
+            DatabaseMetaData metaData = connection.getMetaData();
+            String normalizedTableName = normalizeIdentifier(metaData, tableName);
+            String normalizedColumnName = normalizeIdentifier(metaData, columnName);
+            String schemaPattern = resolveSchemaPattern(connection, metaData, schema);
+            try (ResultSet rs = metaData.getColumns(connection.getCatalog(), schemaPattern, normalizedTableName,
+                    normalizedColumnName)) {
+                while (rs.next()) {
+                    // the lookup takes patterns, in which "_" matches any character
+                    if (normalizedTableName.equals(rs.getString("TABLE_NAME"))
+                            && normalizedColumnName.equals(rs.getString("COLUMN_NAME"))) {
+                        return new ColumnType(rs.getInt("DATA_TYPE"), rs.getString("TYPE_NAME"));
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to get the type of column: " + tableName + "." + columnName
+                    + " in data source: " + dataSourceName, e);
+        }
+        return null;
+    }
+
+    /**
      * Determines the SQL dialect of a data source from its JDBC metadata. The result is cached:
      * a data source cannot change its database product while the application is running.
      *
@@ -202,4 +234,12 @@ public class DqDataSourceProvider {
         return dataSource;
     }
 
+    /**
+     * A column type from the JDBC metadata.
+     *
+     * @param jdbcType one of {@link java.sql.Types}
+     * @param typeName the database's own name of the type, e.g. {@code varchar} or {@code uuid}
+     */
+    public record ColumnType(int jdbcType, String typeName) {
+    }
 }

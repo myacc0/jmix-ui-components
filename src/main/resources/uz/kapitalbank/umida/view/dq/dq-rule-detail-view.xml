@@ -134,6 +134,19 @@
                     </formItem>
                 </hbox>
 
+                <vbox id="referentialBox" visible="false" padding="false" spacing="false" width="100%">
+                    <formItem label="msg://ruleConfig.refSchema">
+                        <comboBox id="refSchemaField" width="100%"/>
+                    </formItem>
+                    <formItem label="msg://ruleConfig.refTable">
+                        <comboBox id="refTableField" width="100%" helperText="msg://ruleConfig.refTable.helper"/>
+                    </formItem>
+                    <formItem label="msg://ruleConfig.refColumn">
+                        <comboBox id="refColumnField" width="100%"/>
+                    </formItem>
+                    <checkbox id="allowNullField" label="msg://ruleConfig.allowNull" value="true"/>
+                </vbox>
+
                 <app:slider id="thresholdField"
                             label="msg://ruleConfig.threshold"
                             min="0"

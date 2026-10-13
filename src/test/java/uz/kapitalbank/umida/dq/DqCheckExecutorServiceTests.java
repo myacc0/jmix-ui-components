@@ -14,6 +14,7 @@ import uz.kapitalbank.umida.entity.dict.DictDataDomain;
 import uz.kapitalbank.umida.entity.dq.*;
 import uz.kapitalbank.umida.enums.dq.*;
 import uz.kapitalbank.umida.service.dq.DqCheckExecutorService;
+import uz.kapitalbank.umida.service.dq.DqDataSourceProvider;
 import uz.kapitalbank.umida.service.dq.DqIssueService;
 import uz.kapitalbank.umida.service.dq.DqViolationsService;
 import uz.kapitalbank.umida.service.dq.DqViolationsService.ViolationsPage;
@@ -59,6 +60,9 @@ public class DqCheckExecutorServiceTests {
 
     @Autowired
     DqIssueService issueService;
+
+    @Autowired
+    DqDataSourceProvider dataSourceProvider;
 
     private final List<DqCheckRun> checkRuns = new ArrayList<>();
     private DqTestData testData;
@@ -261,6 +265,54 @@ public class DqCheckExecutorServiceTests {
     }
 
     @Test
+    void referentialFlagsAValueMissingFromTheReferenceColumn() {
+        // the domain table serves as its own reference: a description must name the code of a domain
+        DictDataDomain referencedDomain = testData.createDomain();
+        DictDataDomain knownDomain = testData.createDomain();
+        knownDomain.setDescription(referencedDomain.getCode());
+        knownDomain = dataManager.save(knownDomain);
+        DictDataDomain unknownDomain = testData.createDomain();
+        unknownDomain.setDescription("no such code " + UUID.randomUUID());
+        unknownDomain = dataManager.save(unknownDomain);
+        // createDomain leaves the description empty
+        DictDataDomain emptyDomain = testData.createDomain();
+
+        String reference = "\"refSchema\": \"public\", \"refTable\": \"umida_dict_data_domain\"," +
+                " \"refColumn\": \"code\", \"samplesQueryColumns\": [\"id\"]";
+        DqRule nullAllowedRule = testData.createRule(referencedDomain, "referential", DqRuleType.REFERENTIAL,
+                "description", "{" + reference + "}", rule -> rule.setDbSchema("public"));
+        extraRules.add(nullAllowedRule);
+        DqRule nullRejectedRule = testData.createRule(referencedDomain, "referential not null",
+                DqRuleType.REFERENTIAL, "description", "{" + reference + ", \"allowNull\": false}",
+                rule -> rule.setDbSchema("public"));
+        extraRules.add(nullRejectedRule);
+
+        DqCheckRun run = awaitFinished(checkExecutorService.startCheckRun(filter(referencedDomain)));
+        List<DqCheckRunResult> results = loadResults(run);
+
+        DqCheckRunResult nullAllowed = resultOf(results, nullAllowedRule);
+        assertEquals(DqCheckResultStatus.FAILED, nullAllowed.getStatus(), nullAllowed.getErrorMessage());
+        List<String> violatingIds = violatingIds(nullAllowed);
+        assertTrue(violatingIds.contains(unknownDomain.getId().toString()), "an unknown code violates");
+        assertFalse(violatingIds.contains(knownDomain.getId().toString()), "a known code does not violate");
+        assertFalse(violatingIds.contains(emptyDomain.getId().toString()), "an empty value is allowed by default");
+
+        DqCheckRunResult nullRejected = resultOf(results, nullRejectedRule);
+        assertEquals(DqCheckResultStatus.FAILED, nullRejected.getStatus(), nullRejected.getErrorMessage());
+        violatingIds = violatingIds(nullRejected);
+        assertTrue(violatingIds.contains(unknownDomain.getId().toString()), "an unknown code violates");
+        assertFalse(violatingIds.contains(knownDomain.getId().toString()), "a known code does not violate");
+        assertTrue(violatingIds.contains(emptyDomain.getId().toString()), "an empty value violates when rejected");
+
+        // joining the reference must not multiply the checked rows
+        assertEquals(nullAllowed.getTotalRecords(), nullRejected.getTotalRecords());
+        // counted in SQL: the soft-deleted rows DataManager hides are rows of the table too
+        assertEquals(dataSourceProvider.getJdbcTemplate("main")
+                        .queryForObject("SELECT COUNT(*) FROM umida_dict_data_domain", Long.class),
+                nullAllowed.getTotalRecords().longValueExact());
+    }
+
+    @Test
     void rejectsAFilterThatMatchesNothing() {
         DqRuleFilter filter = filter();
         filter.setTableName("no_such_table_" + UUID.randomUUID().toString().replace("-", ""));
@@ -335,6 +387,15 @@ public class DqCheckExecutorServiceTests {
                 .parameter("rule", rule)
                 .fetchPlan(FetchPlan.BASE)
                 .list();
+    }
+
+    /** The first sample column of every violating row of a result: the id, by the rule's projection. */
+    private List<String> violatingIds(DqCheckRunResult result) {
+        long count = violationsService.countViolations(result.getId());
+        return violationsService.loadViolations(result.getId(), 0, Math.toIntExact(count))
+                .rows().stream()
+                .map(row -> String.valueOf(row.get(0)))
+                .toList();
     }
 
     private DqRule updateRuleConfig(DqRule rule, String ruleConfig) {

@@ -143,10 +143,58 @@ public class DqRuleValidatorTests {
                 "{\"min\": \"2026-01-01\", \"max\": \"2026-12-31\"}")).isEmpty());
     }
 
+    // ----- REFERENTIAL -----
+
+    /** A rule over a real table of the main data source, so that the column types can be read. */
+    private DqRule referentialRule(String column, String refColumn) {
+        DqRule rule = rule(DqRuleType.REFERENTIAL, "{\"refSchema\": \"public\", \"refTable\": \"umida_dq_rule\","
+                + " \"refColumn\": \"" + refColumn + "\"}");
+        rule.setDbSchema("public");
+        rule.setTableName("umida_dq_rule");
+        rule.setColumnName(column);
+        return rule;
+    }
+
+    @Test
+    void referentialRequiresTheReferenceLocation() {
+        assertEquals(List.of(FIELD_REF_SCHEMA, FIELD_REF_TABLE, FIELD_REF_COLUMN),
+                fields(rule(DqRuleType.REFERENTIAL, "{}")));
+
+        DqRule rule = rule(DqRuleType.REFERENTIAL, "{}");
+        rule.setTableName(null);
+        rule.setColumnName(null);
+        assertEquals(List.of(FIELD_TABLE_NAME, FIELD_COLUMN_NAME, FIELD_REF_SCHEMA, FIELD_REF_TABLE, FIELD_REF_COLUMN),
+                fields(rule));
+    }
+
+    @Test
+    void referenceColumnOfAComparableTypeIsAccepted() {
+        // varchar against varchar
+        assertTrue(fields(referentialRule("code", "name")).isEmpty());
+        // uuid against uuid: compared by the database's type name
+        assertTrue(fields(referentialRule("group_id", "id")).isEmpty());
+    }
+
+    @Test
+    void referenceColumnOfAnotherTypeIsRejected() {
+        // varchar against integer: PostgreSQL has no = for the pair
+        assertEquals(List.of(FIELD_REF_COLUMN), fields(referentialRule("code", "due_days")));
+        // uuid against varchar
+        assertEquals(List.of(FIELD_REF_COLUMN), fields(referentialRule("group_id", "code")));
+    }
+
+    @Test
+    void columnTypesThatCannotBeReadAreLeftToTheRun() {
+        // no such column, and no such table: the run reports them
+        assertTrue(fields(referentialRule("code", "no_such_column")).isEmpty());
+        assertTrue(fields(rule(DqRuleType.REFERENTIAL,
+                "{\"refSchema\": \"public\", \"refTable\": \"no_such_table\", \"refColumn\": \"code\"}")).isEmpty());
+    }
+
     // ----- not implemented yet: accept anything -----
 
     @ParameterizedTest
-    @EnumSource(value = DqRuleType.class, names = {"REFERENTIAL", "CUSTOM_SQL", "CROSS_SOURCE_AGGREGATED"})
+    @EnumSource(value = DqRuleType.class, names = {"CUSTOM_SQL", "CROSS_SOURCE_AGGREGATED"})
     void placeholderTypesReportNoErrors(DqRuleType type) {
         assertTrue(fields(rule(type, "{}")).isEmpty());
     }

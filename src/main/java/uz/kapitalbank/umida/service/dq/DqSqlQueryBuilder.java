@@ -69,6 +69,7 @@ public class DqSqlQueryBuilder {
 
     private static final String ROW_ALIAS = "t";
     private static final String DUPLICATE_ALIAS = "d";
+    private static final String REFERENCE_ALIAS = "r";
 
     private final DqDataSourceProvider dataSourceProvider;
     private final ObjectMapper objectMapper;
@@ -204,9 +205,39 @@ public class DqSqlQueryBuilder {
                 max == null ? null : java.sql.Date.valueOf(max));
     }
 
+    /**
+     * Violating row: the column holds a value that does not occur in the reference column
+     * ({@code refSchema.refTable.refColumn}, same data source). {@code NULL} is a valid value unless
+     * {@code allowNull} is explicitly false.
+     * <p>
+     * The reference is joined as its DISTINCT values rather than tested with a correlated
+     * {@code NOT EXISTS}: inside the CASE of the metrics query a correlated subquery runs once per
+     * row, while a join is planned as a hash join. DISTINCT keeps a duplicated reference value from
+     * multiplying the checked rows, and joining keeps a NULL in the reference column harmless — the
+     * trap of {@code NOT IN}. The reference table may be the checked table itself ({@code parent_id}
+     * against {@code id}): the two are told apart by their aliases.
+     */
     private DqRuleQueries buildReferential(DqRule rule, DqRuleConfig config, DqSqlDialect dialect) {
-        // TODO not implemented yet: anti-join of the column against refTable.refColumn
-        throw new UnsupportedOperationException("Rule type is not supported yet: " + DqRuleType.REFERENTIAL.getId());
+        String column = columnRef(rule, dialect);
+        String refTable = qualifiedTableRef(config.getRefSchema(), config.getRefTable(), "Reference table",
+                rule, dialect);
+        String refColumnName = config.getRefColumn();
+        if (!StringUtils.hasText(refColumnName)) {
+            throw new IllegalArgumentException("Reference column is not set for rule: " + rule.getName());
+        }
+        String quotedRefColumn = dialect.quote(requireIdentifier(refColumnName.trim(), "Reference column", rule));
+        String refColumn = REFERENCE_ALIAS + "." + quotedRefColumn;
+
+        String join = "LEFT JOIN (SELECT DISTINCT " + quotedRefColumn + " FROM " + refTable + ") " + REFERENCE_ALIAS
+                + " ON " + refColumn + " = " + column;
+        // the join matches on equality, so the reference side is NULL exactly when nothing matched
+        String notFound = refColumn + " IS NULL";
+        String predicate = Boolean.FALSE.equals(config.getAllowNull())
+                ? column + " IS NULL OR " + notFound
+                : column + " IS NOT NULL AND " + notFound;
+
+        // ordering keeps the rows sharing an unknown value adjacent in the violating rows
+        return rowLevelQueries(rule, config, dialect, join, new Predicate(predicate, List.of()), column);
     }
 
     private DqRuleQueries buildCustomSql(DqRule rule, DqRuleConfig config, DqSqlDialect dialect) {
@@ -233,7 +264,17 @@ public class DqSqlQueryBuilder {
      */
     private DqRuleQueries rowLevelQueries(DqRule rule, DqRuleConfig config, DqSqlDialect dialect,
                                           Predicate violation, @Nullable String orderByColumn) {
-        String from = " FROM " + tableRef(rule, dialect) + " " + ROW_ALIAS;
+        return rowLevelQueries(rule, config, dialect, null, violation, orderByColumn);
+    }
+
+    /**
+     * @param join join clause appended to the rule's table, or {@code null} for none. It must match
+     *             at most one row per row of the rule's table, or the total count would grow.
+     */
+    private DqRuleQueries rowLevelQueries(DqRule rule, DqRuleConfig config, DqSqlDialect dialect,
+                                          @Nullable String join, Predicate violation,
+                                          @Nullable String orderByColumn) {
+        String from = " FROM " + tableRef(rule, dialect) + " " + ROW_ALIAS + (join != null ? " " + join : "");
 
         // the predicate is parenthesized at both use sites: it may contain OR, and both sites may grow
         String metrics = "SELECT COUNT(*) AS " + COLUMN_TOTAL_COUNT
@@ -317,13 +358,22 @@ public class DqSqlQueryBuilder {
      * itself when that already contains a dot (rules created before the schema was selectable).
      */
     private String tableRef(DqRule rule, DqSqlDialect dialect) {
-        String tableName = rule.getTableName();
+        return qualifiedTableRef(rule.getDbSchema(), rule.getTableName(), "Table name", rule, dialect);
+    }
+
+    /**
+     * A table, quoted and schema-qualified: from the given schema, or from the table name itself when
+     * that already contains a dot.
+     *
+     * @param what how the table is named in an error message
+     */
+    private String qualifiedTableRef(@Nullable String schema, @Nullable String tableName, String what,
+                                     DqRule rule, DqSqlDialect dialect) {
         if (!StringUtils.hasText(tableName)) {
-            throw new IllegalArgumentException("Table name is not set for rule: " + rule.getName());
+            throw new IllegalArgumentException(what + " is not set for rule: " + rule.getName());
         }
         tableName = tableName.trim();
 
-        String schema = rule.getDbSchema();
         if (StringUtils.hasText(schema) && !tableName.contains(".")) {
             tableName = schema.trim() + "." + tableName;
         }
@@ -333,7 +383,7 @@ public class DqSqlQueryBuilder {
             if (!ref.isEmpty()) {
                 ref.append('.');
             }
-            ref.append(dialect.quote(requireIdentifier(part, "Table name", rule)));
+            ref.append(dialect.quote(requireIdentifier(part, what, rule)));
         }
         return ref.toString();
     }

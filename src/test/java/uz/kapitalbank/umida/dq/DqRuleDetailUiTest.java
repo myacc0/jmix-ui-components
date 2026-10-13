@@ -5,6 +5,9 @@ import io.jmix.core.DataManager;
 import io.jmix.core.Id;
 import io.jmix.core.Messages;
 import io.jmix.flowui.ViewNavigators;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import io.jmix.flowui.component.checkbox.JmixCheckbox;
+import io.jmix.flowui.component.combobox.JmixComboBox;
 import io.jmix.flowui.component.grid.DataGrid;
 import io.jmix.flowui.component.select.JmixSelect;
 import io.jmix.flowui.component.textfield.JmixIntegerField;
@@ -18,13 +21,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import uz.kapitalbank.umida.UmidaApplication;
+import uz.kapitalbank.umida.dto.dq.DqRuleConfig;
 import uz.kapitalbank.umida.entity.dq.DqRule;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.enums.dq.DqDimension;
 import uz.kapitalbank.umida.enums.dq.DqRuleType;
 import uz.kapitalbank.umida.enums.dq.DqSeverity;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
+import uz.kapitalbank.umida.utils.JsonUtils;
 import uz.kapitalbank.umida.view.dq.DqRuleDetailView;
 import uz.kapitalbank.umida.view.dq.DqRuleListView;
 
@@ -155,6 +161,76 @@ public class DqRuleDetailUiTest {
                 .containsExactly(rule.getCode());
     }
 
+    @Test
+    void theReferenceFieldsShowOnlyForAReferentialRule() {
+        DqRuleDetailView view = openNewRule();
+        VerticalLayout referentialBox = UiTestUtils.getComponent(view, "referentialBox");
+        JmixSelect<DqRuleType> ruleTypeField = UiTestUtils.getComponent(view, "ruleTypeField");
+
+        assertThat(referentialBox.isVisible()).isFalse();
+        ruleTypeField.setValue(DqRuleType.REFERENTIAL);
+        assertThat(referentialBox.isVisible()).isTrue();
+        ruleTypeField.setValue(DqRuleType.NOT_NULL);
+        assertThat(referentialBox.isVisible()).isFalse();
+    }
+
+    @Test
+    void pickingTheReferenceWritesItToTheConfig() {
+        DqRuleDetailView view = openNewRule();
+        JmixSelect<String> dataSourceField = UiTestUtils.getComponent(view, "dataSourceField");
+        JmixSelect<DqRuleType> ruleTypeField = UiTestUtils.getComponent(view, "ruleTypeField");
+        JmixComboBox<String> refSchemaField = UiTestUtils.getComponent(view, "refSchemaField");
+        JmixComboBox<String> refTableField = UiTestUtils.getComponent(view, "refTableField");
+        JmixComboBox<String> refColumnField = UiTestUtils.getComponent(view, "refColumnField");
+        JmixCheckbox allowNullField = UiTestUtils.getComponent(view, "allowNullField");
+
+        dataSourceField.setValue("main");
+        ruleTypeField.setValue(DqRuleType.REFERENTIAL);
+        // the reference location is picked from the rule's data source, step by step
+        assertThat(refSchemaField.getGenericDataView().getItems()).contains("public");
+        refSchemaField.setValue("public");
+        assertThat(refTableField.getGenericDataView().getItems()).contains("umida_dq_rule");
+        refTableField.setValue("umida_dq_rule");
+        assertThat(refColumnField.getGenericDataView().getItems()).contains("code");
+        refColumnField.setValue("code");
+        allowNullField.setValue(false);
+
+        DqRuleConfig config = JsonUtils.parseConfig(view.getEditedEntity().getRuleConfig(), DqRuleConfig.class,
+                new ObjectMapper());
+        assertThat(config).isNotNull();
+        assertThat(config.getRefSchema()).isEqualTo("public");
+        assertThat(config.getRefTable()).isEqualTo("umida_dq_rule");
+        assertThat(config.getRefColumn()).isEqualTo("code");
+        assertThat(config.getAllowNull()).isFalse();
+    }
+
+    @Test
+    void aStoredReferentialRuleShowsItsReference() {
+        DqRule rule = createRule(DqRuleType.REFERENTIAL, "{\"refSchema\": \"public\","
+                + " \"refTable\": \"umida_dq_rule\", \"refColumn\": \"code\", \"allowNull\": false}");
+
+        viewNavigators.detailView(UiTestUtils.getCurrentView(), DqRule.class)
+                .editEntity(rule)
+                .withViewClass(DqRuleDetailView.class)
+                .navigate();
+        DqRuleDetailView view = UiTestUtils.getCurrentView();
+
+        VerticalLayout referentialBox = UiTestUtils.getComponent(view, "referentialBox");
+        JmixComboBox<String> refSchemaField = UiTestUtils.getComponent(view, "refSchemaField");
+        JmixComboBox<String> refTableField = UiTestUtils.getComponent(view, "refTableField");
+        JmixComboBox<String> refColumnField = UiTestUtils.getComponent(view, "refColumnField");
+        JmixCheckbox allowNullField = UiTestUtils.getComponent(view, "allowNullField");
+        assertThat(referentialBox.isVisible()).isTrue();
+        assertThat(refSchemaField.getValue()).isEqualTo("public");
+        assertThat(refTableField.getValue()).isEqualTo("umida_dq_rule");
+        assertThat(refColumnField.getValue()).isEqualTo("code");
+        assertThat(refColumnField.getGenericDataView().getItems()).contains("code", "name");
+        assertThat(allowNullField.getValue()).isFalse();
+
+        // opening the rule changes nothing in it
+        assertThat(view.hasUnsavedChanges()).isFalse();
+    }
+
     // ---------------------------------------------------------------------
     // fixtures
     // ---------------------------------------------------------------------
@@ -168,14 +244,18 @@ public class DqRuleDetailUiTest {
     }
 
     private DqRule createRule() {
+        return createRule(DqRuleType.NOT_NULL, "{}");
+    }
+
+    private DqRule createRule(DqRuleType ruleType, String ruleConfig) {
         DqRule rule = dataManager.create(DqRule.class);
         rule.setName("dq rule detail ui test " + UUID.randomUUID());
         rule.setDataSource("main");
         rule.setTableName("umida_dq_rule");
         rule.setColumnName("name");
         rule.setDimension(DqDimension.COMPLETENESS);
-        rule.setRuleType(DqRuleType.NOT_NULL);
-        rule.setRuleConfig("{}");
+        rule.setRuleType(ruleType);
+        rule.setRuleConfig(ruleConfig);
         rule.setSeverity(DqSeverity.LOW);
         rule.setDueDays(7);
         DqRule saved = dataManager.save(rule);
