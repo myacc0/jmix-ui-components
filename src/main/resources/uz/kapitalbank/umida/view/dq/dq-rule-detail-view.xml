@@ -30,60 +30,7 @@
                 expandColumns="true"
                 expandFields="true">
 
-            <hbox classNames="form-block">
-                <span classNames="form-block-title" text="Общая информация"/>
-
-                <formItem id="codeFormItem" label="msg://uz.kapitalbank.umida.entity.dq/DqRule.code">
-                    <textField id="codeField" property="code" readOnly="true"/>
-                </formItem>
-                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.name">
-                    <textField id="nameField" property="name"/>
-                </formItem>
-                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.description">
-                    <textArea id="descriptionField" property="description" minRows="5"/>
-                </formItem>
-                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.group">
-                    <entityPicker id="groupField" property="group" required="true">
-                        <actions>
-                            <action id="entityLookupAction" type="entity_lookup"/>
-                            <action id="entityClearAction" type="entity_clear"/>
-                        </actions>
-                    </entityPicker>
-                </formItem>
-                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.domain">
-                    <entityPicker id="domainField" property="domain" required="true">
-                        <actions>
-                            <action id="entityLookupAction" type="entity_lookup"/>
-                            <action id="entityClearAction" type="entity_clear"/>
-                        </actions>
-                    </entityPicker>
-                </formItem>
-                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.dataProduct">
-                    <entityPicker id="dataProductField" property="dataProduct">
-                        <actions>
-                            <action id="entityLookupAction" type="entity_lookup"/>
-                            <action id="entityClearAction" type="entity_clear"/>
-                        </actions>
-                    </entityPicker>
-                </formItem>
-                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.dimension">
-                    <select id="dimensionField" property="dimension"/>
-                </formItem>
-                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.severity">
-                    <select id="severityField" property="severity"/>
-                </formItem>
-                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.dueDays">
-                    <integerField id="dueDaysField" property="dueDays" required="true" stepButtonsVisible="true"/>
-                </formItem>
-                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.assignee">
-                    <entityPicker id="assigneeField" property="assignee" required="true">
-                        <actions>
-                            <action id="entityLookupAction" type="entity_lookup"/>
-                            <action id="entityClearAction" type="entity_clear"/>
-                        </actions>
-                    </entityPicker>
-                </formItem>
-            </hbox>
+            <fragment id="generalInfoFragment" class="uz.kapitalbank.umida.view.dq.DqRuleGeneralInfoFragment"/>
 
             <hbox classNames="form-block">
                 <span classNames="form-block-title" text="Источник данных"/>

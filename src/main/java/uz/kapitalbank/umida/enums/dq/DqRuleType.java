@@ -27,6 +27,14 @@ public enum DqRuleType implements EnumClass<String> {
         return id;
     }
 
+    /**
+     * Whether the rule checks one column of one table and is edited in the standard rule form.
+     * Custom SQL and cross-source rules are not bound to a single column and have forms of their own.
+     */
+    public boolean isStandard() {
+        return this != CUSTOM_SQL && this != CROSS_SOURCE_AGGREGATED;
+    }
+
     @Nullable
     public static DqRuleType fromId(String id) {
         for (DqRuleType at : DqRuleType.values()) {

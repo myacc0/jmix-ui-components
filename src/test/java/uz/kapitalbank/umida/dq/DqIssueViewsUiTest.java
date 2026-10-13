@@ -1,5 +1,7 @@
 package uz.kapitalbank.umida.dq;
 
+import io.jmix.flowui.view.View;
+import uz.kapitalbank.umida.view.dq.DqRuleGeneralInfoFragment;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -325,7 +327,7 @@ public class DqIssueViewsUiTest {
                 .withViewClass(DqRuleDetailView.class)
                 .navigate();
         DqRuleDetailView view = UiTestUtils.getCurrentView();
-        EntityPicker<OrgStructureSubdivision> assigneeField = UiTestUtils.getComponent(view, "assigneeField");
+        EntityPicker<OrgStructureSubdivision> assigneeField = generalInfoComponent(view, "assigneeField");
         assigneeField.setValue(savedNewAssignee);
 
         assertTrue(UiTestUtils.validateView(view).isEmpty());
@@ -394,5 +396,12 @@ public class DqIssueViewsUiTest {
     @AfterEach
     void tearDown() {
         testData.cleanup();
+    }
+
+    /** An input of the "general information" block, which lives in a fragment of the rule form. */
+    @SuppressWarnings("unchecked")
+    private static <T extends Component> T generalInfoComponent(View<?> view, String id) {
+        DqRuleGeneralInfoFragment fragment = UiTestUtils.getComponent(view, "generalInfoFragment");
+        return (T) UiComponentUtils.getComponent(fragment, id);
     }
 }

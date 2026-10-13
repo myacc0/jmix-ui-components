@@ -3,6 +3,7 @@ package uz.kapitalbank.umida.view.dq;
 import uz.kapitalbank.umida.service.dq.DqBadges;
 import uz.kapitalbank.umida.dto.SelectDto;
 import uz.kapitalbank.umida.entity.dq.DqRule;
+import uz.kapitalbank.umida.enums.dq.DqRuleType;
 import uz.kapitalbank.umida.repository.DqRuleRepository;
 import uz.kapitalbank.umida.service.dq.DqDataSourceProvider;
 import uz.kapitalbank.umida.view.main.MainView;
@@ -15,12 +16,14 @@ import io.jmix.core.querycondition.PropertyCondition;
 import io.jmix.core.repository.JmixDataRepositoryContext;
 import io.jmix.core.security.CurrentAuthentication;
 import io.jmix.flowui.UiComponents;
+import io.jmix.flowui.action.list.EditAction;
 import io.jmix.flowui.component.combobox.JmixComboBox;
 import io.jmix.flowui.component.grid.DataGrid;
 import io.jmix.flowui.component.grid.DataGridColumn;
 import io.jmix.flowui.component.grid.headerfilter.DataGridHeaderFilter;
 import io.jmix.flowui.component.propertyfilter.PropertyFilter;
 import io.jmix.flowui.component.checkbox.JmixCheckbox;
+import io.jmix.flowui.kit.action.ActionPerformedEvent;
 import io.jmix.flowui.model.CollectionLoader;
 import io.jmix.flowui.view.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,6 +60,9 @@ public class DqRuleListView extends StandardListView<DqRule> {
 
     @ViewComponent
     private CollectionLoader<DqRule> dqRulesDl;
+
+    @ViewComponent("dqRulesDataGrid.editAction")
+    private EditAction<DqRule> dqRulesDataGridEditAction;
 
     /**
      * The "mine" filter: the rules created by the current user. It carries no value while the
@@ -223,6 +229,30 @@ public class DqRuleListView extends StandardListView<DqRule> {
     @Install(to = "dqRulesDl", target = Target.DATA_LOADER, subject = "loadFromRepositoryDelegate")
     private List<DqRule> loadDelegate(Pageable pageable, JmixDataRepositoryContext context) {
         return repository.findAllSlice(pageable, context).getContent();
+    }
+
+    /**
+     * Opens a rule in the form of its type: custom SQL and cross-source rules have forms of their
+     * own. Runs on the edit button and on a double click on a row alike.
+     */
+    @Subscribe("dqRulesDataGrid.editAction")
+    public void onDqRulesDataGridEditAction(final ActionPerformedEvent event) {
+        DqRule rule = dqRulesDataGrid.getSingleSelectedItem();
+        if (rule == null) {
+            return;
+        }
+        dqRulesDataGridEditAction.setViewId(detailViewId(rule.getRuleType()));
+        dqRulesDataGridEditAction.execute();
+    }
+
+    private static String detailViewId(@Nullable DqRuleType type) {
+        if (type == DqRuleType.CUSTOM_SQL) {
+            return "umida_DqRule.customSqlDetail";
+        }
+        if (type == DqRuleType.CROSS_SOURCE_AGGREGATED) {
+            return "umida_DqRule.crossSourceDetail";
+        }
+        return "umida_DqRule.detail";
     }
 
     @Install(to = "dqRulesDataGrid.removeAction", subject = "delegate")

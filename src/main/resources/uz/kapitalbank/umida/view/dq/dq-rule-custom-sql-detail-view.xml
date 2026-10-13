@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://dqRuleCustomSqlDetailView.title"
+      focusComponent="form">
+    <data>
+        <instance id="dqRuleDc" class="uz.kapitalbank.umida.entity.dq.DqRule">
+            <fetchPlan extends="_base">
+                <property name="group" fetchPlan="_instance_name"/>
+                <property name="assignee" fetchPlan="_instance_name"/>
+                <property name="domain" fetchPlan="_instance_name"/>
+                <property name="dataProduct" fetchPlan="_instance_name"/>
+            </fetchPlan>
+            <loader id="dqRuleDl"/>
+        </instance>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+    </facets>
+    <actions>
+        <action id="saveCloseAction" type="detail_saveClose"/>
+        <action id="closeAction" type="detail_close"/>
+    </actions>
+    <layout>
+        <formLayout
+                id="form"
+                dataContainer="dqRuleDc"
+                autoResponsive="true"
+                width="60%"
+                expandColumns="true"
+                expandFields="true">
+
+            <fragment id="generalInfoFragment" class="uz.kapitalbank.umida.view.dq.DqRuleGeneralInfoFragment"/>
+
+            <hbox id="settingsBlock" classNames="form-block">
+                <span classNames="form-block-title" text="msg://dqRuleCustomSqlDetailView.settingsTitle"/>
+
+                <span id="settingsPendingText" text="msg://dqRuleDetailView.settingsPending" css="display: block; margin-bottom: 10px"/>
+
+                <checkbox id="activeField" property="active" label="msg://uz.kapitalbank.umida.entity.dq/DqRule.active" dataContainer="dqRuleDc"/>
+            </hbox>
+        </formLayout>
+
+        <hbox id="detailActions" width="50%" justifyContent="CENTER" css="padding-bottom: 40px">
+            <button id="saveAndCloseButton" themeNames="primary" action="saveCloseAction" text="msg:///actions.Save"/>
+            <button id="closeButton" action="closeAction"/>
+        </hbox>
+    </layout>
+</view>

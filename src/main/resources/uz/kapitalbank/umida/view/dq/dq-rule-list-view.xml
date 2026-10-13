@@ -36,7 +36,13 @@
     <layout>
         <hbox id="buttonsPanel" classNames="buttons-panel">
             <startSlot>
-                <button id="createButton" themeNames="primary" action="dqRulesDataGrid.createAction" text="" title="msg:///actions.Create"/>
+                <dropdownButton id="createButton" themeNames="primary" icon="PLUS" title="msg:///actions.Create">
+                    <items>
+                        <actionItem id="createItem" ref="dqRulesDataGrid.createAction"/>
+                        <actionItem id="createCustomSqlItem" ref="dqRulesDataGrid.createCustomSqlAction"/>
+                        <actionItem id="createCrossSourceItem" ref="dqRulesDataGrid.createCrossSourceAction"/>
+                    </items>
+                </dropdownButton>
                 <button id="editButton" action="dqRulesDataGrid.editAction" text="" title="msg:///actions.Edit"/>
                 <button id="removeButton" action="dqRulesDataGrid.removeAction" text="" title="msg:///actions.Remove"/>
                 <checkbox id="mineField" label="msg://mineField.label" css="display: flex; align-items: center"/>
@@ -53,7 +59,17 @@
                   dataContainer="dqRulesDc"
                   columnReorderingAllowed="true">
             <actions>
-                <action id="createAction" type="list_create"/>
+                <action id="createAction" type="list_create" text="msg://dqRuleListView.createAction"/>
+                <action id="createCustomSqlAction" type="list_create" text="msg://dqRuleListView.createCustomSqlAction">
+                    <properties>
+                        <property name="viewId" value="umida_DqRule.customSqlDetail"/>
+                    </properties>
+                </action>
+                <action id="createCrossSourceAction" type="list_create" text="msg://dqRuleListView.createCrossSourceAction">
+                    <properties>
+                        <property name="viewId" value="umida_DqRule.crossSourceDetail"/>
+                    </properties>
+                </action>
                 <action id="editAction" type="list_edit"/>
                 <action id="removeAction" type="list_remove"/>
             </actions>

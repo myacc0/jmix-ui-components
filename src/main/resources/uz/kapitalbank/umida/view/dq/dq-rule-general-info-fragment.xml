@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<fragment xmlns="http://jmix.io/schema/flowui/fragment">
+    <data>
+        <instance id="dqRuleDc" class="uz.kapitalbank.umida.entity.dq.DqRule" provided="true"/>
+    </data>
+    <content>
+        <hbox id="root" classNames="form-block">
+            <span classNames="form-block-title" text="msg://dqRuleGeneralInfoFragment.title"/>
+
+            <formItem id="codeFormItem" label="msg://uz.kapitalbank.umida.entity.dq/DqRule.code">
+                <textField id="codeField" dataContainer="dqRuleDc" property="code" readOnly="true"/>
+            </formItem>
+            <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.name">
+                <textField id="nameField" dataContainer="dqRuleDc" property="name"/>
+            </formItem>
+            <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.description">
+                <textArea id="descriptionField" dataContainer="dqRuleDc" property="description" minRows="5"/>
+            </formItem>
+            <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.group">
+                <entityPicker id="groupField" dataContainer="dqRuleDc" property="group" required="true">
+                    <actions>
+                        <action id="entityLookupAction" type="entity_lookup"/>
+                        <action id="entityClearAction" type="entity_clear"/>
+                    </actions>
+                </entityPicker>
+            </formItem>
+            <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.domain">
+                <entityPicker id="domainField" dataContainer="dqRuleDc" property="domain" required="true">
+                    <actions>
+                        <action id="entityLookupAction" type="entity_lookup"/>
+                        <action id="entityClearAction" type="entity_clear"/>
+                    </actions>
+                </entityPicker>
+            </formItem>
+            <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.dataProduct">
+                <entityPicker id="dataProductField" dataContainer="dqRuleDc" property="dataProduct">
+                    <actions>
+                        <action id="entityLookupAction" type="entity_lookup"/>
+                        <action id="entityClearAction" type="entity_clear"/>
+                    </actions>
+                </entityPicker>
+            </formItem>
+            <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.dimension">
+                <select id="dimensionField" dataContainer="dqRuleDc" property="dimension"/>
+            </formItem>
+            <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.severity">
+                <select id="severityField" dataContainer="dqRuleDc" property="severity"/>
+            </formItem>
+            <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.dueDays">
+                <integerField id="dueDaysField" dataContainer="dqRuleDc" property="dueDays" required="true"
+                              stepButtonsVisible="true"/>
+            </formItem>
+            <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.assignee">
+                <entityPicker id="assigneeField" dataContainer="dqRuleDc" property="assignee" required="true">
+                    <actions>
+                        <action id="entityLookupAction" type="entity_lookup"/>
+                        <action id="entityClearAction" type="entity_clear"/>
+                    </actions>
+                </entityPicker>
+            </formItem>
+        </hbox>
+    </content>
+</fragment>

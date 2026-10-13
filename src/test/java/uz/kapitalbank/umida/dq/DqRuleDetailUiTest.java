@@ -1,5 +1,9 @@
 package uz.kapitalbank.umida.dq;
 
+import com.vaadin.flow.component.Component;
+import io.jmix.flowui.component.UiComponentUtils;
+import io.jmix.flowui.view.View;
+import uz.kapitalbank.umida.view.dq.DqRuleGeneralInfoFragment;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import io.jmix.core.DataManager;
 import io.jmix.core.Id;
@@ -31,6 +35,8 @@ import uz.kapitalbank.umida.enums.dq.DqRuleType;
 import uz.kapitalbank.umida.enums.dq.DqSeverity;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
 import uz.kapitalbank.umida.utils.JsonUtils;
+import uz.kapitalbank.umida.view.dq.DqRuleCrossSourceDetailView;
+import uz.kapitalbank.umida.view.dq.DqRuleCustomSqlDetailView;
 import uz.kapitalbank.umida.view.dq.DqRuleDetailView;
 import uz.kapitalbank.umida.view.dq.DqRuleListView;
 
@@ -62,14 +68,14 @@ public class DqRuleDetailUiTest {
     void aNewRuleHasNoCodeToShow() {
         DqRuleDetailView view = openNewRule();
 
-        FormLayout.FormItem codeFormItem = UiTestUtils.getComponent(view, "codeFormItem");
+        FormLayout.FormItem codeFormItem = generalInfoComponent(view, "codeFormItem");
         assertThat(codeFormItem.isVisible()).isFalse();
     }
 
     @Test
     void severityOptionsShowTheirResolutionPeriod() {
         DqRuleDetailView view = openNewRule();
-        JmixSelect<DqSeverity> severityField = UiTestUtils.getComponent(view, "severityField");
+        JmixSelect<DqSeverity> severityField = generalInfoComponent(view, "severityField");
 
         for (DqSeverity severity : DqSeverity.values()) {
             assertThat(severityField.getItemLabelGenerator().apply(severity))
@@ -81,8 +87,8 @@ public class DqRuleDetailUiTest {
     @Test
     void pickingASeverityProposesItsResolutionPeriod() {
         DqRuleDetailView view = openNewRule();
-        JmixSelect<DqSeverity> severityField = UiTestUtils.getComponent(view, "severityField");
-        JmixIntegerField dueDaysField = UiTestUtils.getComponent(view, "dueDaysField");
+        JmixSelect<DqSeverity> severityField = generalInfoComponent(view, "severityField");
+        JmixIntegerField dueDaysField = generalInfoComponent(view, "dueDaysField");
 
         severityField.setValue(DqSeverity.MEDIUM);
         assertThat(dueDaysField.getValue()).isEqualTo(DqSeverity.MEDIUM.getDayCost());
@@ -97,7 +103,7 @@ public class DqRuleDetailUiTest {
     @Test
     void theResolutionPeriodIsBoundedAndRequired() {
         DqRuleDetailView view = openNewRule();
-        JmixIntegerField dueDaysField = UiTestUtils.getComponent(view, "dueDaysField");
+        JmixIntegerField dueDaysField = generalInfoComponent(view, "dueDaysField");
 
         assertThat(dueDaysField.isRequired()).isTrue();
         assertThat(dueDaysField.getMin()).isEqualTo(1);
@@ -114,7 +120,7 @@ public class DqRuleDetailUiTest {
     @Test
     void theAssigneeIsARequiredSubdivisionPicker() {
         DqRuleDetailView view = openNewRule();
-        EntityPicker<OrgStructureSubdivision> assigneeField = UiTestUtils.getComponent(view, "assigneeField");
+        EntityPicker<OrgStructureSubdivision> assigneeField = generalInfoComponent(view, "assigneeField");
 
         assertThat(assigneeField.isRequired()).isTrue();
         assertThat(assigneeField.getActions()).hasSize(2);
@@ -130,15 +136,15 @@ public class DqRuleDetailUiTest {
                 .navigate();
         DqRuleDetailView view = UiTestUtils.getCurrentView();
 
-        FormLayout.FormItem codeFormItem = UiTestUtils.getComponent(view, "codeFormItem");
-        TypedTextField<String> codeField = UiTestUtils.getComponent(view, "codeField");
+        FormLayout.FormItem codeFormItem = generalInfoComponent(view, "codeFormItem");
+        TypedTextField<String> codeField = generalInfoComponent(view, "codeField");
         assertThat(codeFormItem.isVisible()).isTrue();
         assertThat(codeField.isReadOnly()).isTrue();
         assertThat(codeField.isRequired()).isFalse();
         assertThat(codeField.getValue()).isEqualTo(rule.getCode()).startsWith("DQR-");
 
         // a stored period is kept, not replaced by the one of the severity
-        JmixIntegerField dueDaysField = UiTestUtils.getComponent(view, "dueDaysField");
+        JmixIntegerField dueDaysField = generalInfoComponent(view, "dueDaysField");
         assertThat(dueDaysField.getValue()).isEqualTo(7);
 
         // opening the rule changes nothing in it
@@ -159,6 +165,52 @@ public class DqRuleDetailUiTest {
                 .filter(item -> item.getId().equals(rule.getId()))
                 .map(DqRule::getCode))
                 .containsExactly(rule.getCode());
+    }
+
+    @Test
+    void theStandardFormDoesNotOfferRuleTypesWithFormsOfTheirOwn() {
+        DqRuleDetailView view = openNewRule();
+        JmixSelect<DqRuleType> ruleTypeField = UiTestUtils.getComponent(view, "ruleTypeField");
+
+        assertThat(ruleTypeField.getListDataView().getItems())
+                .contains(DqRuleType.NOT_NULL, DqRuleType.REFERENTIAL)
+                .doesNotContain(DqRuleType.CUSTOM_SQL, DqRuleType.CROSS_SOURCE_AGGREGATED);
+    }
+
+    @Test
+    void theCreateMenuOpensTheStandardForm() {
+        assertThat(createFromList("createAction")).isInstanceOf(DqRuleDetailView.class);
+    }
+
+    @Test
+    void theCreateMenuOpensTheCustomSqlForm() {
+        View<?> view = createFromList("createCustomSqlAction");
+
+        assertThat(view).isInstanceOf(DqRuleCustomSqlDetailView.class);
+        assertThat(((DqRuleCustomSqlDetailView) view).getEditedEntity().getRuleType())
+                .isEqualTo(DqRuleType.CUSTOM_SQL);
+        EntityPicker<OrgStructureSubdivision> assigneeField = generalInfoComponent(view, "assigneeField");
+        assertThat(assigneeField.isRequired()).isTrue();
+    }
+
+    @Test
+    void theCreateMenuOpensTheCrossSourceForm() {
+        View<?> view = createFromList("createCrossSourceAction");
+
+        assertThat(view).isInstanceOf(DqRuleCrossSourceDetailView.class);
+        assertThat(((DqRuleCrossSourceDetailView) view).getEditedEntity().getRuleType())
+                .isEqualTo(DqRuleType.CROSS_SOURCE_AGGREGATED);
+        EntityPicker<OrgStructureSubdivision> assigneeField = generalInfoComponent(view, "assigneeField");
+        assertThat(assigneeField.isRequired()).isTrue();
+    }
+
+    @Test
+    void aRuleOpensFromTheListInTheFormOfItsType() {
+        assertThat(editFromList(createRule())).isInstanceOf(DqRuleDetailView.class);
+        assertThat(editFromList(createRule(DqRuleType.CUSTOM_SQL, "{}")))
+                .isInstanceOf(DqRuleCustomSqlDetailView.class);
+        assertThat(editFromList(createRule(DqRuleType.CROSS_SOURCE_AGGREGATED, "{}")))
+                .isInstanceOf(DqRuleCrossSourceDetailView.class);
     }
 
     @Test
@@ -243,6 +295,21 @@ public class DqRuleDetailUiTest {
         return UiTestUtils.getCurrentView();
     }
 
+    private View<?> createFromList(String actionId) {
+        viewNavigators.view(UiTestUtils.getCurrentView(), DqRuleListView.class).navigate();
+        DataGrid<DqRule> grid = UiTestUtils.getComponent(UiTestUtils.getCurrentView(), "dqRulesDataGrid");
+        grid.getAction(actionId).actionPerform(grid);
+        return UiTestUtils.getCurrentView();
+    }
+
+    private View<?> editFromList(DqRule rule) {
+        viewNavigators.view(UiTestUtils.getCurrentView(), DqRuleListView.class).navigate();
+        DataGrid<DqRule> grid = UiTestUtils.getComponent(UiTestUtils.getCurrentView(), "dqRulesDataGrid");
+        grid.select(rule);
+        grid.getAction("editAction").actionPerform(grid);
+        return UiTestUtils.getCurrentView();
+    }
+
     private DqRule createRule() {
         return createRule(DqRuleType.NOT_NULL, "{}");
     }
@@ -267,5 +334,12 @@ public class DqRuleDetailUiTest {
     void tearDown() {
         cleanup.forEach(entity -> dataManager.remove(Id.of(entity)));
         cleanup.clear();
+    }
+
+    /** An input of the "general information" block, which lives in a fragment of the rule form. */
+    @SuppressWarnings("unchecked")
+    private static <T extends Component> T generalInfoComponent(View<?> view, String id) {
+        DqRuleGeneralInfoFragment fragment = UiTestUtils.getComponent(view, "generalInfoFragment");
+        return (T) UiComponentUtils.getComponent(fragment, id);
     }
 }

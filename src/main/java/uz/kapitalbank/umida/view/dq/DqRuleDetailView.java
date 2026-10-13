@@ -7,7 +7,6 @@ import uz.kapitalbank.umida.dto.SelectDto;
 import uz.kapitalbank.umida.entity.dq.DqIssue;
 import uz.kapitalbank.umida.entity.dq.DqRule;
 import uz.kapitalbank.umida.enums.dq.DqRuleType;
-import uz.kapitalbank.umida.enums.dq.DqSeverity;
 import uz.kapitalbank.umida.repository.DqRuleRepository;
 import uz.kapitalbank.umida.service.dq.DqDataSourceProvider;
 import uz.kapitalbank.umida.service.dq.DqIssueService;
@@ -22,13 +21,11 @@ import uz.kapitalbank.umida.view.main.MainView;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
 import io.jmix.core.EntityStates;
 import io.jmix.core.FetchPlan;
-import io.jmix.core.Messages;
 import io.jmix.core.SaveContext;
 import io.jmix.flowui.Dialogs;
 import io.jmix.flowui.action.DialogAction;
@@ -37,11 +34,9 @@ import io.jmix.flowui.component.combobox.JmixComboBox;
 import io.jmix.flowui.component.datepicker.TypedDatePicker;
 import io.jmix.flowui.component.multiselectcombobox.JmixMultiSelectComboBox;
 import io.jmix.flowui.component.select.JmixSelect;
-import io.jmix.flowui.component.textfield.JmixIntegerField;
 import io.jmix.flowui.component.textfield.JmixNumberField;
 import io.jmix.flowui.component.textfield.TypedTextField;
 import io.jmix.flowui.component.validation.ValidationErrors;
-import io.jmix.flowui.model.InstanceContainer;
 import io.jmix.flowui.view.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,23 +77,11 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
     @Autowired
     private EntityStates entityStates;
 
-    @Autowired
-    private Messages messages;
-
     @ViewComponent
     private MessageBundle messageBundle;
 
     @ViewComponent
-    private FormLayout.FormItem codeFormItem;
-
-    @ViewComponent
-    private TypedTextField<String> codeField;
-
-    @ViewComponent
-    private JmixSelect<DqSeverity> severityField;
-
-    @ViewComponent
-    private JmixIntegerField dueDaysField;
+    private DqRuleGeneralInfoFragment generalInfoFragment;
 
     @ViewComponent
     private JmixSelect<String> dataSourceField;
@@ -177,12 +160,8 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
 
     @Subscribe
     public void onInit(final InitEvent event) {
-        severityField.setItemLabelGenerator(severity -> severity == null ? ""
-                : messageBundle.formatMessage("severityItemLabel", messages.getMessage(severity), severity.getDayCost()));
-
-        // the same bounds the validator enforces
-        dueDaysField.setMin(DqRuleValidator.MIN_DUE_DAYS);
-        dueDaysField.setMax(DqRuleValidator.MAX_DUE_DAYS);
+        // custom SQL and cross-source rules are created and edited in forms of their own
+        ruleTypeField.setItems(Arrays.stream(DqRuleType.values()).filter(DqRuleType::isStandard).toList());
 
         List<SelectDto> dataSources = dataSourceProvider.getDataSourceList();
         dataSourceField.setItems(dataSources.stream().map(SelectDto::getId).collect(Collectors.toList()));
@@ -291,12 +270,6 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
     @Subscribe
     public void onReady(final ReadyEvent event) {
         DqRule rule = getEditedEntity();
-
-        // The code is generated on the first save, so a new rule has none to show yet.
-        codeFormItem.setVisible(!entityStates.isNew(rule));
-        // generated, never entered: the required marker the binding puts on it would only mislead
-        codeField.setRequired(false);
-
         if (rule.getRuleConfig() == null) {
             rule.setRuleConfig("{}");
         }
@@ -307,14 +280,6 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
             populateFieldsFromConfig(type);
         } finally {
             populating = false;
-        }
-    }
-
-    /** Picking a severity proposes its resolution period, which the user may still correct. */
-    @Subscribe(id = "dqRuleDc", target = Target.DATA_CONTAINER)
-    public void onDqRuleDcItemPropertyChange(final InstanceContainer.ItemPropertyChangeEvent<DqRule> event) {
-        if ("severity".equals(event.getProperty()) && event.getValue() instanceof DqSeverity severity) {
-            event.getItem().setDueDays(severity.getDayCost());
         }
     }
 
@@ -525,7 +490,7 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
         }
         boolean rangeDate = ruleTypeField.getValue() == DqRuleType.RANGE_DATE;
         return switch (field) {
-            case DqRuleValidationError.FIELD_DUE_DAYS -> dueDaysField;
+            case DqRuleValidationError.FIELD_DUE_DAYS -> generalInfoFragment.getDueDaysField();
             case DqRuleValidationError.FIELD_TABLE_NAME -> tableNameField;
             case DqRuleValidationError.FIELD_COLUMN_NAME -> columnNameField;
             case DqRuleValidationError.FIELD_RULE_TYPE -> ruleTypeField;
