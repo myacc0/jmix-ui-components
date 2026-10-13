@@ -3,8 +3,11 @@ package uz.kapitalbank.umida.service.dq;
 import uz.kapitalbank.umida.dto.SelectDto;
 import uz.kapitalbank.umida.enums.dq.DqSqlDialect;
 import io.jmix.core.Messages;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -12,8 +15,11 @@ import org.springframework.util.StringUtils;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +27,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class DqDataSourceProvider {
+    private static final Logger log = LoggerFactory.getLogger(DqDataSourceProvider.class);
+
     private final Environment env;
     private final Messages messages;
     private final Map<String, DataSource> dataSourcesByBeanName;
@@ -196,6 +204,108 @@ public class DqDataSourceProvider {
      */
     public JdbcTemplate getJdbcTemplate(String dataSourceName) {
         return jdbcTemplateCache.computeIfAbsent(dataSourceName, name -> new JdbcTemplate(resolveDataSource(name)));
+    }
+
+    /**
+     * Runs a user-written read query in a read-only transaction, which is rolled back afterwards: the
+     * database itself then refuses whatever the statement would write. A driver that cannot switch a
+     * connection to read-only runs it as is — the statement is still held to a single read query by
+     * {@link DqCustomSql#check}.
+     * <p>
+     * The statement is sent as plain text, not prepared, so a {@code ?} in it stays an operator.
+     *
+     * @param timeoutSeconds the longest the statement may run, or 0 for no limit
+     * @throws QueryFailedException when the database rejects or aborts the statement
+     * @throws IllegalStateException when no connection to the data source can be opened
+     */
+    public <T> T queryReadOnly(String dataSourceName, String sql, ResultSetExtractor<T> extractor,
+                               int timeoutSeconds) {
+        return inReadOnlyTransaction(dataSourceName, connection -> {
+            try (Statement statement = connection.createStatement()) {
+                statement.setQueryTimeout(timeoutSeconds);
+                try (ResultSet rs = statement.executeQuery(sql)) {
+                    return extractor.extractData(rs);
+                }
+            }
+        });
+    }
+
+    /**
+     * The columns a user-written read query returns, without reading its rows. The database describes
+     * a prepared statement without running it where the driver supports that (PostgreSQL); elsewhere
+     * the query is run wrapped into a sub-query that selects nothing.
+     *
+     * @param timeoutSeconds the longest the statement may run, or 0 for no limit
+     * @throws QueryFailedException when the database rejects the statement
+     * @throws IllegalStateException when no connection to the data source can be opened
+     */
+    public List<ColumnType> describeQuery(String dataSourceName, String sql, int timeoutSeconds) {
+        return inReadOnlyTransaction(dataSourceName, connection -> {
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setQueryTimeout(timeoutSeconds);
+                ResultSetMetaData metaData = statement.getMetaData();
+                if (metaData != null) {
+                    return columnTypes(metaData);
+                }
+            }
+            try (Statement statement = connection.createStatement()) {
+                statement.setQueryTimeout(timeoutSeconds);
+                try (ResultSet rs = statement.executeQuery("SELECT * FROM (" + sql + ") dq_query WHERE 1 = 0")) {
+                    return columnTypes(rs.getMetaData());
+                }
+            }
+        });
+    }
+
+    private List<ColumnType> columnTypes(ResultSetMetaData metaData) throws SQLException {
+        List<ColumnType> columns = new ArrayList<>();
+        for (int i = 1; i <= metaData.getColumnCount(); i++) {
+            columns.add(new ColumnType(metaData.getColumnType(i), metaData.getColumnTypeName(i)));
+        }
+        return columns;
+    }
+
+    private <T> T inReadOnlyTransaction(String dataSourceName, ConnectionWork<T> work) {
+        DataSource dataSource = resolveDataSource(dataSourceName);
+        Connection connection;
+        try {
+            connection = dataSource.getConnection();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to connect to data source: " + dataSourceName, e);
+        }
+        try (connection) {
+            boolean autoCommit = connection.getAutoCommit();
+            boolean readOnly = connection.isReadOnly();
+            // PostgreSQL applies read-only to explicit transactions only
+            connection.setAutoCommit(false);
+            try {
+                connection.setReadOnly(true);
+            } catch (SQLException e) {
+                log.warn("Data source '{}' cannot switch a connection to read-only, the query runs as is",
+                        dataSourceName, e);
+            }
+            try {
+                return work.run(connection);
+            } finally {
+                connection.rollback();
+                connection.setReadOnly(readOnly);
+                connection.setAutoCommit(autoCommit);
+            }
+        } catch (SQLException e) {
+            throw new QueryFailedException(e.getMessage(), e);
+        }
+    }
+
+    @FunctionalInterface
+    private interface ConnectionWork<T> {
+        T run(Connection connection) throws SQLException;
+    }
+
+    /** The database rejected or aborted a user-written query; the message is the database's own. */
+    public static class QueryFailedException extends RuntimeException {
+        public QueryFailedException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
 
     /**

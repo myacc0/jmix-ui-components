@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <view xmlns="http://jmix.io/schema/flowui/view"
+      xmlns:app="http://uz.kapitalbank.umida/schema/app-ui-components"
       title="msg://dqRuleCustomSqlDetailView.title"
       focusComponent="form">
     <data>
@@ -31,10 +32,63 @@
 
             <fragment id="generalInfoFragment" class="uz.kapitalbank.umida.view.dq.DqRuleGeneralInfoFragment"/>
 
-            <hbox id="settingsBlock" classNames="form-block">
-                <span classNames="form-block-title" text="msg://dqRuleCustomSqlDetailView.settingsTitle"/>
+            <hbox classNames="form-block">
+                <span classNames="form-block-title" text="msg://dqRuleDetailView.dataSourceBlock"/>
 
-                <span id="settingsPendingText" text="msg://dqRuleDetailView.settingsPending" css="display: block; margin-bottom: 10px"/>
+                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.dataSource">
+                    <select id="dataSourceField" property="dataSource" required="true"/>
+                </formItem>
+            </hbox>
+
+            <hbox classNames="form-block">
+                <span classNames="form-block-title" text="msg://dqRuleDetailView.settingsBlock"/>
+
+                <formItem label="msg://ruleConfig.sql">
+                    <vbox id="sqlBox" padding="false" spacing="false" width="100%">
+                        <hbox width="100%" justifyContent="END" padding="false">
+                            <button id="sqlFullScreenButton"
+                                    text="msg://dqRuleCustomSqlDetailView.fullScreenButton"
+                                    icon="EXPAND_SQUARE"
+                                    themeNames="tertiary-inline"/>
+                        </hbox>
+                        <codeEditor id="sqlField"
+                                    mode="SQL"
+                                    width="100%"
+                                    height="15em"
+                                    showPrintMargin="false"
+                                    textWrap="true"
+                                    helperText="msg://ruleConfig.sql.helper"/>
+                    </vbox>
+                </formItem>
+
+                <formItem label="msg://ruleConfig.violationsSql">
+                    <vbox id="violationsSqlBox" padding="false" spacing="false" width="100%">
+                        <hbox width="100%" justifyContent="END" padding="false">
+                            <button id="violationsSqlFullScreenButton"
+                                    text="msg://dqRuleCustomSqlDetailView.fullScreenButton"
+                                    icon="EXPAND_SQUARE"
+                                    themeNames="tertiary-inline"/>
+                        </hbox>
+                        <codeEditor id="violationsSqlField"
+                                    mode="SQL"
+                                    width="100%"
+                                    height="15em"
+                                    showPrintMargin="false"
+                                    textWrap="true"
+                                    helperText="msg://ruleConfig.violationsSql.helper"/>
+                    </vbox>
+                </formItem>
+
+                <app:slider id="thresholdField"
+                            label="msg://ruleConfig.threshold"
+                            min="0"
+                            max="100"
+                            value="100"
+                            css="margin-top: 10px"/>
+
+                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.ruleConfig" css="margin-bottom: 10px">
+                    <textArea id="ruleConfigField" property="ruleConfig" minRows="5" readOnly="true"/>
+                </formItem>
 
                 <checkbox id="activeField" property="active" label="msg://uz.kapitalbank.umida.entity.dq/DqRule.active" dataContainer="dqRuleDc"/>
             </hbox>

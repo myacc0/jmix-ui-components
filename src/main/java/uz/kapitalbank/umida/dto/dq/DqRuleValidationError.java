@@ -25,6 +25,8 @@ public record DqRuleValidationError(@Nullable String field, String message) {
     public static final String FIELD_REF_SCHEMA = "refSchema";
     public static final String FIELD_REF_TABLE = "refTable";
     public static final String FIELD_REF_COLUMN = "refColumn";
+    public static final String FIELD_SQL = "sql";
+    public static final String FIELD_VIOLATIONS_SQL = "violationsSql";
 
     public static DqRuleValidationError of(String message) {
         return new DqRuleValidationError(null, message);

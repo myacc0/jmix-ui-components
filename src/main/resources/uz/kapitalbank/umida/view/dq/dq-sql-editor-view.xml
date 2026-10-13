@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://dqSqlEditorView.title"
+      focusComponent="editor">
+    <actions>
+        <action id="applyAction" text="msg://dqSqlEditorView.applyAction" icon="CHECK" actionVariant="PRIMARY"/>
+        <action id="cancelAction" type="view_close"/>
+    </actions>
+    <layout expand="editor">
+        <codeEditor id="editor"
+                    mode="SQL"
+                    width="100%"
+                    showPrintMargin="false"
+                    textWrap="true"/>
+        <hbox id="editorActions" width="100%" justifyContent="END">
+            <button id="applyButton" action="applyAction"/>
+            <button id="cancelButton" action="cancelAction"/>
+        </hbox>
+    </layout>
+</view>

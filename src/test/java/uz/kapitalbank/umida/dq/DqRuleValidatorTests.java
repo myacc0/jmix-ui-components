@@ -191,11 +191,85 @@ public class DqRuleValidatorTests {
                 "{\"refSchema\": \"public\", \"refTable\": \"no_such_table\", \"refColumn\": \"code\"}")).isEmpty());
     }
 
+    // ----- CUSTOM_SQL -----
+
+    private static final String VIOLATIONS_SQL = "select id, short_name from umida_dict_data_domain where parent_id is null";
+
+    private DqRule customSql(String sql) {
+        return customSql(sql, VIOLATIONS_SQL);
+    }
+
+    private DqRule customSql(String sql, String violationsSql) {
+        DqRule rule = rule(DqRuleType.CUSTOM_SQL,
+                "{\"sql\": " + quoted(sql) + ", \"violationsSql\": " + quoted(violationsSql) + "}");
+        rule.setTableName(null);
+        rule.setColumnName(null);
+        return rule;
+    }
+
+    private static String quoted(String value) {
+        return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") + "\"";
+    }
+
+    private List<String> messages(DqRule rule) {
+        return validator.validate(rule).stream().map(DqRuleValidationError::message).toList();
+    }
+
+    @Test
+    void customSqlRequiresBothQueriesButNoTable() {
+        DqRule rule = rule(DqRuleType.CUSTOM_SQL, "{}");
+        rule.setTableName(null);
+        rule.setColumnName(null);
+        assertEquals(List.of(FIELD_SQL, FIELD_VIOLATIONS_SQL), fields(rule));
+    }
+
+    @Test
+    void customSqlAcceptsReadQueries() {
+        assertTrue(fields(customSql(
+                "select count(*), count(*) filter (where parent_id is null) from umida_dict_data_domain;")).isEmpty());
+        assertTrue(fields(customSql(
+                "-- the domains without a parent\n"
+                        + "with d as (select * from umida_dict_data_domain where short_name <> 'a;b')\n"
+                        + "select count(*), sum(case when parent_id is null then 1 else 0 end) from d",
+                "with d as (select * from umida_dict_data_domain) select * from d order by code -- newest last")).isEmpty());
+    }
+
+    @Test
+    void customSqlMustBeASingleReadQuery() {
+        assertEquals(List.of(FIELD_SQL), fields(customSql("delete from umida_dict_data_domain")));
+        assertEquals(List.of(FIELD_SQL), fields(customSql("select 1, 2; delete from umida_dict_data_domain")));
+        assertEquals(List.of(FIELD_SQL), fields(customSql(
+                "with d as (delete from umida_dict_data_domain returning id) select count(*), 0 from d")));
+    }
+
+    @Test
+    void customSqlMustReturnTwoNumericColumns() {
+        assertEquals(List.of(FIELD_SQL), fields(customSql("select count(*) from umida_dict_data_domain")));
+        assertTrue(messages(customSql("select count(*) from umida_dict_data_domain")).get(0).contains("1"));
+
+        assertEquals(List.of(FIELD_SQL), fields(customSql("select count(*), max(short_name) from umida_dict_data_domain")));
+    }
+
+    @Test
+    void customSqlTheDataSourceRejectsIsReported() {
+        assertEquals(List.of(FIELD_SQL), fields(customSql("select count(*), 0 from no_such_table")));
+        assertTrue(messages(customSql("select count(*), 0 from no_such_table")).get(0).contains("no_such_table"));
+    }
+
+    @Test
+    void theViolationsQueryMustBeAReadQueryTheDataSourceRuns() {
+        String sql = "select count(*), 0 from umida_dict_data_domain";
+        assertEquals(List.of(FIELD_VIOLATIONS_SQL), fields(customSql(sql, "update umida_dict_data_domain set code = code")));
+        assertEquals(List.of(FIELD_VIOLATIONS_SQL), fields(customSql(sql, "select * from umida_dict_data_domain; select 1")));
+        assertEquals(List.of(FIELD_VIOLATIONS_SQL), fields(customSql(sql, "select * from no_such_table")));
+        // any columns will do
+        assertTrue(fields(customSql(sql, "select short_name, 'x' as note from umida_dict_data_domain")).isEmpty());
+    }
+
     // ----- not implemented yet: accept anything -----
 
-    @ParameterizedTest
-    @EnumSource(value = DqRuleType.class, names = {"CUSTOM_SQL", "CROSS_SOURCE_AGGREGATED"})
-    void placeholderTypesReportNoErrors(DqRuleType type) {
-        assertTrue(fields(rule(type, "{}")).isEmpty());
+    @Test
+    void placeholderTypesReportNoErrors() {
+        assertTrue(fields(rule(DqRuleType.CROSS_SOURCE_AGGREGATED, "{}")).isEmpty());
     }
 }

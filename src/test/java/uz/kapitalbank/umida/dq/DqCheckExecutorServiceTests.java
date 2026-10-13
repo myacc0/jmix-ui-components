@@ -83,8 +83,8 @@ public class DqCheckExecutorServiceTests {
         // the domain created above has no parent, so this rule always finds a violation
         failingRule = testData.createRule(domain, "failing", DqRuleType.NOT_NULL, "parent_id", "{}");
         // the query builder does not translate this type yet
-        unsupportedRule = testData.createRule(domain, "unsupported", DqRuleType.CUSTOM_SQL, "short_name",
-                "{\"sql\": \"select 1\"}");
+        unsupportedRule = testData.createRule(domain, "unsupported", DqRuleType.CROSS_SOURCE_AGGREGATED,
+                "short_name", "{}");
     }
 
     @Test
@@ -131,7 +131,7 @@ public class DqCheckExecutorServiceTests {
         DqCheckRunResult skipped = resultOf(results, unsupportedRule);
         assertEquals(DqCheckResultStatus.SKIPPED, skipped.getStatus());
         assertNotNull(skipped.getErrorMessage());
-        assertTrue(skipped.getErrorMessage().contains(DqRuleType.CUSTOM_SQL.getId()),
+        assertTrue(skipped.getErrorMessage().contains(DqRuleType.CROSS_SOURCE_AGGREGATED.getId()),
                 "the reason must name the rule type that is not supported: " + skipped.getErrorMessage());
         assertNull(skipped.getPassRate());
         assertNull(skipped.getViolationsQuery(), "a rule that was not translated has no query to keep");
@@ -313,6 +313,64 @@ public class DqCheckExecutorServiceTests {
     }
 
     @Test
+    void aCustomSqlRuleTakesBothCountsFromItsQuery() {
+        DqRule failing = customSqlRule("custom failing", "select 10, 4;", "select id from umida_dict_data_domain;");
+        DqRule passing = customSqlRule("custom passing",
+                "select count(*), count(*) filter (where short_name is null) from umida_dict_data_domain",
+                "select id from umida_dict_data_domain where short_name is null");
+
+        List<DqCheckRunResult> results = loadResults(awaitFinished(checkExecutorService.startCheckRun(filter())));
+
+        DqCheckRunResult failed = resultOf(results, failing);
+        assertEquals(DqCheckResultStatus.FAILED, failed.getStatus(), failed.getErrorMessage());
+        assertEquals(BigInteger.TEN, failed.getTotalRecords());
+        assertEquals(BigInteger.valueOf(4), failed.getFailedRecords());
+        assertEquals(0, new BigDecimal("60.00").compareTo(failed.getPassRate()));
+        assertEquals("select 10, 4", failed.getExecutedQuery());
+        assertEquals("select id from umida_dict_data_domain", failed.getViolationsQuery());
+        List<DqIssue> issues = loadIssues(failing);
+        assertEquals(1, issues.size(), "a failed custom rule opens an issue like any other");
+        assertTrue(issues.get(0).getDescription().endsWith("4 of 10.") || issues.get(0).getDescription().endsWith("4 из 10."),
+                "a custom rule names no table: " + issues.get(0).getDescription());
+
+        DqCheckRunResult passed = resultOf(results, passing);
+        assertEquals(DqCheckResultStatus.PASSED, passed.getStatus(), passed.getErrorMessage());
+        assertEquals(BigInteger.ZERO, passed.getFailedRecords());
+    }
+
+    @Test
+    void aCustomSqlRuleCannotChangeTheData() {
+        // passes the text-level checks, but the sequence would advance: a write the database refuses
+        DqRule writing = customSqlRule("custom writing", "select nextval('umida_dq_rule_code_seq'), 0",
+                "select 1");
+
+        List<DqCheckRunResult> results = loadResults(awaitFinished(checkExecutorService.startCheckRun(filter())));
+
+        DqCheckRunResult skipped = resultOf(results, writing);
+        assertEquals(DqCheckResultStatus.SKIPPED, skipped.getStatus());
+        assertTrue(skipped.getErrorMessage().contains("read-only"), skipped.getErrorMessage());
+    }
+
+    @Test
+    void theViolationsOfACustomSqlRuleArePagedFromItsOwnQuery() {
+        // a CTE, a LIMIT of its own and a trailing comment: none of them may break the paging
+        DqRule rule = customSqlRule("custom violations", "select 1, 1",
+                "with d as (select id, short_name from umida_dict_data_domain where id = '" + domain.getId() + "')"
+                        + " select * from d order by id limit 5 -- the domain of this test");
+
+        DqCheckRunResult result = resultOf(loadResults(awaitFinished(checkExecutorService.startCheckRun(filter()))),
+                rule);
+
+        assertEquals(DqCheckResultStatus.FAILED, result.getStatus(), result.getErrorMessage());
+        assertEquals(1, violationsService.countViolations(result.getId()));
+        DqViolationsService.ViolationsPage page = violationsService.loadViolations(result.getId(), 0, 10);
+        assertEquals(List.of("id", "short_name"), page.columns());
+        assertEquals(List.of(domain.getId().toString()), violatingIds(result));
+        assertTrue(violationsService.loadViolations(result.getId(), 1, 10).rows().isEmpty(),
+                "the second page starts past the only row");
+    }
+
+    @Test
     void rejectsAFilterThatMatchesNothing() {
         DqRuleFilter filter = filter();
         filter.setTableName("no_such_table_" + UUID.randomUUID().toString().replace("-", ""));
@@ -396,6 +454,14 @@ public class DqCheckExecutorServiceTests {
                 .rows().stream()
                 .map(row -> String.valueOf(row.get(0)))
                 .toList();
+    }
+
+    private DqRule customSqlRule(String name, String sql, String violationsSql) {
+        DqRule rule = testData.createRule(domain, name, DqRuleType.CUSTOM_SQL, null,
+                "{\"sql\": \"" + sql + "\", \"violationsSql\": \"" + violationsSql + "\"}",
+                custom -> custom.setTableName(null));
+        extraRules.add(rule);
+        return rule;
     }
 
     private DqRule updateRuleConfig(DqRule rule, String ruleConfig) {

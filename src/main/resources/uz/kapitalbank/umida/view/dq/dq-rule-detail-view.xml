@@ -33,7 +33,7 @@
             <fragment id="generalInfoFragment" class="uz.kapitalbank.umida.view.dq.DqRuleGeneralInfoFragment"/>
 
             <hbox classNames="form-block">
-                <span classNames="form-block-title" text="Источник данных"/>
+                <span classNames="form-block-title" text="msg://dqRuleDetailView.dataSourceBlock"/>
 
                 <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.dataSource">
                     <select id="dataSourceField" property="dataSource" required="true"/>
@@ -50,7 +50,7 @@
             </hbox>
 
             <hbox classNames="form-block">
-                <span classNames="form-block-title" text="Настройки"/>
+                <span classNames="form-block-title" text="msg://dqRuleDetailView.settingsBlock"/>
 
                 <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.ruleType">
                     <select id="ruleTypeField" property="ruleType"/>

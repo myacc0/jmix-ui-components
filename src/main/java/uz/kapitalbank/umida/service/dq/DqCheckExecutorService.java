@@ -34,6 +34,7 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 import java.util.*;
+import java.util.function.Function;
 
 /**
  * Runs a data quality check: takes the rule filter of the "run check" page, records a
@@ -272,11 +273,12 @@ public class DqCheckExecutorService {
     }
 
     /**
-     * Counts the rows the user-supplied statement reports as violations. The query builder does not
-     * translate this type yet, so the rule is recorded as skipped until it does.
+     * Takes both counts from the user-written statement. The statement is the user's own, so it runs
+     * in a read-only transaction: it may measure the data, never change it.
      */
     private DqCheckRunResult executeCheckCustomSql(DqCheckRun run, DqRule rule) {
-        return executeRowLevelCheck(run, rule);
+        return measure(run, rule, query -> dataSourceProvider.queryReadOnly(
+                rule.getDataSource(), query.sql(), METRICS_EXTRACTOR, 0));
     }
 
     /**
@@ -300,14 +302,22 @@ public class DqCheckExecutorService {
      * the pass rate, and stores the query selecting the violating rows next to the numbers.
      */
     private DqCheckRunResult executeRowLevelCheck(DqCheckRun run, DqRule rule) {
+        JdbcTemplate jdbcTemplate = dataSourceProvider.getJdbcTemplate(rule.getDataSource());
+        return measure(run, rule, query -> jdbcTemplate.query(query.sql(), METRICS_EXTRACTOR, query.paramArray()));
+    }
+
+    /**
+     * Runs the metrics query of a rule with {@code runner}, derives the pass rate, and stores the
+     * result together with the query selecting the violating rows, when the rule type has one.
+     */
+    private DqCheckRunResult measure(DqCheckRun run, DqRule rule, Function<DqSqlQuery, Metrics> runner) {
         DqSqlDialect dialect = dataSourceProvider.resolveDialect(rule.getDataSource());
         DqRuleQueries queries = queryBuilder.buildQueries(rule, dialect);
-        JdbcTemplate jdbcTemplate = dataSourceProvider.getJdbcTemplate(rule.getDataSource());
         DqSqlQuery metricsQuery = queries.metrics();
 
         long startedAt = System.currentTimeMillis();
 
-        Metrics metrics = jdbcTemplate.query(metricsQuery.sql(), METRICS_EXTRACTOR, metricsQuery.paramArray());
+        Metrics metrics = runner.apply(metricsQuery);
         BigDecimal passRate = passRate(metrics);
         boolean failed = passRate.compareTo(BigDecimal.valueOf(threshold(rule))) < 0;
 
@@ -358,10 +368,15 @@ public class DqCheckExecutorService {
         return result;
     }
 
+    /** A custom SQL rule names no table: its description leaves the location out. */
     private String issueDescription(DqRule rule, DqCheckRunResult result) {
+        BigDecimal threshold = BigDecimal.valueOf(threshold(rule)).setScale(RATE_SCALE, RoundingMode.HALF_UP);
+        if (!StringUtils.hasText(rule.getTableName())) {
+            return messages.formatMessage(DqCheckExecutorService.class, "dqCheckExecutor.issueDescriptionNoTarget",
+                    result.getPassRate(), threshold, result.getFailedRecords(), result.getTotalRecords());
+        }
         return messages.formatMessage(DqCheckExecutorService.class, "dqCheckExecutor.issueDescription",
-                result.getPassRate(), BigDecimal.valueOf(threshold(rule)).setScale(RATE_SCALE, RoundingMode.HALF_UP),
-                result.getFailedRecords(), result.getTotalRecords(), target(rule));
+                result.getPassRate(), threshold, result.getFailedRecords(), result.getTotalRecords(), target(rule));
     }
 
     /** The table, and the column when the rule has one, as shown to the user. */

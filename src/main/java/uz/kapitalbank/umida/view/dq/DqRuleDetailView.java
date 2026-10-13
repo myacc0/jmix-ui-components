@@ -4,14 +4,9 @@ import uz.kapitalbank.umida.component.slider.Slider;
 import uz.kapitalbank.umida.dto.dq.DqRuleConfig;
 import uz.kapitalbank.umida.dto.dq.DqRuleValidationError;
 import uz.kapitalbank.umida.dto.SelectDto;
-import uz.kapitalbank.umida.entity.dq.DqIssue;
 import uz.kapitalbank.umida.entity.dq.DqRule;
 import uz.kapitalbank.umida.enums.dq.DqRuleType;
-import uz.kapitalbank.umida.repository.DqRuleRepository;
 import uz.kapitalbank.umida.service.dq.DqDataSourceProvider;
-import uz.kapitalbank.umida.service.dq.DqIssueService;
-import uz.kapitalbank.umida.service.dq.DqRuleService;
-import uz.kapitalbank.umida.service.dq.DqRuleValidator;
 import uz.kapitalbank.umida.service.dq.DqSqlQueryBuilder;
 import uz.kapitalbank.umida.utils.DateUtils;
 import uz.kapitalbank.umida.utils.JsonUtils;
@@ -19,16 +14,10 @@ import uz.kapitalbank.umida.utils.NumberUtils;
 import uz.kapitalbank.umida.utils.StringUtils;
 import uz.kapitalbank.umida.view.main.MainView;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
-import io.jmix.core.EntityStates;
-import io.jmix.core.FetchPlan;
-import io.jmix.core.SaveContext;
-import io.jmix.flowui.Dialogs;
-import io.jmix.flowui.action.DialogAction;
 import io.jmix.flowui.component.checkbox.JmixCheckbox;
 import io.jmix.flowui.component.combobox.JmixComboBox;
 import io.jmix.flowui.component.datepicker.TypedDatePicker;
@@ -36,7 +25,6 @@ import io.jmix.flowui.component.multiselectcombobox.JmixMultiSelectComboBox;
 import io.jmix.flowui.component.select.JmixSelect;
 import io.jmix.flowui.component.textfield.JmixNumberField;
 import io.jmix.flowui.component.textfield.TypedTextField;
-import io.jmix.flowui.component.validation.ValidationErrors;
 import io.jmix.flowui.view.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,37 +39,11 @@ import java.util.stream.Collectors;
 @ViewController(id = "umida_DqRule.detail")
 @ViewDescriptor(path = "dq-rule-detail-view.xml")
 @EditedEntityContainer("dqRuleDc")
-public class DqRuleDetailView extends StandardDetailView<DqRule> {
+public class DqRuleDetailView extends AbstractDqRuleDetailView {
     private static final Logger log = LoggerFactory.getLogger(DqRuleDetailView.class);
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
-    @Autowired
-    private DqRuleRepository repository;
 
     @Autowired
     private DqDataSourceProvider dataSourceProvider;
-
-    @Autowired
-    private DqRuleValidator ruleValidator;
-
-    @Autowired
-    private DqRuleService ruleService;
-
-    @Autowired
-    private DqIssueService issueService;
-
-    @Autowired
-    private Dialogs dialogs;
-
-    @Autowired
-    private EntityStates entityStates;
-
-    @ViewComponent
-    private MessageBundle messageBundle;
-
-    @ViewComponent
-    private DqRuleGeneralInfoFragment generalInfoFragment;
 
     @ViewComponent
     private JmixSelect<String> dataSourceField;
@@ -146,17 +108,6 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
      * type switch). Field value-change listeners skip JSON rebuild while true.
      */
     private boolean populating;
-
-    @Install(to = "dqRuleDl", target = Target.DATA_LOADER, subject = "loadFromRepositoryDelegate")
-    private Optional<DqRule> loadDelegate(UUID id, FetchPlan fetchPlan) {
-        // Reformat the stored (compact) ruleConfig to pretty JSON for display.
-        // Done before the entity enters the DataContext so it is not flagged as a change.
-        return repository.findById(id, fetchPlan)
-                .map(rule -> {
-                    rule.setRuleConfig(JsonUtils.prettify(rule.getRuleConfig(), objectMapper));
-                    return rule;
-                });
-    }
 
     @Subscribe
     public void onInit(final InitEvent event) {
@@ -467,30 +418,14 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
     }
 
     /**
-     * Runs on every save (create and update): the rule config must match the selected rule type.
-     * Reported errors abort the save and are shown next to the offending field.
-     */
-    @Subscribe
-    public void onValidation(final ValidationEvent event) {
-        ValidationErrors errors = new ValidationErrors();
-        for (DqRuleValidationError error : ruleValidator.validate(getEditedEntity())) {
-            errors.add(resolveComponent(error.field()), error.message());
-        }
-        event.addErrors(errors);
-    }
-
-    /**
      * Maps a logical config field name to the input that edits it, so the error is attached to it.
      * Returns null when no single input owns the value — the error is then shown unattached.
      */
     @Nullable
-    private Component resolveComponent(@Nullable String field) {
-        if (field == null) {
-            return null;
-        }
+    @Override
+    protected Component resolveComponent(String field) {
         boolean rangeDate = ruleTypeField.getValue() == DqRuleType.RANGE_DATE;
         return switch (field) {
-            case DqRuleValidationError.FIELD_DUE_DAYS -> generalInfoFragment.getDueDaysField();
             case DqRuleValidationError.FIELD_TABLE_NAME -> tableNameField;
             case DqRuleValidationError.FIELD_COLUMN_NAME -> columnNameField;
             case DqRuleValidationError.FIELD_RULE_TYPE -> ruleTypeField;
@@ -503,52 +438,5 @@ public class DqRuleDetailView extends StandardDetailView<DqRule> {
             case DqRuleValidationError.FIELD_REF_COLUMN -> refColumnField;
             default -> null;
         };
-    }
-
-    /**
-     * Moving a stored rule to another data source, schema, table or column closes its open issues,
-     * and assigning it to another subdivision moves them to that one (see {@link DqIssueService}),
-     * so the user confirms that first, seeing the issues it changes. A rule both moved and reassigned
-     * only asks about the closing: no issue is left open to move.
-     */
-    @Subscribe
-    public void onBeforeSave(final BeforeSaveEvent event) {
-        DqRule rule = getEditedEntity();
-        if (entityStates.isNew(rule)) {
-            return;
-        }
-        boolean dataSourceChanged = ruleService.isDataSourceChanged(rule);
-        if (!dataSourceChanged && !ruleService.isAssigneeChanged(rule)) {
-            return;
-        }
-        List<DqIssue> openIssues = issueService.findOpenIssues(rule);
-        if (openIssues.isEmpty()) {
-            return;
-        }
-
-        event.preventSave();
-        String codes = openIssues.stream().map(DqIssue::getCode).collect(Collectors.joining(", "));
-        String header;
-        String text;
-        if (dataSourceChanged) {
-            header = messageBundle.getMessage("dqRuleDetailView.dataSourceChangedHeader");
-            text = messageBundle.formatMessage("dqRuleDetailView.dataSourceChangedText", codes);
-        } else {
-            header = messageBundle.getMessage("dqRuleDetailView.assigneeChangedHeader");
-            text = messageBundle.formatMessage("dqRuleDetailView.assigneeChangedText", codes,
-                    rule.getAssignee() != null ? rule.getAssignee().getName() : "");
-        }
-        dialogs.createOptionDialog()
-                .withHeader(header)
-                .withText(text)
-                .withActions(
-                        new DialogAction(DialogAction.Type.YES).withHandler(e -> event.resume()),
-                        new DialogAction(DialogAction.Type.NO))
-                .open();
-    }
-
-    @Install(target = Target.DATA_CONTEXT)
-    private Set<Object> saveDelegate(SaveContext saveContext) {
-        return Set.of(repository.save(getEditedEntity()));
     }
 }

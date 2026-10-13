@@ -34,7 +34,10 @@ public class DqRuleConfig {
     private Boolean allowNull;
 
     // ----- CUSTOM_SQL -----
+    // one row of two numbers: the total and the failed record counts
     private String sql;
+    // the failed records themselves, with the columns to show; paged when the violations are viewed
+    private String violationsSql;
 
     // ----- CROSS_SOURCE -----
     private String crossPrimarySql;
@@ -135,6 +138,14 @@ public class DqRuleConfig {
 
     public void setSql(String sql) {
         this.sql = sql;
+    }
+
+    public String getViolationsSql() {
+        return violationsSql;
+    }
+
+    public void setViolationsSql(String violationsSql) {
+        this.violationsSql = violationsSql;
     }
 
     public String getCrossPrimarySql() {

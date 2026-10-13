@@ -240,9 +240,25 @@ public class DqSqlQueryBuilder {
         return rowLevelQueries(rule, config, dialect, join, new Predicate(predicate, List.of()), column);
     }
 
+    /**
+     * The user-written statements are the queries as they stand: the metrics query returns the total
+     * and the failed counts, in this order; the violations query returns the failed records. Both are
+     * run as text, see {@link DqDataSourceProvider#queryReadOnly}; the violations query is paged by
+     * wrapping it, see {@link DqViolationsService}.
+     */
     private DqRuleQueries buildCustomSql(DqRule rule, DqRuleConfig config, DqSqlDialect dialect) {
-        // TODO not implemented yet: wrap the user-supplied config.sql as the violating-row query
-        throw new UnsupportedOperationException("Rule type is not supported yet: " + DqRuleType.CUSTOM_SQL.getId());
+        return new DqRuleQueries(customQuery(rule, "SQL", config.getSql()),
+                customQuery(rule, "violations SQL", config.getViolationsSql()));
+    }
+
+    private DqSqlQuery customQuery(DqRule rule, String name, @Nullable String sql) {
+        DqCustomSql.Violation violation = DqCustomSql.check(sql);
+        if (violation != null) {
+            throw new IllegalArgumentException("The " + name + " of rule '" + rule.getName()
+                    + "' is not a single read query: " + violation.problem()
+                    + (violation.word() != null ? " (" + violation.word() + ")" : ""));
+        }
+        return DqSqlQuery.of(DqCustomSql.normalize(sql));
     }
 
     private DqRuleQueries buildCrossSourceAggregated(DqRule rule, DqRuleConfig config, DqSqlDialect dialect) {

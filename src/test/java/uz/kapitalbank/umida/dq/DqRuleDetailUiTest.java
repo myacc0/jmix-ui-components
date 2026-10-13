@@ -1,5 +1,13 @@
 package uz.kapitalbank.umida.dq;
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import com.vaadin.flow.component.UI;
+import io.jmix.flowui.component.codeeditor.CodeEditor;
+import io.jmix.flowui.kit.component.button.JmixButton;
+import uz.kapitalbank.umida.component.slider.Slider;
+import uz.kapitalbank.umida.view.dq.DqSqlEditorView;
+import java.util.stream.Stream;
 import com.vaadin.flow.component.Component;
 import io.jmix.flowui.component.UiComponentUtils;
 import io.jmix.flowui.view.View;
@@ -205,6 +213,77 @@ public class DqRuleDetailUiTest {
     }
 
     @Test
+    void theCustomSqlFormAsksForTheDataSourceAndTwoQueries() {
+        DqRuleCustomSqlDetailView view = openNewCustomSqlRule();
+
+        assertThat(UiComponentUtils.findComponent(view, "dataSourceField")).isPresent();
+        assertThat(UiComponentUtils.findComponent(view, "sqlField")).isPresent();
+        assertThat(UiComponentUtils.findComponent(view, "violationsSqlField")).isPresent();
+        for (String absent : List.of("dbSchemaField", "tableNameField", "columnNameField", "ruleTypeField",
+                "samplesQueryColumnsField")) {
+            assertThat(UiComponentUtils.findComponent(view, absent)).as(absent).isEmpty();
+        }
+    }
+
+    @Test
+    void theCustomSqlFormWritesTheQueryToTheConfig() {
+        DqRuleCustomSqlDetailView view = openNewCustomSqlRule();
+        CodeEditor sqlField = UiTestUtils.getComponent(view, "sqlField");
+
+        CodeEditor violationsSqlField = UiTestUtils.getComponent(view, "violationsSqlField");
+
+        sqlField.setValue("select 10, 4");
+        violationsSqlField.setValue("select id from umida_dq_rule");
+
+        DqRuleConfig config = JsonUtils.parseConfig(view.getEditedEntity().getRuleConfig(), DqRuleConfig.class,
+                new ObjectMapper());
+        assertThat(config.getSql()).isEqualTo("select 10, 4");
+        assertThat(config.getViolationsSql()).isEqualTo("select id from umida_dq_rule");
+        assertThat(config.getThreshold()).isEqualTo(100.0);
+        assertThat(config.getSamplesQueryColumns()).isNull();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"sql", "violationsSql"})
+    void theFullScreenEditorAppliesItsTextToTheForm(String query) {
+        DqRuleCustomSqlDetailView view = openNewCustomSqlRule();
+        CodeEditor field = UiTestUtils.getComponent(view, query + "Field");
+        field.setValue("select 1, 2");
+
+        JmixButton fullScreenButton = UiTestUtils.getComponent(view, query + "FullScreenButton");
+        fullScreenButton.click();
+        DqSqlEditorView editorView = openedDialogView(DqSqlEditorView.class);
+        assertThat(editorView.getPageTitle()).isEqualTo(messages.getMessage(DqSqlEditorView.class, "ruleConfig." + query));
+        CodeEditor editor = UiTestUtils.getComponent(editorView, "editor");
+        assertThat(editor.getValue()).isEqualTo("select 1, 2");
+
+        editor.setValue("select 3, 4");
+        JmixButton applyButton = UiTestUtils.getComponent(editorView, "applyButton");
+        applyButton.click();
+
+        assertThat(field.getValue()).isEqualTo("select 3, 4");
+    }
+
+    @Test
+    void aStoredCustomSqlRuleShowsItsQuery() {
+        DqRule rule = createRule(DqRuleType.CUSTOM_SQL,
+                "{\"sql\": \"select 10, 4\", \"violationsSql\": \"select id from umida_dq_rule\", \"threshold\": 90}");
+
+        viewNavigators.detailView(UiTestUtils.getCurrentView(), DqRule.class)
+                .editEntity(rule)
+                .withViewClass(DqRuleCustomSqlDetailView.class)
+                .navigate();
+        DqRuleCustomSqlDetailView view = UiTestUtils.getCurrentView();
+
+        CodeEditor sqlField = UiTestUtils.getComponent(view, "sqlField");
+        CodeEditor violationsSqlField = UiTestUtils.getComponent(view, "violationsSqlField");
+        Slider thresholdField = UiTestUtils.getComponent(view, "thresholdField");
+        assertThat(sqlField.getValue()).isEqualTo("select 10, 4");
+        assertThat(violationsSqlField.getValue()).isEqualTo("select id from umida_dq_rule");
+        assertThat(thresholdField.getValue()).isEqualTo(90);
+    }
+
+    @Test
     void aRuleOpensFromTheListInTheFormOfItsType() {
         assertThat(editFromList(createRule())).isInstanceOf(DqRuleDetailView.class);
         assertThat(editFromList(createRule(DqRuleType.CUSTOM_SQL, "{}")))
@@ -293,6 +372,30 @@ public class DqRuleDetailUiTest {
                 .withViewClass(DqRuleDetailView.class)
                 .navigate();
         return UiTestUtils.getCurrentView();
+    }
+
+    private DqRuleCustomSqlDetailView openNewCustomSqlRule() {
+        viewNavigators.detailView(UiTestUtils.getCurrentView(), DqRule.class)
+                .newEntity()
+                .withViewClass(DqRuleCustomSqlDetailView.class)
+                .navigate();
+        return UiTestUtils.getCurrentView();
+    }
+
+    /** The view of the dialog window open over the current view. */
+    private static <V extends View<?>> V openedDialogView(Class<V> viewClass) {
+        UI.getCurrent().getInternals().getStateTree().runExecutionsBeforeClientResponse();
+        return UI.getCurrent().getChildren()
+                .flatMap(DqRuleDetailUiTest::selfAndDescendants)
+                .filter(viewClass::isInstance)
+                .map(viewClass::cast)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError(viewClass.getSimpleName() + " is not open"));
+    }
+
+    private static Stream<Component> selfAndDescendants(Component component) {
+        return Stream.concat(Stream.of(component),
+                component.getChildren().flatMap(DqRuleDetailUiTest::selfAndDescendants));
     }
 
     private View<?> createFromList(String actionId) {

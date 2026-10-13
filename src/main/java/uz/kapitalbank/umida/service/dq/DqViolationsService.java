@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import uz.kapitalbank.umida.entity.dq.DqCheckRunResult;
+import uz.kapitalbank.umida.enums.dq.DqRuleType;
 import uz.kapitalbank.umida.enums.dq.DqSqlDialect;
 
 import java.sql.ResultSetMetaData;
@@ -20,7 +21,10 @@ import java.util.UUID;
  * at a time: they show the data as it is now, which may have changed since the check.
  * <p>
  * The query is only ever taken from the stored result, never from the caller, and must be a
- * {@code SELECT}.
+ * {@code SELECT}. How it is paged depends on the type of the rule: a generated query ends in its own
+ * {@code ORDER BY} and takes the page clause as it is; the query a user wrote for a
+ * {@link DqRuleType#CUSTOM_SQL} rule may end in anything (a {@code LIMIT}, a comment), so it is paged
+ * as a sub-query, and runs read-only like the rest of that rule.
  */
 @Service
 public class DqViolationsService {
@@ -43,8 +47,8 @@ public class DqViolationsService {
      */
     public long countViolations(UUID checkResultId) {
         ViolationsQuery query = loadQuery(checkResultId);
-        Long count = query.jdbcTemplate().queryForObject(
-                "SELECT COUNT(*) FROM (" + query.sql() + ") " + QUERY_ALIAS, Long.class);
+        Long count = run(query, "SELECT COUNT(*) FROM (" + query.subQuery() + ") " + QUERY_ALIAS,
+                rs -> rs.next() ? rs.getLong(1) : 0L);
         return count == null ? 0 : count;
     }
 
@@ -58,8 +62,11 @@ public class DqViolationsService {
      */
     public ViolationsPage loadViolations(UUID checkResultId, int firstResult, int maxResults) {
         ViolationsQuery query = loadQuery(checkResultId);
-        String pageSql = query.sql() + " " + query.dialect().pageClause(firstResult, maxResults);
-        return query.jdbcTemplate().query(pageSql, PAGE_EXTRACTOR);
+        String pageClause = query.dialect().pageClause(firstResult, maxResults);
+        String pageSql = query.userWritten()
+                ? "SELECT * FROM (" + query.subQuery() + ") " + QUERY_ALIAS + " " + pageClause
+                : query.sql() + " " + pageClause;
+        return run(query, pageSql, PAGE_EXTRACTOR);
     }
 
     /** Reads the columns positionally: a query may select two columns under the same label. */
@@ -87,26 +94,52 @@ public class DqViolationsService {
         DqCheckRunResult result = dataManager.load(DqCheckRunResult.class)
                 .id(checkResultId)
                 .fetchPlan(fp -> fp.add("violationsQuery")
-                        .add("checkRun", checkRun -> checkRun.add("dataSource")))
+                        .add("checkRun", checkRun -> checkRun.add("dataSource"))
+                        .add("rule", rule -> rule.add("ruleType")))
                 .one();
 
         String sql = result.getViolationsQuery();
         if (!StringUtils.hasText(sql)) {
             throw new IllegalStateException("Check result " + checkResultId + " has no violations query");
         }
-        sql = sql.strip();
-        if (!sql.regionMatches(true, 0, SELECT, 0, SELECT.length())) {
-            throw new IllegalStateException("Violations query of check result " + checkResultId
-                    + " is not a SELECT statement");
+        boolean userWritten = result.getRule() != null && result.getRule().getRuleType() == DqRuleType.CUSTOM_SQL;
+        if (userWritten) {
+            sql = DqCustomSql.normalize(sql);
+            if (DqCustomSql.check(sql) != null) {
+                throw new IllegalStateException("Violations query of check result " + checkResultId
+                        + " is not a single read query");
+            }
+        } else {
+            sql = sql.strip();
+            if (!sql.regionMatches(true, 0, SELECT, 0, SELECT.length())) {
+                throw new IllegalStateException("Violations query of check result " + checkResultId
+                        + " is not a SELECT statement");
+            }
         }
 
         String dataSource = result.getCheckRun().getDataSource();
-        return new ViolationsQuery(sql,
+        return new ViolationsQuery(sql, userWritten, dataSource,
                 dataSourceProvider.resolveDialect(dataSource),
                 dataSourceProvider.getJdbcTemplate(dataSource));
     }
 
-    private record ViolationsQuery(String sql, DqSqlDialect dialect, JdbcTemplate jdbcTemplate) {
+    private record ViolationsQuery(String sql, boolean userWritten, String dataSource, DqSqlDialect dialect,
+                                   JdbcTemplate jdbcTemplate) {
+
+        /**
+         * The query as the body of a sub-query. A user-written one goes on lines of its own, so that a
+         * trailing line comment cannot swallow the closing parenthesis.
+         */
+        String subQuery() {
+            return userWritten ? "\n" + sql + "\n" : sql;
+        }
+    }
+
+    /** Runs a statement built around the violations query; a user-written one runs read-only. */
+    private <T> T run(ViolationsQuery query, String statement, ResultSetExtractor<T> extractor) {
+        return query.userWritten()
+                ? dataSourceProvider.queryReadOnly(query.dataSource(), statement, extractor, 0)
+                : query.jdbcTemplate().query(statement, extractor);
     }
 
     /**

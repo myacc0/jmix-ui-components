@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -41,6 +42,9 @@ public class DqRuleValidator {
     /** The accepted issue resolution period, in days, also used by the editor to bound its input. */
     public static final int MIN_DUE_DAYS = 1;
     public static final int MAX_DUE_DAYS = 365;
+
+    /** Describing a statement does not read its rows, so it is expected to answer quickly. */
+    private static final int CUSTOM_SQL_DESCRIBE_TIMEOUT_SECONDS = 30;
 
     private final Messages messages;
     private final DqDataSourceProvider dataSourceProvider;
@@ -226,8 +230,74 @@ public class DqRuleValidator {
         }
     }
 
+    /**
+     * Both statements are the user's own and must be single read queries: the metrics query returns
+     * the total and the failed counts, the violations query the failed records themselves.
+     */
     private void validateCustomSql(DqRule rule, DqRuleConfig config, List<DqRuleValidationError> errors) {
-        // TODO not implemented yet
+        boolean sqlReadable = validateReadQuery(config.getSql(), FIELD_SQL, "dqRuleValidation.sqlRequired", errors);
+        boolean violationsSqlReadable = validateReadQuery(config.getViolationsSql(), FIELD_VIOLATIONS_SQL,
+                "dqRuleValidation.violationsSqlRequired", errors);
+        if (!StringUtils.hasText(rule.getDataSource())) {
+            return;
+        }
+        if (sqlReadable) {
+            describeCustomSql(rule, DqCustomSql.normalize(config.getSql()), FIELD_SQL, errors)
+                    .ifPresent(columns -> validateMetricsColumns(columns, errors));
+        }
+        if (violationsSqlReadable) {
+            // any columns will do: they are shown as they are
+            describeCustomSql(rule, DqCustomSql.normalize(config.getViolationsSql()), FIELD_VIOLATIONS_SQL, errors);
+        }
+    }
+
+    /** Reports a statement that is not a single read query; returns whether it is one. */
+    private boolean validateReadQuery(@Nullable String sql, String field, String requiredKey,
+                                      List<DqRuleValidationError> errors) {
+        DqCustomSql.Violation violation = DqCustomSql.check(sql);
+        if (violation == null) {
+            return true;
+        }
+        errors.add(switch (violation.problem()) {
+            case BLANK -> error(field, requiredKey);
+            case MULTIPLE_STATEMENTS -> error(field, "dqRuleValidation.sqlMultipleStatements");
+            case NOT_SELECT -> error(field, "dqRuleValidation.sqlNotSelect");
+            case MODIFYING_KEYWORD -> formatError(field, "dqRuleValidation.sqlModifiesData", violation.word());
+        });
+        return false;
+    }
+
+    /**
+     * Asks the data source what a statement returns. A statement the database rejects is reported
+     * with the database's own message; when the data source cannot be reached, the statement is left
+     * to the run and nothing is returned.
+     */
+    private Optional<List<DqDataSourceProvider.ColumnType>> describeCustomSql(DqRule rule, String sql, String field,
+                                                                              List<DqRuleValidationError> errors) {
+        try {
+            return Optional.of(dataSourceProvider.describeQuery(rule.getDataSource(), sql,
+                    CUSTOM_SQL_DESCRIBE_TIMEOUT_SECONDS));
+        } catch (DqDataSourceProvider.QueryFailedException e) {
+            errors.add(formatError(field, "dqRuleValidation.sqlFailed", e.getMessage()));
+        } catch (RuntimeException e) {
+            log.warn("A query of rule '{}' could not be described, its columns are not checked", rule.getName(), e);
+        }
+        return Optional.empty();
+    }
+
+    /** The metrics query returns two numeric columns, the total count first. */
+    private void validateMetricsColumns(List<DqDataSourceProvider.ColumnType> columns,
+                                        List<DqRuleValidationError> errors) {
+        if (columns.size() != 2) {
+            errors.add(formatError(FIELD_SQL, "dqRuleValidation.sqlColumnCount", columns.size()));
+            return;
+        }
+        for (int i = 0; i < columns.size(); i++) {
+            DqDataSourceProvider.ColumnType column = columns.get(i);
+            if (typeFamily(column.jdbcType()) != TypeFamily.NUMBER) {
+                errors.add(formatError(FIELD_SQL, "dqRuleValidation.sqlColumnNotNumber", i + 1, column.typeName()));
+            }
+        }
     }
 
     private void validateCrossSourceAggregated(DqRule rule, DqRuleConfig config, List<DqRuleValidationError> errors) {

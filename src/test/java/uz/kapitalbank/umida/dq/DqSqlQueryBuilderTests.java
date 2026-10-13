@@ -500,14 +500,43 @@ public class DqSqlQueryBuilderTests {
                         DqSqlDialect.POSTGRESQL));
     }
 
+    // ----- CUSTOM_SQL -----
+
+    @Test
+    void customSqlQueriesAreTakenAsWritten() {
+        DqRuleQueries queries = build(rule(DqRuleType.CUSTOM_SQL,
+                "{\"sql\": \"select count(*), count(*) filter (where a is null) from t;\","
+                        + " \"violationsSql\": \"select id, a from t where a is null order by id;\"}"),
+                DqSqlDialect.POSTGRESQL);
+
+        assertEquals("select count(*), count(*) filter (where a is null) from t", queries.metrics().sql());
+        assertTrue(queries.metrics().params().isEmpty());
+        assertEquals("select id, a from t where a is null order by id", queries.violations().sql());
+        assertTrue(queries.violations().params().isEmpty());
+    }
+
+    @Test
+    void customSqlThatIsNotASingleReadQueryIsRejected() {
+        String violations = ", \"violationsSql\": \"select * from t\"}";
+        assertThrows(IllegalArgumentException.class,
+                () -> build(rule(DqRuleType.CUSTOM_SQL, "{}"), DqSqlDialect.POSTGRESQL));
+        assertThrows(IllegalArgumentException.class,
+                () -> build(rule(DqRuleType.CUSTOM_SQL, "{\"sql\": \"delete from t\"" + violations),
+                        DqSqlDialect.POSTGRESQL));
+        assertThrows(IllegalArgumentException.class,
+                () -> build(rule(DqRuleType.CUSTOM_SQL, "{\"sql\": \"select 1, 2; delete from t\"" + violations),
+                        DqSqlDialect.POSTGRESQL));
+        assertThrows(IllegalArgumentException.class,
+                () -> build(rule(DqRuleType.CUSTOM_SQL, "{\"sql\": \"select 1, 2\"}"), DqSqlDialect.POSTGRESQL),
+                "the violations query is required too");
+    }
+
     // ----- not implemented yet -----
 
-    @ParameterizedTest
-    @EnumSource(value = DqRuleType.class,
-            names = {"CUSTOM_SQL", "CROSS_SOURCE_AGGREGATED"})
-    void pendingRuleTypesFailExplicitly(DqRuleType type) {
+    @Test
+    void pendingRuleTypesFailExplicitly() {
         assertThrows(UnsupportedOperationException.class,
-                () -> build(rule(type, "{}"), DqSqlDialect.POSTGRESQL));
+                () -> build(rule(DqRuleType.CROSS_SOURCE_AGGREGATED, "{}"), DqSqlDialect.POSTGRESQL));
     }
 
     // ----- dialect detection -----
