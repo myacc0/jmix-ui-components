@@ -11,6 +11,8 @@
                     <property name="code"/>
                     <property name="dataSource"/>
                     <property name="severity"/>
+                    <!-- decides which dialog the violations action opens -->
+                    <property name="ruleType"/>
                 </property>
                 <!-- the status and the query decide whether the violating rows can be shown,
                      the reconciliation whether what a cross-source rule compared can -->
@@ -41,7 +43,6 @@
             <startSlot>
                 <button id="readButton" themeNames="primary" action="dqIssuesDataGrid.readAction" text="" title="msg:///actions.Read"/>
                 <button id="violationsButton" themeNames="primary" action="dqIssuesDataGrid.violationsAction"/>
-                <button id="reconciliationButton" themeNames="primary" action="dqIssuesDataGrid.reconciliationAction"/>
                 <button id="closeIssueButton" themeNames="primary" action="dqIssuesDataGrid.closeIssueAction"/>
             </startSlot>
             <endSlot>
@@ -60,10 +61,6 @@
                         type="list_itemTracking"
                         text="msg://dqIssueListView.violationsAction"
                         icon="vaadin:file-search"/>
-                <action id="reconciliationAction"
-                        type="list_itemTracking"
-                        text="msg://dqIssueListView.reconciliationAction"
-                        icon="vaadin:scale"/>
                 <action id="closeIssueAction"
                         type="list_itemTracking"
                         text="msg://dqIssueListView.closeIssueAction"

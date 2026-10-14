@@ -216,17 +216,12 @@ public class DqCheckRunDetailUiTest {
 
         DataGrid<DqCheckRunResult> grid = openResultsGrid();
         DqCheckRunDetailView detailView = UiTestUtils.getCurrentView();
-        JmixButton reconciliationButton = UiTestUtils.getComponent(detailView, "reconciliationButton");
         JmixButton violationsButton = UiTestUtils.getComponent(detailView, "violationsButton");
 
-        grid.select(gridItem(grid, failedResult()));
-        assertFalse(reconciliationButton.isEnabled(), "a row-level rule compared nothing");
-
         grid.select(gridItem(grid, crossSource));
-        assertTrue(reconciliationButton.isEnabled());
-        assertFalse(violationsButton.isEnabled(), "a cross-source rule has no violating rows to read");
+        assertTrue(violationsButton.isEnabled(), "a cross-source rule shows what it compared");
 
-        reconciliationButton.click();
+        violationsButton.click();
 
         UI.getCurrent().getInternals().getStateTree().runExecutionsBeforeClientResponse();
         DqCheckRunReconciliationView dialog = UI.getCurrent().getChildren()

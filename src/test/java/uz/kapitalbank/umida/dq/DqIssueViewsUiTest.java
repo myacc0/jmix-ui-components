@@ -43,6 +43,7 @@ import uz.kapitalbank.umida.service.dq.DqBadges;
 import uz.kapitalbank.umida.service.dq.DqIssueService;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
 import uz.kapitalbank.umida.test_support.DqTestData;
+import uz.kapitalbank.umida.view.dq.DqCheckRunReconciliationView;
 import uz.kapitalbank.umida.view.dq.DqCheckRunViolationsView;
 import uz.kapitalbank.umida.view.dq.DqIssueCloseView;
 import uz.kapitalbank.umida.view.dq.DqIssueDetailView;
@@ -243,16 +244,23 @@ public class DqIssueViewsUiTest {
 
         DataGrid<DqIssue> grid = openList();
         DqIssueListView listView = UiTestUtils.getCurrentView();
-        JmixButton reconciliationButton = UiTestUtils.getComponent(listView, "reconciliationButton");
         JmixButton violationsButton = UiTestUtils.getComponent(listView, "violationsButton");
-        grid.select(gridItem(grid));
-        assertFalse(reconciliationButton.isEnabled(), "a row-level rule compared nothing");
         grid.select(grid.getGenericDataView().getItems()
                 .filter(item -> crossSourceIssue.getId().equals(item.getId()))
                 .findFirst()
                 .orElseGet(() -> fail("the cross-source issue is not listed")));
-        assertTrue(reconciliationButton.isEnabled());
-        assertFalse(violationsButton.isEnabled(), "a cross-source rule has no violating rows to read");
+        assertTrue(violationsButton.isEnabled(), "a cross-source rule shows what it compared");
+
+        violationsButton.click();
+        UI.getCurrent().getInternals().getStateTree().runExecutionsBeforeClientResponse();
+        assertTrue(UI.getCurrent().getChildren()
+                        .flatMap(DqIssueViewsUiTest::selfAndDescendants)
+                        .anyMatch(DqCheckRunReconciliationView.class::isInstance),
+                "the reconciliation dialog is open");
+        assertTrue(UI.getCurrent().getChildren()
+                        .flatMap(DqIssueViewsUiTest::selfAndDescendants)
+                        .noneMatch(DqCheckRunViolationsView.class::isInstance),
+                "a cross-source rule has no violating rows to read");
 
         viewNavigators.detailView(UiTestUtils.getCurrentView(), DqIssue.class)
                 .editEntity(crossSourceIssue)

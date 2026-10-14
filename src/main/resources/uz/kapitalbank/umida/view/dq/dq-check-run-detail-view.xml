@@ -8,6 +8,8 @@
                 <property name="checkResults" fetchPlan="_base">
                     <property name="rule" fetchPlan="_instance_name">
                         <property name="code"/>
+                        <!-- decides which dialog the violations action opens -->
+                        <property name="ruleType"/>
                     </property>
                 </property>
             </fetchPlan>
@@ -48,7 +50,6 @@
             <button id="closeButton" themeNames="primary" action="closeAction"/>
             <button id="executedQueryButton" themeNames="primary" action="checkResultsDataGrid.executedQueryAction"/>
             <button id="violationsButton" themeNames="primary" action="checkResultsDataGrid.violationsAction"/>
-            <button id="reconciliationButton" themeNames="primary" action="checkResultsDataGrid.reconciliationAction"/>
         </hbox>
         <dataGrid id="checkResultsDataGrid"
                   width="100%"
@@ -64,10 +65,6 @@
                         type="list_itemTracking"
                         text="msg://dqCheckRunDetailView.violationsAction"
                         icon="vaadin:file-search"/>
-                <action id="reconciliationAction"
-                        type="list_itemTracking"
-                        text="msg://dqCheckRunDetailView.reconciliationAction"
-                        icon="vaadin:scale"/>
             </actions>
             <columns resizable="true">
                 <column key="ruleCode"

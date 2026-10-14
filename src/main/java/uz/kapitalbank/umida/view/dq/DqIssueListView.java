@@ -2,6 +2,7 @@ package uz.kapitalbank.umida.view.dq;
 
 import uz.kapitalbank.umida.service.dq.DqBadges;
 import uz.kapitalbank.umida.entity.dq.DqIssue;
+import uz.kapitalbank.umida.enums.dq.DqRuleType;
 import uz.kapitalbank.umida.service.dq.DqIssueService;
 import uz.kapitalbank.umida.view.main.MainView;
 import com.vaadin.flow.data.renderer.Renderer;
@@ -75,10 +76,19 @@ public class DqIssueListView extends StandardListView<DqIssue> {
                 .open();
     }
 
+    /**
+     * The rows the latest failed check found — or, for a cross-source rule, which finds no rows,
+     * the values the check compared.
+     */
     @Install(to = "dqIssuesDataGrid.violationsAction", subject = "enabledRule")
     private boolean violationsActionEnabledRule() {
         DqIssue issue = dqIssuesDataGrid.getSingleSelectedItem();
-        return issue != null && DqViolationsFragment.hasViolations(issue.getCheckResult());
+        if (issue == null) {
+            return false;
+        }
+        return isCrossSource(issue)
+                ? DqReconciliationFragment.hasReconciliation(issue.getCheckResult())
+                : DqViolationsFragment.hasViolations(issue.getCheckResult());
     }
 
     @Subscribe("dqIssuesDataGrid.violationsAction")
@@ -87,26 +97,18 @@ public class DqIssueListView extends StandardListView<DqIssue> {
         if (issue == null || issue.getCheckResult() == null) {
             return;
         }
-        dialogWindows.view(this, DqCheckRunViolationsView.class)
-                .withViewConfigurer(view -> view.setCheckResult(issue.getCheckResult()))
-                .open();
-    }
-
-    /** Only a cross-source rule keeps what it compared. */
-    @Install(to = "dqIssuesDataGrid.reconciliationAction", subject = "enabledRule")
-    private boolean reconciliationActionEnabledRule() {
-        DqIssue issue = dqIssuesDataGrid.getSingleSelectedItem();
-        return issue != null && DqReconciliationFragment.hasReconciliation(issue.getCheckResult());
-    }
-
-    @Subscribe("dqIssuesDataGrid.reconciliationAction")
-    public void onDqIssuesDataGridReconciliation(final ActionPerformedEvent event) {
-        DqIssue issue = dqIssuesDataGrid.getSingleSelectedItem();
-        if (issue == null || issue.getCheckResult() == null) {
-            return;
+        if (isCrossSource(issue)) {
+            dialogWindows.view(this, DqCheckRunReconciliationView.class)
+                    .withViewConfigurer(view -> view.setCheckResult(issue.getCheckResult()))
+                    .open();
+        } else {
+            dialogWindows.view(this, DqCheckRunViolationsView.class)
+                    .withViewConfigurer(view -> view.setCheckResult(issue.getCheckResult()))
+                    .open();
         }
-        dialogWindows.view(this, DqCheckRunReconciliationView.class)
-                .withViewConfigurer(view -> view.setCheckResult(issue.getCheckResult()))
-                .open();
+    }
+
+    private static boolean isCrossSource(DqIssue issue) {
+        return issue.getRule() != null && issue.getRule().getRuleType() == DqRuleType.CROSS_SOURCE_AGGREGATED;
     }
 }
