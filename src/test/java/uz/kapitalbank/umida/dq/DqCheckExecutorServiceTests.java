@@ -111,6 +111,17 @@ public class DqCheckExecutorServiceTests {
     }
 
     @Test
+    void anInactiveRuleIsLeftOutOfTheRun() {
+        testData.createRule(domain, "inactive", DqRuleType.NOT_NULL, "parent_id", "{}",
+                rule -> rule.setActive(false));
+
+        DqCheckRun run = awaitFinished(checkExecutorService.startCheckRun(filter()));
+
+        // only the three active rules of the set-up
+        assertEquals(3, run.getRulesTotal());
+    }
+
+    @Test
     void theRuleCodeFilterSelectsTheRulesWhoseCodeContainsTheText() {
         DqRuleFilter filter = filter();
         // a part of the code in another case: the match is "contains", case-insensitive

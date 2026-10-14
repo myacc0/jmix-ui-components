@@ -34,9 +34,11 @@ public class DqRuleFilterService {
     /**
      * Returns the condition to assign to the rules loader once, at view init. The actual filtering
      * is driven by the parameters produced by {@link #createRuleParameters(DqRuleFilter)}.
+     * Inactive rules are never selected, whatever the filter.
      */
     public LogicalCondition createRuleCondition() {
         return LogicalCondition.and(
+                JpqlCondition.create("{E}.active = true", null),
                 condition("{E}.dataSource = :" + PARAM_DATA_SOURCE),
                 condition("{E}.group = :" + PARAM_GROUP),
                 condition("{E}.domain = :" + PARAM_DOMAIN),
