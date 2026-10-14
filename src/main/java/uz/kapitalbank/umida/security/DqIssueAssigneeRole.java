@@ -37,16 +37,19 @@ public interface DqIssueAssigneeRole {
             action = EntityAttributePolicyAction.MODIFY)
     void dqIssueClosing();
 
-    /** The rule columns of the issue screens. */
+    /** The rule columns of the issue screens; the type decides what the issue page shows of the check. */
     @EntityAttributePolicy(entityClass = DqRule.class,
-            attributes = {"name", "code", "dataSource", "severity"},
+            attributes = {"name", "code", "dataSource", "severity", "ruleType"},
             action = EntityAttributePolicyAction.VIEW)
     @EntityPolicy(entityClass = DqRule.class, actions = EntityPolicyAction.READ)
     void dqRule();
 
-    /** The latest failed check of the issue and the query that reads its violating rows. */
+    /**
+     * The latest failed check of the issue and the query that reads its violating rows, or what a
+     * cross-source rule compared.
+     */
     @EntityAttributePolicy(entityClass = DqCheckRunResult.class,
-            attributes = {"status", "failedRecords", "violationsQuery", "checkRun"},
+            attributes = {"status", "failedRecords", "violationsQuery", "reconciliation", "checkRun"},
             action = EntityAttributePolicyAction.VIEW)
     @EntityPolicy(entityClass = DqCheckRunResult.class, actions = EntityPolicyAction.READ)
     void dqCheckRunResult();
@@ -76,7 +79,8 @@ public interface DqIssueAssigneeRole {
             "umida_DqIssue.list",
             "umida_DqIssue.detail",
             "umida_DqIssue.close",
-            "umida_DqCheckRunViolationsView"
+            "umida_DqCheckRunViolationsView",
+            "umida_DqCheckRunReconciliationView"
     })
     @MenuPolicy(menuIds = "umida_DqIssue.list")
     void screens();

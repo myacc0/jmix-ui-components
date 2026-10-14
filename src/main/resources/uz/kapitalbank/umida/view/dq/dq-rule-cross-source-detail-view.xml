@@ -31,10 +31,72 @@
 
             <fragment id="generalInfoFragment" class="uz.kapitalbank.umida.view.dq.DqRuleGeneralInfoFragment"/>
 
-            <hbox id="settingsBlock" classNames="form-block">
-                <span classNames="form-block-title" text="msg://dqRuleCrossSourceDetailView.settingsTitle"/>
+            <hbox classNames="form-block">
+                <span classNames="form-block-title" text="msg://dqRuleCrossSourceDetailView.dataSourcesBlock"/>
 
-                <span id="settingsPendingText" text="msg://dqRuleDetailView.settingsPending" css="display: block; margin-bottom: 10px"/>
+                <formItem label="msg://dqRuleCrossSourceDetailView.primaryDataSource">
+                    <select id="dataSourceField" property="dataSource" required="true"/>
+                </formItem>
+
+                <formItem label="msg://dqRuleCrossSourceDetailView.secondaryDataSource">
+                    <select id="crossDataSourceField" required="true"
+                            requiredMessage="msg://dqRuleCrossSourceDetailView.secondaryDataSourceRequired"/>
+                </formItem>
+            </hbox>
+
+            <hbox classNames="form-block">
+                <span classNames="form-block-title" text="msg://dqRuleDetailView.settingsBlock"/>
+
+                <formItem label="msg://ruleConfig.crossPrimarySql">
+                    <vbox id="primarySqlBox" padding="false" spacing="false" width="100%">
+                        <hbox width="100%" justifyContent="END" padding="false">
+                            <button id="primarySqlFullScreenButton"
+                                    text="msg://dqRuleCustomSqlDetailView.fullScreenButton"
+                                    icon="EXPAND_SQUARE"
+                                    themeNames="tertiary-inline"/>
+                        </hbox>
+                        <codeEditor id="primarySqlField"
+                                    mode="SQL"
+                                    width="100%"
+                                    height="12em"
+                                    showPrintMargin="false"
+                                    textWrap="true"
+                                    helperText="msg://ruleConfig.crossSql.helper"/>
+                    </vbox>
+                </formItem>
+
+                <formItem label="msg://ruleConfig.crossDataSourceSql">
+                    <vbox id="secondarySqlBox" padding="false" spacing="false" width="100%">
+                        <hbox width="100%" justifyContent="END" padding="false">
+                            <button id="secondarySqlFullScreenButton"
+                                    text="msg://dqRuleCustomSqlDetailView.fullScreenButton"
+                                    icon="EXPAND_SQUARE"
+                                    themeNames="tertiary-inline"/>
+                        </hbox>
+                        <codeEditor id="secondarySqlField"
+                                    mode="SQL"
+                                    width="100%"
+                                    height="12em"
+                                    showPrintMargin="false"
+                                    textWrap="true"
+                                    helperText="msg://ruleConfig.crossSql.helper"/>
+                    </vbox>
+                </formItem>
+
+                <formItem label="msg://ruleConfig.crossColumnPairs">
+                    <!-- the rows of alias pairs are built by the controller, one per configured pair -->
+                    <vbox id="columnPairsBox" padding="false" spacing="false" width="100%">
+                        <vbox id="columnPairRowsBox" padding="false" width="100%"/>
+                        <button id="addColumnPairButton"
+                                text="msg://dqRuleCrossSourceDetailView.addColumnPair"
+                                icon="PLUS"
+                                themeNames="tertiary-inline"/>
+                    </vbox>
+                </formItem>
+
+                <formItem label="msg://uz.kapitalbank.umida.entity.dq/DqRule.ruleConfig" css="margin-bottom: 10px">
+                    <textArea id="ruleConfigField" property="ruleConfig" minRows="5" readOnly="true"/>
+                </formItem>
 
                 <checkbox id="activeField" property="active" label="msg://uz.kapitalbank.umida.entity.dq/DqRule.active" dataContainer="dqRuleDc"/>
             </hbox>

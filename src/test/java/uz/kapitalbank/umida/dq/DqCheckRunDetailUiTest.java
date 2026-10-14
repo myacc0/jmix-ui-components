@@ -31,7 +31,10 @@ import uz.kapitalbank.umida.service.dq.DqBadges;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
 import uz.kapitalbank.umida.test_support.DqTestData;
 import uz.kapitalbank.umida.view.dq.DqCheckRunDetailView;
+import uz.kapitalbank.umida.dto.dq.DqReconciliation;
+import uz.kapitalbank.umida.view.dq.DqCheckRunReconciliationView;
 import uz.kapitalbank.umida.view.dq.DqCheckRunViolationsView;
+import uz.kapitalbank.umida.view.dq.DqReconciliationFragment;
 import uz.kapitalbank.umida.view.dq.DqViolationsFragment;
 
 import java.math.BigDecimal;
@@ -192,6 +195,58 @@ public class DqCheckRunDetailUiTest {
                 violationsGrid.getGenericDataView().getItems().count(), "the second page holds the rest");
         assertTrue(previousPageButton.isEnabled());
         assertFalse(nextPageButton.isEnabled(), "the second page is the last one");
+    }
+
+    @Test
+    void theReconciliationOfACrossSourceRuleOpensAsPairsSideBySide() {
+        DqRule crossSourceRule = testData.createRule(testData.createDomain(), "cross ui",
+                DqRuleType.CROSS_SOURCE_AGGREGATED, null, "{}");
+        DqCheckRunResult crossSource = newResult(DqCheckResultStatus.FAILED);
+        crossSource.setRule(crossSourceRule);
+        crossSource.setViolationsQuery(null);
+        crossSource.setTotalRecords(BigInteger.TWO);
+        crossSource.setFailedRecords(BigInteger.ONE);
+        crossSource.setReconciliation("{\"primary\": {\"dataSource\": \"main\", \"row\": {\"cnt\": 10, \"sum\": 2.5}},"
+                + " \"secondary\": {\"dataSource\": \"dwh\", \"row\": {\"total\": 10, \"amount\": 3}},"
+                + " \"pairs\": [{\"primaryAlias\": \"cnt\", \"primaryValue\": 10, \"secondaryAlias\": \"total\","
+                + " \"secondaryValue\": 10, \"matched\": true},"
+                + " {\"primaryAlias\": \"sum\", \"primaryValue\": 2.5, \"secondaryAlias\": \"amount\","
+                + " \"secondaryValue\": 3, \"matched\": false}]}");
+        results.add(dataManager.save(crossSource));
+
+        DataGrid<DqCheckRunResult> grid = openResultsGrid();
+        DqCheckRunDetailView detailView = UiTestUtils.getCurrentView();
+        JmixButton reconciliationButton = UiTestUtils.getComponent(detailView, "reconciliationButton");
+        JmixButton violationsButton = UiTestUtils.getComponent(detailView, "violationsButton");
+
+        grid.select(gridItem(grid, failedResult()));
+        assertFalse(reconciliationButton.isEnabled(), "a row-level rule compared nothing");
+
+        grid.select(gridItem(grid, crossSource));
+        assertTrue(reconciliationButton.isEnabled());
+        assertFalse(violationsButton.isEnabled(), "a cross-source rule has no violating rows to read");
+
+        reconciliationButton.click();
+
+        UI.getCurrent().getInternals().getStateTree().runExecutionsBeforeClientResponse();
+        DqCheckRunReconciliationView dialog = UI.getCurrent().getChildren()
+                .flatMap(DqCheckRunDetailUiTest::selfAndDescendants)
+                .filter(DqCheckRunReconciliationView.class::isInstance)
+                .map(DqCheckRunReconciliationView.class::cast)
+                .findFirst()
+                .orElseGet(() -> fail("the reconciliation dialog is open"));
+        DqReconciliationFragment fragment = UiTestUtils.getComponent(dialog, "reconciliationFragment");
+        @SuppressWarnings("unchecked")
+        Grid<DqReconciliation.Pair> pairsGrid =
+                (Grid<DqReconciliation.Pair>) UiComponentUtils.getComponent(fragment, "reconciliationDataGrid");
+        List<DqReconciliation.Pair> pairs = pairsGrid.getGenericDataView().getItems().toList();
+        assertEquals(List.of("cnt", "sum"), pairs.stream().map(DqReconciliation.Pair::getPrimaryAlias).toList());
+        assertEquals(0, new BigDecimal("2.5").compareTo(pairs.get(1).getPrimaryValue()));
+        assertFalse(pairs.get(1).isMatched());
+        assertEquals(6, pairsGrid.getColumns().size(),
+                "both columns, both values, their difference and the outcome");
+        Span summary = (Span) UiComponentUtils.getComponent(fragment, "summaryLabel");
+        assertTrue(summary.getText().contains("dwh") && summary.getText().contains("1"), summary.getText());
     }
 
     private DqCheckRunResult failedResult() {

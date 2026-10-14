@@ -531,10 +531,10 @@ public class DqSqlQueryBuilderTests {
                 "the violations query is required too");
     }
 
-    // ----- not implemented yet -----
+    // ----- not translated: compared by DqCrossSourceReconciler -----
 
     @Test
-    void pendingRuleTypesFailExplicitly() {
+    void crossSourceRulesAreNotTranslated() {
         assertThrows(UnsupportedOperationException.class,
                 () -> build(rule(DqRuleType.CROSS_SOURCE_AGGREGATED, "{}"), DqSqlDialect.POSTGRESQL));
     }

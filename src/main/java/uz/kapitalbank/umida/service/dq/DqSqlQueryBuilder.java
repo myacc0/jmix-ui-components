@@ -83,7 +83,8 @@ public class DqSqlQueryBuilder {
      * Builds the queries for a rule, detecting the dialect from the rule's data source.
      *
      * @throws IllegalArgumentException      when the rule or its configuration cannot be translated
-     * @throws UnsupportedOperationException when the rule type is not implemented yet
+     * @throws UnsupportedOperationException when the rule type is not measured by queries, see
+     *                                       {@link DqCrossSourceReconciler}
      */
     public DqRuleQueries buildQueries(DqRule rule) {
         return buildQueries(rule, dataSourceProvider.resolveDialect(rule.getDataSource()));
@@ -94,7 +95,8 @@ public class DqSqlQueryBuilder {
      * translation of every rule type can be asserted without a database.
      *
      * @throws IllegalArgumentException      when the rule or its configuration cannot be translated
-     * @throws UnsupportedOperationException when the rule type is not implemented yet
+     * @throws UnsupportedOperationException when the rule type is not measured by queries, see
+     *                                       {@link DqCrossSourceReconciler}
      */
     public DqRuleQueries buildQueries(DqRule rule, DqSqlDialect dialect) {
         DqRuleType ruleType = rule.getRuleType();
@@ -261,10 +263,12 @@ public class DqSqlQueryBuilder {
         return DqSqlQuery.of(DqCustomSql.normalize(sql));
     }
 
+    /**
+     * Not translated: the rule compares rows of two data sources, which no single query can, and has no
+     * violating rows to select. {@link DqCrossSourceReconciler} runs its statements and compares them.
+     */
     private DqRuleQueries buildCrossSourceAggregated(DqRule rule, DqRuleConfig config, DqSqlDialect dialect) {
-        // TODO not implemented yet: needs a second query against config.secondaryDataSourceId,
-        //  compared in the executor rather than by the database
-        throw new UnsupportedOperationException("Rule type is not supported yet: "
+        throw new UnsupportedOperationException("Rule type is not translated into metrics and violations queries: "
                 + DqRuleType.CROSS_SOURCE_AGGREGATED.getId());
     }
 

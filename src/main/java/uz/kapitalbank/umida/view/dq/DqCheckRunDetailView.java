@@ -62,6 +62,12 @@ public class DqCheckRunDetailView extends StandardDetailView<DqCheckRun> {
         return DqViolationsFragment.hasViolations(checkResultsDataGrid.getSingleSelectedItem());
     }
 
+    /** Only a cross-source rule keeps what it compared. */
+    @Install(to = "checkResultsDataGrid.reconciliationAction", subject = "enabledRule")
+    private boolean reconciliationActionEnabledRule() {
+        return DqReconciliationFragment.hasReconciliation(checkResultsDataGrid.getSingleSelectedItem());
+    }
+
     @Subscribe("checkResultsDataGrid.executedQueryAction")
     public void onExecutedQueryAction(final ActionPerformedEvent event) {
         DqCheckRunResult result = checkResultsDataGrid.getSingleSelectedItem();
@@ -77,6 +83,17 @@ public class DqCheckRunDetailView extends StandardDetailView<DqCheckRun> {
             return;
         }
         dialogWindows.view(this, DqCheckRunViolationsView.class)
+                .withViewConfigurer(view -> view.setCheckResult(result))
+                .open();
+    }
+
+    @Subscribe("checkResultsDataGrid.reconciliationAction")
+    public void onReconciliationAction(final ActionPerformedEvent event) {
+        DqCheckRunResult result = checkResultsDataGrid.getSingleSelectedItem();
+        if (result == null) {
+            return;
+        }
+        dialogWindows.view(this, DqCheckRunReconciliationView.class)
                 .withViewConfigurer(view -> view.setCheckResult(result))
                 .open();
     }

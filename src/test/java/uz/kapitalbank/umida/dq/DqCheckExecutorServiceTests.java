@@ -9,11 +9,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import uz.kapitalbank.umida.dto.dq.DqReconciliation;
 import uz.kapitalbank.umida.dto.dq.DqRuleFilter;
 import uz.kapitalbank.umida.entity.dict.DictDataDomain;
 import uz.kapitalbank.umida.entity.dq.*;
 import uz.kapitalbank.umida.enums.dq.*;
 import uz.kapitalbank.umida.service.dq.DqCheckExecutorService;
+import uz.kapitalbank.umida.service.dq.DqCrossSourceReconciler;
 import uz.kapitalbank.umida.service.dq.DqDataSourceProvider;
 import uz.kapitalbank.umida.service.dq.DqIssueService;
 import uz.kapitalbank.umida.service.dq.DqViolationsService;
@@ -64,13 +66,16 @@ public class DqCheckExecutorServiceTests {
     @Autowired
     DqDataSourceProvider dataSourceProvider;
 
+    @Autowired
+    DqCrossSourceReconciler crossSourceReconciler;
+
     private final List<DqCheckRun> checkRuns = new ArrayList<>();
     private DqTestData testData;
 
     private DictDataDomain domain;
     private DqRule passingRule;
     private DqRule failingRule;
-    private DqRule unsupportedRule;
+    private DqRule misconfiguredRule;
     /** Rules a single test case adds on top of the three above, whose issues must go before they do. */
     private final List<DqRule> extraRules = new ArrayList<>();
 
@@ -82,8 +87,8 @@ public class DqCheckExecutorServiceTests {
         passingRule = testData.createRule(domain, "passing", DqRuleType.NOT_NULL, "short_name", "{}");
         // the domain created above has no parent, so this rule always finds a violation
         failingRule = testData.createRule(domain, "failing", DqRuleType.NOT_NULL, "parent_id", "{}");
-        // the query builder does not translate this type yet
-        unsupportedRule = testData.createRule(domain, "unsupported", DqRuleType.CROSS_SOURCE_AGGREGATED,
+        // a cross-source rule with nothing to compare cannot be evaluated
+        misconfiguredRule = testData.createRule(domain, "misconfigured", DqRuleType.CROSS_SOURCE_AGGREGATED,
                 "short_name", "{}");
     }
 
@@ -128,13 +133,14 @@ public class DqCheckExecutorServiceTests {
         assertNotNull(failed.getViolationsQuery(), "a failed rule must keep the query of its violating rows");
         assertTrue(failed.getViolationsQuery().startsWith("SELECT "), failed.getViolationsQuery());
 
-        DqCheckRunResult skipped = resultOf(results, unsupportedRule);
+        DqCheckRunResult skipped = resultOf(results, misconfiguredRule);
         assertEquals(DqCheckResultStatus.SKIPPED, skipped.getStatus());
         assertNotNull(skipped.getErrorMessage());
-        assertTrue(skipped.getErrorMessage().contains(DqRuleType.CROSS_SOURCE_AGGREGATED.getId()),
-                "the reason must name the rule type that is not supported: " + skipped.getErrorMessage());
+        assertTrue(skipped.getErrorMessage().contains("second data source"),
+                "the reason must name what the configuration lacks: " + skipped.getErrorMessage());
         assertNull(skipped.getPassRate());
-        assertNull(skipped.getViolationsQuery(), "a rule that was not translated has no query to keep");
+        assertNull(skipped.getViolationsQuery(), "a rule that was not evaluated has no query to keep");
+        assertNull(skipped.getReconciliation(), "a rule that was not evaluated compared nothing");
     }
 
     @Test
@@ -160,7 +166,7 @@ public class DqCheckExecutorServiceTests {
         DqCheckRun run = awaitFinished(checkExecutorService.startCheckRun(filter()));
 
         assertTrue(loadIssues(passingRule).isEmpty());
-        assertTrue(loadIssues(unsupportedRule).isEmpty(), "a skipped rule says nothing about the data");
+        assertTrue(loadIssues(misconfiguredRule).isEmpty(), "a skipped rule says nothing about the data");
 
         List<DqIssue> issues = loadIssues(failingRule);
         assertEquals(1, issues.size());
@@ -371,6 +377,86 @@ public class DqCheckExecutorServiceTests {
     }
 
     @Test
+    void aCrossSourceRuleFailsWhenAnyPairDiffers() {
+        // both "sources" are the main store: what is compared is the rows, not the databases
+        DqRule rule = crossSourceRule("cross failing",
+                "select 10 as total, 2.50 as amount, null::numeric as missing, 'x' as note",
+                "select 10.00 as cnt, 3 as sum_amount, null::numeric as nothing",
+                "[{\"primaryAlias\": \"total\", \"secondaryAlias\": \"cnt\"},"
+                        + " {\"primaryAlias\": \"AMOUNT\", \"secondaryAlias\": \"sum_amount\"},"
+                        + " {\"primaryAlias\": \"missing\", \"secondaryAlias\": \"nothing\"}]");
+
+        DqCheckRunResult result = resultOf(loadResults(awaitFinished(checkExecutorService.startCheckRun(filter()))),
+                rule);
+
+        assertEquals(DqCheckResultStatus.FAILED, result.getStatus(), result.getErrorMessage());
+        assertEquals(BigInteger.valueOf(3), result.getTotalRecords(), "every pair is a record");
+        assertEquals(BigInteger.ONE, result.getFailedRecords(), "only the amounts differ");
+        assertNull(result.getViolationsQuery(), "the compared rows are in two databases: there is no query to read them");
+        assertTrue(result.getExecutedQuery().startsWith("-- main\nselect 10 as total"), result.getExecutedQuery());
+
+        DqReconciliation reconciliation = crossSourceReconciler.fromJson(result.getReconciliation());
+        assertNotNull(reconciliation, "what was compared is kept: " + result.getReconciliation());
+        assertEquals("main", reconciliation.getPrimary().getDataSource());
+        assertEquals("x", reconciliation.getPrimary().getRow().get("note"), "the whole row is kept");
+        List<DqReconciliation.Pair> pairs = reconciliation.getPairs();
+        assertEquals(3, pairs.size());
+        assertTrue(pairs.get(0).isMatched(), "10 equals 10.00");
+        assertFalse(pairs.get(1).isMatched());
+        assertEquals(0, new BigDecimal("2.50").compareTo(pairs.get(1).getPrimaryValue()),
+                "an alias is found whatever its case");
+        assertEquals(0, new BigDecimal("-0.50").compareTo(pairs.get(1).difference()));
+        assertTrue(pairs.get(2).isMatched(), "two NULLs match");
+
+        List<DqIssue> issues = loadIssues(rule);
+        assertEquals(1, issues.size(), "a failed cross-source rule opens an issue like any other");
+        assertTrue(issues.get(0).getDescription().contains("AMOUNT / sum_amount"),
+                "the issue names the pairs that differ: " + issues.get(0).getDescription());
+    }
+
+    @Test
+    void aCrossSourceRulePassesWhenEveryPairMatches() {
+        DqRule rule = crossSourceRule("cross passing",
+                "select count(*) as cnt from umida_dict_data_domain",
+                "select count(*) as total from umida_dict_data_domain",
+                "[{\"primaryAlias\": \"cnt\", \"secondaryAlias\": \"total\"}]");
+
+        DqCheckRunResult result = resultOf(loadResults(awaitFinished(checkExecutorService.startCheckRun(filter()))),
+                rule);
+
+        assertEquals(DqCheckResultStatus.PASSED, result.getStatus(), result.getErrorMessage());
+        assertEquals(BigInteger.ZERO, result.getFailedRecords());
+        assertEquals(0, new BigDecimal("100.00").compareTo(result.getPassRate()));
+        assertNotNull(result.getReconciliation(), "a passed check keeps what it compared too");
+        assertTrue(loadIssues(rule).isEmpty());
+    }
+
+    @Test
+    void aCrossSourceQueryMustReturnExactlyOneRow() {
+        DqRule noRows = crossSourceRule("cross no rows", "select 1 as a where false", "select 1 as b",
+                "[{\"primaryAlias\": \"a\", \"secondaryAlias\": \"b\"}]");
+        DqRule twoRows = crossSourceRule("cross two rows", "select 1 as a",
+                "select g as b from generate_series(1, 2) g",
+                "[{\"primaryAlias\": \"a\", \"secondaryAlias\": \"b\"}]");
+        DqRule unknownAlias = crossSourceRule("cross unknown alias", "select 1 as a", "select 1 as b",
+                "[{\"primaryAlias\": \"a\", \"secondaryAlias\": \"c\"}]");
+
+        List<DqCheckRunResult> results = loadResults(awaitFinished(checkExecutorService.startCheckRun(filter())));
+
+        for (DqRule rule : List.of(noRows, twoRows, unknownAlias)) {
+            DqCheckRunResult result = resultOf(results, rule);
+            assertEquals(DqCheckResultStatus.SKIPPED, result.getStatus(), rule.getName());
+            assertTrue(loadIssues(rule).isEmpty(), "a rule that could not be evaluated opens no issue");
+        }
+        assertTrue(resultOf(results, noRows).getErrorMessage().contains("returned none"),
+                resultOf(results, noRows).getErrorMessage());
+        assertTrue(resultOf(results, twoRows).getErrorMessage().contains("returned more"),
+                resultOf(results, twoRows).getErrorMessage());
+        assertTrue(resultOf(results, unknownAlias).getErrorMessage().contains("'c'"),
+                resultOf(results, unknownAlias).getErrorMessage());
+    }
+
+    @Test
     void rejectsAFilterThatMatchesNothing() {
         DqRuleFilter filter = filter();
         filter.setTableName("no_such_table_" + UUID.randomUUID().toString().replace("-", ""));
@@ -464,6 +550,16 @@ public class DqCheckExecutorServiceTests {
         return rule;
     }
 
+    /** A cross-source rule comparing two queries of the main store. */
+    private DqRule crossSourceRule(String name, String primarySql, String secondarySql, String pairsJson) {
+        DqRule rule = testData.createRule(domain, name, DqRuleType.CROSS_SOURCE_AGGREGATED, null,
+                "{\"crossPrimarySql\": \"" + primarySql + "\", \"crossDataSource\": \"main\","
+                        + " \"crossDataSourceSql\": \"" + secondarySql + "\", \"crossColumnPairs\": " + pairsJson + "}",
+                custom -> custom.setTableName(null));
+        extraRules.add(rule);
+        return rule;
+    }
+
     private DqRule updateRuleConfig(DqRule rule, String ruleConfig) {
         DqRule loaded = dataManager.load(DqRule.class).id(rule.getId()).one();
         loaded.setRuleConfig(ruleConfig);
@@ -481,7 +577,7 @@ public class DqCheckExecutorServiceTests {
     void tearDown() {
         // issues first, then results, then the runs that own them: each step drops references the
         // next one would otherwise leave dangling
-        List<DqRule> rules = new ArrayList<>(List.of(passingRule, failingRule, unsupportedRule));
+        List<DqRule> rules = new ArrayList<>(List.of(passingRule, failingRule, misconfiguredRule));
         rules.addAll(extraRules);
         for (DqRule rule : rules) {
             loadIssues(rule).forEach(dataManager::remove);

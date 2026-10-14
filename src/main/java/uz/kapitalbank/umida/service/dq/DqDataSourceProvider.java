@@ -231,7 +231,7 @@ public class DqDataSourceProvider {
     }
 
     /**
-     * The columns a user-written read query returns, without reading its rows. The database describes
+     * The columns a user-written read query returns, by label and type, without reading its rows. The database describes
      * a prepared statement without running it where the driver supports that (PostgreSQL); elsewhere
      * the query is run wrapped into a sub-query that selects nothing.
      *
@@ -239,7 +239,7 @@ public class DqDataSourceProvider {
      * @throws QueryFailedException when the database rejects the statement
      * @throws IllegalStateException when no connection to the data source can be opened
      */
-    public List<ColumnType> describeQuery(String dataSourceName, String sql, int timeoutSeconds) {
+    public List<QueryColumn> describeQuery(String dataSourceName, String sql, int timeoutSeconds) {
         return inReadOnlyTransaction(dataSourceName, connection -> {
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
                 statement.setQueryTimeout(timeoutSeconds);
@@ -257,10 +257,11 @@ public class DqDataSourceProvider {
         });
     }
 
-    private List<ColumnType> columnTypes(ResultSetMetaData metaData) throws SQLException {
-        List<ColumnType> columns = new ArrayList<>();
+    private List<QueryColumn> columnTypes(ResultSetMetaData metaData) throws SQLException {
+        List<QueryColumn> columns = new ArrayList<>();
         for (int i = 1; i <= metaData.getColumnCount(); i++) {
-            columns.add(new ColumnType(metaData.getColumnType(i), metaData.getColumnTypeName(i)));
+            columns.add(new QueryColumn(metaData.getColumnLabel(i),
+                    new ColumnType(metaData.getColumnType(i), metaData.getColumnTypeName(i))));
         }
         return columns;
     }
@@ -351,5 +352,14 @@ public class DqDataSourceProvider {
      * @param typeName the database's own name of the type, e.g. {@code varchar} or {@code uuid}
      */
     public record ColumnType(int jdbcType, String typeName) {
+    }
+
+    /**
+     * A column of a query result.
+     *
+     * @param label the name the query gives the column, its alias when it has one, as the database
+     *              reports it (an unquoted alias may come back folded to upper or lower case)
+     */
+    public record QueryColumn(String label, ColumnType type) {
     }
 }

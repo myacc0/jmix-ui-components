@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view" title="">
+    <actions>
+        <action id="closeAction" type="view_close" text="msg:///actions.Close" icon="vaadin:close"/>
+    </actions>
+    <layout expand="reconciliationFragment" classNames="dq-check-run-violations-view">
+        <fragment id="reconciliationFragment" class="uz.kapitalbank.umida.view.dq.DqReconciliationFragment"/>
+        <hbox id="dialogActions">
+            <button id="closeButton" themeNames="primary" action="closeAction"/>
+        </hbox>
+    </layout>
+</view>

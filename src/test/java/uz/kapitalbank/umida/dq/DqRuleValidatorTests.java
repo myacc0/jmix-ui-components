@@ -266,10 +266,56 @@ public class DqRuleValidatorTests {
         assertTrue(fields(customSql(sql, "select short_name, 'x' as note from umida_dict_data_domain")).isEmpty());
     }
 
-    // ----- not implemented yet: accept anything -----
+    // ----- CROSS_SOURCE_AGGREGATED -----
+
+    private DqRule crossSource(String primarySql, String secondarySql, String pairsJson) {
+        DqRule rule = rule(DqRuleType.CROSS_SOURCE_AGGREGATED,
+                "{\"crossPrimarySql\": " + quoted(primarySql) + ", \"crossDataSource\": \"main\","
+                        + " \"crossDataSourceSql\": " + quoted(secondarySql) + ", \"crossColumnPairs\": " + pairsJson + "}");
+        rule.setTableName(null);
+        rule.setColumnName(null);
+        return rule;
+    }
 
     @Test
-    void placeholderTypesReportNoErrors() {
-        assertTrue(fields(rule(DqRuleType.CROSS_SOURCE_AGGREGATED, "{}")).isEmpty());
+    void crossSourceRequiresBothQueriesTheSecondSourceAndAPair() {
+        DqRule rule = rule(DqRuleType.CROSS_SOURCE_AGGREGATED, "{}");
+        rule.setTableName(null);
+        rule.setColumnName(null);
+        assertEquals(List.of(FIELD_CROSS_PRIMARY_SQL, FIELD_CROSS_DATA_SOURCE_SQL, FIELD_CROSS_DATA_SOURCE,
+                FIELD_CROSS_COLUMN_PAIRS), fields(rule));
+    }
+
+    @Test
+    void crossSourceAcceptsNumericColumnsBothQueriesReturn() {
+        assertTrue(fields(crossSource("select count(*) as cnt, 1.5 as amount from umida_dict_data_domain",
+                "select 1 as total, 2 as AMOUNT",
+                "[{\"primaryAlias\": \"cnt\", \"secondaryAlias\": \"total\"},"
+                        + " {\"primaryAlias\": \"amount\", \"secondaryAlias\": \"amount\"}]")).isEmpty(),
+                "an alias is matched whatever case the database folded it to");
+    }
+
+    @Test
+    void crossSourcePairsNeedBothAliases() {
+        assertEquals(List.of(FIELD_CROSS_COLUMN_PAIRS), fields(crossSource("select 1 as a", "select 1 as b",
+                "[{\"primaryAlias\": \"a\"}]")));
+    }
+
+    @Test
+    void crossSourceAliasesMustBeNumericColumnsOfTheirQuery() {
+        String pairs = "[{\"primaryAlias\": \"a\", \"secondaryAlias\": \"b\"}]";
+        assertEquals(List.of(FIELD_CROSS_COLUMN_PAIRS), fields(crossSource("select 1 as x", "select 1 as b", pairs)));
+        assertTrue(messages(crossSource("select 1 as x", "select 1 as b", pairs)).get(0).contains("x"),
+                "the message lists the columns the query returns");
+        assertEquals(List.of(FIELD_CROSS_COLUMN_PAIRS), fields(crossSource("select 1 as a", "select 'b' as b", pairs)));
+    }
+
+    @Test
+    void crossSourceQueriesMustBeReadQueriesTheDataSourcesRun() {
+        String pairs = "[{\"primaryAlias\": \"a\", \"secondaryAlias\": \"b\"}]";
+        assertEquals(List.of(FIELD_CROSS_PRIMARY_SQL),
+                fields(crossSource("delete from umida_dict_data_domain", "select 1 as b", pairs)));
+        assertEquals(List.of(FIELD_CROSS_DATA_SOURCE_SQL),
+                fields(crossSource("select 1 as a", "select 1 as b from no_such_table", pairs)));
     }
 }

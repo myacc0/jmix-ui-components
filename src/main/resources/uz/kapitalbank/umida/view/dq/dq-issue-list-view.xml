@@ -12,11 +12,13 @@
                     <property name="dataSource"/>
                     <property name="severity"/>
                 </property>
-                <!-- the status and the query decide whether the violating rows can be shown -->
+                <!-- the status and the query decide whether the violating rows can be shown,
+                     the reconciliation whether what a cross-source rule compared can -->
                 <property name="checkResult">
                     <property name="status"/>
                     <property name="failedRecords"/>
                     <property name="violationsQuery"/>
+                    <property name="reconciliation"/>
                 </property>
                 <property name="assignee" fetchPlan="_instance_name"/>
                 <property name="closedBy" fetchPlan="_instance_name"/>
@@ -39,6 +41,7 @@
             <startSlot>
                 <button id="readButton" themeNames="primary" action="dqIssuesDataGrid.readAction" text="" title="msg:///actions.Read"/>
                 <button id="violationsButton" themeNames="primary" action="dqIssuesDataGrid.violationsAction"/>
+                <button id="reconciliationButton" themeNames="primary" action="dqIssuesDataGrid.reconciliationAction"/>
                 <button id="closeIssueButton" themeNames="primary" action="dqIssuesDataGrid.closeIssueAction"/>
             </startSlot>
             <endSlot>
@@ -57,6 +60,10 @@
                         type="list_itemTracking"
                         text="msg://dqIssueListView.violationsAction"
                         icon="vaadin:file-search"/>
+                <action id="reconciliationAction"
+                        type="list_itemTracking"
+                        text="msg://dqIssueListView.reconciliationAction"
+                        icon="vaadin:scale"/>
                 <action id="closeIssueAction"
                         type="list_itemTracking"
                         text="msg://dqIssueListView.closeIssueAction"

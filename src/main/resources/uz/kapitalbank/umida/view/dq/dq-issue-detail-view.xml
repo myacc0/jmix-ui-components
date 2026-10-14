@@ -9,11 +9,13 @@
                     <property name="code"/>
                     <property name="dataSource"/>
                     <property name="severity"/>
+                    <property name="ruleType"/>
                 </property>
                 <property name="checkResult">
                     <property name="status"/>
                     <property name="failedRecords"/>
                     <property name="violationsQuery"/>
+                    <property name="reconciliation"/>
                 </property>
                 <property name="assignee" fetchPlan="_instance_name"/>
                 <property name="closedBy" fetchPlan="_instance_name"/>
@@ -70,6 +72,11 @@
         </hbox>
         <vbox id="violationsBox" width="100%" height="32em" padding="false" css="padding-bottom: 40px">
             <fragment id="violationsFragment" class="uz.kapitalbank.umida.view.dq.DqViolationsFragment"/>
+        </vbox>
+        <!-- in place of the violating rows for a cross-source rule, which has none -->
+        <vbox id="reconciliationBox" width="100%" height="24em" padding="false" visible="false"
+              css="padding-bottom: 40px">
+            <fragment id="reconciliationFragment" class="uz.kapitalbank.umida.view.dq.DqReconciliationFragment"/>
         </vbox>
     </layout>
 </view>

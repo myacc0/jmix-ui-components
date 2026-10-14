@@ -272,11 +272,16 @@ public class DqRuleValidator {
      * with the database's own message; when the data source cannot be reached, the statement is left
      * to the run and nothing is returned.
      */
-    private Optional<List<DqDataSourceProvider.ColumnType>> describeCustomSql(DqRule rule, String sql, String field,
-                                                                              List<DqRuleValidationError> errors) {
+    private Optional<List<DqDataSourceProvider.QueryColumn>> describeCustomSql(DqRule rule, String sql, String field,
+                                                                               List<DqRuleValidationError> errors) {
+        return describeQuery(rule, rule.getDataSource(), sql, field, errors);
+    }
+
+    private Optional<List<DqDataSourceProvider.QueryColumn>> describeQuery(DqRule rule, String dataSource, String sql,
+                                                                           String field,
+                                                                           List<DqRuleValidationError> errors) {
         try {
-            return Optional.of(dataSourceProvider.describeQuery(rule.getDataSource(), sql,
-                    CUSTOM_SQL_DESCRIBE_TIMEOUT_SECONDS));
+            return Optional.of(dataSourceProvider.describeQuery(dataSource, sql, CUSTOM_SQL_DESCRIBE_TIMEOUT_SECONDS));
         } catch (DqDataSourceProvider.QueryFailedException e) {
             errors.add(formatError(field, "dqRuleValidation.sqlFailed", e.getMessage()));
         } catch (RuntimeException e) {
@@ -286,22 +291,88 @@ public class DqRuleValidator {
     }
 
     /** The metrics query returns two numeric columns, the total count first. */
-    private void validateMetricsColumns(List<DqDataSourceProvider.ColumnType> columns,
+    private void validateMetricsColumns(List<DqDataSourceProvider.QueryColumn> columns,
                                         List<DqRuleValidationError> errors) {
         if (columns.size() != 2) {
             errors.add(formatError(FIELD_SQL, "dqRuleValidation.sqlColumnCount", columns.size()));
             return;
         }
         for (int i = 0; i < columns.size(); i++) {
-            DqDataSourceProvider.ColumnType column = columns.get(i);
+            DqDataSourceProvider.ColumnType column = columns.get(i).type();
             if (typeFamily(column.jdbcType()) != TypeFamily.NUMBER) {
                 errors.add(formatError(FIELD_SQL, "dqRuleValidation.sqlColumnNotNumber", i + 1, column.typeName()));
             }
         }
     }
 
+    /**
+     * Two statements, one per data source, each a single read query returning one row; and at least one
+     * pair of columns to compare, each a numeric column its query returns. The statements are described
+     * by their data sources to check the columns; one that cannot be reached leaves them to the run.
+     */
     private void validateCrossSourceAggregated(DqRule rule, DqRuleConfig config, List<DqRuleValidationError> errors) {
-        // TODO not implemented yet
+        boolean primaryReadable = validateReadQuery(config.getCrossPrimarySql(), FIELD_CROSS_PRIMARY_SQL,
+                "dqRuleValidation.crossPrimarySqlRequired", errors);
+        boolean secondaryReadable = validateReadQuery(config.getCrossDataSourceSql(), FIELD_CROSS_DATA_SOURCE_SQL,
+                "dqRuleValidation.crossSecondarySqlRequired", errors);
+        String secondaryDataSource = config.getCrossDataSource();
+        if (!StringUtils.hasText(secondaryDataSource)) {
+            errors.add(error(FIELD_CROSS_DATA_SOURCE, "dqRuleValidation.crossDataSourceRequired"));
+        }
+
+        List<DqRuleConfig.CrossColumnPair> pairs = config.getCrossColumnPairs() == null
+                ? List.of() : config.getCrossColumnPairs();
+        boolean pairsComplete = false;
+        if (pairs.isEmpty()) {
+            errors.add(error(FIELD_CROSS_COLUMN_PAIRS, "dqRuleValidation.crossColumnPairsRequired"));
+        } else if (pairs.stream().anyMatch(pair -> !StringUtils.hasText(pair.getPrimaryAlias())
+                || !StringUtils.hasText(pair.getSecondaryAlias()))) {
+            errors.add(error(FIELD_CROSS_COLUMN_PAIRS, "dqRuleValidation.crossAliasRequired"));
+        } else {
+            pairsComplete = true;
+        }
+        // the statements are still described without complete pairs: the database may reject them
+        List<DqRuleConfig.CrossColumnPair> checkedPairs = pairsComplete ? pairs : List.of();
+
+        if (primaryReadable && StringUtils.hasText(rule.getDataSource())) {
+            describeQuery(rule, rule.getDataSource(), DqCustomSql.normalize(config.getCrossPrimarySql()),
+                    FIELD_CROSS_PRIMARY_SQL, errors)
+                    .ifPresent(columns -> checkedPairs.stream()
+                            .map(DqRuleConfig.CrossColumnPair::getPrimaryAlias)
+                            .distinct()
+                            .forEach(alias -> validateCrossColumn(columns, alias.trim(), 1, errors)));
+        }
+        if (secondaryReadable && StringUtils.hasText(secondaryDataSource)) {
+            describeQuery(rule, secondaryDataSource.trim(), DqCustomSql.normalize(config.getCrossDataSourceSql()),
+                    FIELD_CROSS_DATA_SOURCE_SQL, errors)
+                    .ifPresent(columns -> checkedPairs.stream()
+                            .map(DqRuleConfig.CrossColumnPair::getSecondaryAlias)
+                            .distinct()
+                            .forEach(alias -> validateCrossColumn(columns, alias.trim(), 2, errors)));
+        }
+    }
+
+    /**
+     * The query of a data source returns a numeric column with the alias. An unquoted alias may come
+     * back folded to upper or lower case, so a label differing only in case is taken when no label
+     * matches exactly — as the run does, see {@link DqCrossSourceReconciler}.
+     *
+     * @param source the number of the data source, 1 or 2, as the form names them
+     */
+    private void validateCrossColumn(List<DqDataSourceProvider.QueryColumn> columns, String alias, int source,
+                                     List<DqRuleValidationError> errors) {
+        DqDataSourceProvider.QueryColumn column = columns.stream()
+                .filter(c -> alias.equals(c.label()))
+                .findFirst()
+                .or(() -> columns.stream().filter(c -> alias.equalsIgnoreCase(c.label())).findFirst())
+                .orElse(null);
+        if (column == null) {
+            errors.add(formatError(FIELD_CROSS_COLUMN_PAIRS, "dqRuleValidation.crossAliasNotFound", alias, source,
+                    columns.stream().map(DqDataSourceProvider.QueryColumn::label).toList()));
+        } else if (typeFamily(column.type().jdbcType()) != TypeFamily.NUMBER) {
+            errors.add(formatError(FIELD_CROSS_COLUMN_PAIRS, "dqRuleValidation.crossAliasNotNumber", alias, source,
+                    column.type().typeName()));
+        }
     }
 
     /**

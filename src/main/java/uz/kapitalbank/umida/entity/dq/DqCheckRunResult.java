@@ -7,7 +7,10 @@ import io.jmix.core.metamodel.annotation.JmixEntity;
 import io.jmix.core.metamodel.annotation.NumberFormat;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import org.eclipse.persistence.annotations.Convert;
+import org.eclipse.persistence.annotations.Converter;
 import uz.kapitalbank.umida.enums.dq.DqCheckResultStatus;
+import uz.kapitalbank.umida.utils.JsonbStringConverter;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -65,6 +68,12 @@ public class DqCheckRunResult {
     @Column(name = "VIOLATIONS_QUERY", columnDefinition = "text")
     private String violationsQuery;
 
+    /** The rows a cross-source rule compared, see {@link uz.kapitalbank.umida.dto.dq.DqReconciliation}. */
+    @Column(name = "RECONCILIATION", columnDefinition = "jsonb")
+    @Converter(name = "reconciliationJsonbConverter", converterClass = JsonbStringConverter.class)
+    @Convert("reconciliationJsonbConverter")
+    private String reconciliation;
+
     @Column(name = "CREATED_AT", nullable = false, columnDefinition = "TIMESTAMP")
     @NotNull
     private LocalDateTime createdAt;
@@ -83,6 +92,14 @@ public class DqCheckRunResult {
 
     public void setViolationsQuery(String violationsQuery) {
         this.violationsQuery = violationsQuery;
+    }
+
+    public String getReconciliation() {
+        return reconciliation;
+    }
+
+    public void setReconciliation(String reconciliation) {
+        this.reconciliation = reconciliation;
     }
 
     public String getExecutedQuery() {

@@ -91,4 +91,22 @@ public class DqIssueListView extends StandardListView<DqIssue> {
                 .withViewConfigurer(view -> view.setCheckResult(issue.getCheckResult()))
                 .open();
     }
+
+    /** Only a cross-source rule keeps what it compared. */
+    @Install(to = "dqIssuesDataGrid.reconciliationAction", subject = "enabledRule")
+    private boolean reconciliationActionEnabledRule() {
+        DqIssue issue = dqIssuesDataGrid.getSingleSelectedItem();
+        return issue != null && DqReconciliationFragment.hasReconciliation(issue.getCheckResult());
+    }
+
+    @Subscribe("dqIssuesDataGrid.reconciliationAction")
+    public void onDqIssuesDataGridReconciliation(final ActionPerformedEvent event) {
+        DqIssue issue = dqIssuesDataGrid.getSingleSelectedItem();
+        if (issue == null || issue.getCheckResult() == null) {
+            return;
+        }
+        dialogWindows.view(this, DqCheckRunReconciliationView.class)
+                .withViewConfigurer(view -> view.setCheckResult(issue.getCheckResult()))
+                .open();
+    }
 }

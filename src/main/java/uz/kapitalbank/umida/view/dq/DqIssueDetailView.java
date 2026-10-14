@@ -1,11 +1,13 @@
 package uz.kapitalbank.umida.view.dq;
 
 import uz.kapitalbank.umida.entity.dq.DqIssue;
+import uz.kapitalbank.umida.enums.dq.DqRuleType;
 import uz.kapitalbank.umida.service.dq.DqBadges;
 import uz.kapitalbank.umida.service.dq.DqIssueService;
 import uz.kapitalbank.umida.view.main.MainView;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.html.DescriptionList;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
 import io.jmix.flowui.DialogWindows;
 import io.jmix.flowui.kit.component.button.JmixButton;
@@ -37,6 +39,15 @@ public class DqIssueDetailView extends StandardDetailView<DqIssue> {
 
     @ViewComponent
     private DqViolationsFragment violationsFragment;
+
+    @ViewComponent
+    private VerticalLayout violationsBox;
+
+    @ViewComponent
+    private DqReconciliationFragment reconciliationFragment;
+
+    @ViewComponent
+    private VerticalLayout reconciliationBox;
 
     @ViewComponent
     private DescriptionList.Description statusValue;
@@ -80,11 +91,23 @@ public class DqIssueDetailView extends StandardDetailView<DqIssue> {
                 .open();
     }
 
-    /** Shows what the loaded issue allows: closing it, and the rows its latest failed check found. */
+    /**
+     * Shows what the loaded issue allows: closing it, and the rows its latest failed check found — or,
+     * for a cross-source rule, which finds no rows, the values the check compared.
+     */
     private void refresh() {
         DqIssue issue = getEditedEntity();
         closeIssueButton.setEnabled(dqIssueService.canClose(issue));
-        violationsFragment.setCheckResult(
-                DqViolationsFragment.hasViolations(issue.getCheckResult()) ? issue.getCheckResult() : null);
+
+        boolean crossSource = issue.getRule() != null
+                && issue.getRule().getRuleType() == DqRuleType.CROSS_SOURCE_AGGREGATED;
+        violationsBox.setVisible(!crossSource);
+        reconciliationBox.setVisible(crossSource);
+        if (crossSource) {
+            reconciliationFragment.setCheckResult(issue.getCheckResult());
+        } else {
+            violationsFragment.setCheckResult(
+                    DqViolationsFragment.hasViolations(issue.getCheckResult()) ? issue.getCheckResult() : null);
+        }
     }
 }

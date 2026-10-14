@@ -17,6 +17,7 @@ import io.jmix.core.DataManager;
 import io.jmix.core.Id;
 import io.jmix.core.Messages;
 import io.jmix.flowui.ViewNavigators;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import io.jmix.flowui.component.checkbox.JmixCheckbox;
 import io.jmix.flowui.component.combobox.JmixComboBox;
@@ -53,6 +54,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 /**
  * The rule editor: the code shows only once generated and never edits, the severity offers its
@@ -284,6 +286,88 @@ public class DqRuleDetailUiTest {
     }
 
     @Test
+    void theCrossSourceFormStartsWithOnePairThatCannotBeRemoved() {
+        DqRuleCrossSourceDetailView view = openNewCrossSourceRule();
+
+        for (String present : List.of("dataSourceField", "crossDataSourceField", "primarySqlField",
+                "secondarySqlField", "addColumnPairButton")) {
+            assertThat(UiComponentUtils.findComponent(view, present)).as(present).isPresent();
+        }
+        for (String absent : List.of("thresholdField", "samplesQueryColumnsField", "tableNameField")) {
+            assertThat(UiComponentUtils.findComponent(view, absent)).as(absent).isEmpty();
+        }
+
+        List<HorizontalLayout> rows = columnPairRows(view);
+        assertThat(rows).hasSize(1);
+        assertThat(aliasField(rows.get(0), 0).getValue()).isEmpty();
+        assertThat(aliasField(rows.get(0), 1).getValue()).isEmpty();
+        assertThat(removeButton(rows.get(0)).isEnabled()).as("the last pair stays").isFalse();
+    }
+
+    @Test
+    void theCrossSourceFormWritesItsPairsToTheConfig() {
+        DqRuleCrossSourceDetailView view = openNewCrossSourceRule();
+        JmixSelect<String> crossDataSourceField = UiTestUtils.getComponent(view, "crossDataSourceField");
+        CodeEditor primarySqlField = UiTestUtils.getComponent(view, "primarySqlField");
+        CodeEditor secondarySqlField = UiTestUtils.getComponent(view, "secondarySqlField");
+        JmixButton addColumnPairButton = UiTestUtils.getComponent(view, "addColumnPairButton");
+
+        crossDataSourceField.setValue("main");
+        primarySqlField.setValue("select count(*) as cnt from a");
+        secondarySqlField.setValue("select count(*) as total from b");
+        aliasField(columnPairRows(view).get(0), 0).setValue("cnt");
+        aliasField(columnPairRows(view).get(0), 1).setValue("total");
+        addColumnPairButton.click();
+        HorizontalLayout second = columnPairRows(view).get(1);
+        aliasField(second, 0).setValue("sum1");
+        aliasField(second, 1).setValue("sum2");
+
+        DqRuleConfig config = crossSourceConfig(view);
+        assertThat(config.getCrossDataSource()).isEqualTo("main");
+        assertThat(config.getCrossPrimarySql()).isEqualTo("select count(*) as cnt from a");
+        assertThat(config.getCrossDataSourceSql()).isEqualTo("select count(*) as total from b");
+        assertThat(config.getCrossColumnPairs())
+                .extracting(DqRuleConfig.CrossColumnPair::getPrimaryAlias, DqRuleConfig.CrossColumnPair::getSecondaryAlias)
+                .containsExactly(tuple("cnt", "total"), tuple("sum1", "sum2"));
+        assertThat(config.getThreshold()).as("the rule has no threshold to set").isNull();
+        assertThat(config.getSamplesQueryColumns()).isNull();
+        assertThat(columnPairRows(view)).allSatisfy(row -> assertThat(removeButton(row).isEnabled()).isTrue());
+
+        removeButton(columnPairRows(view).get(0)).click();
+
+        assertThat(columnPairRows(view)).hasSize(1);
+        assertThat(removeButton(columnPairRows(view).get(0)).isEnabled()).isFalse();
+        assertThat(crossSourceConfig(view).getCrossColumnPairs())
+                .extracting(DqRuleConfig.CrossColumnPair::getPrimaryAlias)
+                .containsExactly("sum1");
+    }
+
+    @Test
+    void aStoredCrossSourceRuleShowsItsPairs() {
+        DqRule rule = createRule(DqRuleType.CROSS_SOURCE_AGGREGATED,
+                "{\"crossPrimarySql\": \"select 1 as a, 2 as b\", \"crossDataSource\": \"main\","
+                        + " \"crossDataSourceSql\": \"select 1 as x, 2 as y\", \"crossColumnPairs\": ["
+                        + "{\"primaryAlias\": \"a\", \"secondaryAlias\": \"x\"},"
+                        + " {\"primaryAlias\": \"b\", \"secondaryAlias\": \"y\"}]}");
+
+        viewNavigators.detailView(UiTestUtils.getCurrentView(), DqRule.class)
+                .editEntity(rule)
+                .withViewClass(DqRuleCrossSourceDetailView.class)
+                .navigate();
+        DqRuleCrossSourceDetailView view = UiTestUtils.getCurrentView();
+
+        JmixSelect<String> crossDataSourceField = UiTestUtils.getComponent(view, "crossDataSourceField");
+        CodeEditor primarySqlField = UiTestUtils.getComponent(view, "primarySqlField");
+        assertThat(crossDataSourceField.getValue()).isEqualTo("main");
+        assertThat(primarySqlField.getValue()).isEqualTo("select 1 as a, 2 as b");
+        List<HorizontalLayout> rows = columnPairRows(view);
+        assertThat(rows).hasSize(2);
+        assertThat(aliasField(rows.get(1), 0).getValue()).isEqualTo("b");
+        assertThat(aliasField(rows.get(1), 1).getValue()).isEqualTo("y");
+        assertThat(view.hasUnsavedChanges()).as("showing the rule changes nothing").isFalse();
+    }
+
+    @Test
     void aRuleOpensFromTheListInTheFormOfItsType() {
         assertThat(editFromList(createRule())).isInstanceOf(DqRuleDetailView.class);
         assertThat(editFromList(createRule(DqRuleType.CUSTOM_SQL, "{}")))
@@ -380,6 +464,42 @@ public class DqRuleDetailUiTest {
                 .withViewClass(DqRuleCustomSqlDetailView.class)
                 .navigate();
         return UiTestUtils.getCurrentView();
+    }
+
+    private DqRuleCrossSourceDetailView openNewCrossSourceRule() {
+        viewNavigators.detailView(UiTestUtils.getCurrentView(), DqRule.class)
+                .newEntity()
+                .withViewClass(DqRuleCrossSourceDetailView.class)
+                .navigate();
+        return UiTestUtils.getCurrentView();
+    }
+
+    /** The rows of alias pairs, which the cross-source form builds itself. */
+    private static List<HorizontalLayout> columnPairRows(View<?> view) {
+        VerticalLayout box = UiTestUtils.getComponent(view, "columnPairRowsBox");
+        return box.getChildren().map(HorizontalLayout.class::cast).toList();
+    }
+
+    /** The alias field of the first (0) or the second (1) source in a row. */
+    @SuppressWarnings("unchecked")
+    private static TypedTextField<String> aliasField(HorizontalLayout row, int source) {
+        return row.getChildren()
+                .filter(TypedTextField.class::isInstance)
+                .map(c -> (TypedTextField<String>) c)
+                .toList()
+                .get(source);
+    }
+
+    private static JmixButton removeButton(HorizontalLayout row) {
+        return row.getChildren()
+                .filter(JmixButton.class::isInstance)
+                .map(JmixButton.class::cast)
+                .findFirst()
+                .orElseThrow();
+    }
+
+    private static DqRuleConfig crossSourceConfig(DqRuleCrossSourceDetailView view) {
+        return JsonUtils.parseConfig(view.getEditedEntity().getRuleConfig(), DqRuleConfig.class, new ObjectMapper());
     }
 
     /** The view of the dialog window open over the current view. */

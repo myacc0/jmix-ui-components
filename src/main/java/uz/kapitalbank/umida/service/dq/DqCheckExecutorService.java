@@ -1,5 +1,6 @@
 package uz.kapitalbank.umida.service.dq;
 
+import uz.kapitalbank.umida.dto.dq.DqReconciliation;
 import uz.kapitalbank.umida.dto.dq.DqRuleConfig;
 import uz.kapitalbank.umida.dto.dq.DqRuleFilter;
 import uz.kapitalbank.umida.dto.dq.DqRuleQueries;
@@ -35,6 +36,7 @@ import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Runs a data quality check: takes the rule filter of the "run check" page, records a
@@ -51,7 +53,10 @@ import java.util.function.Function;
  * the pass rate, and a violations query selecting the violating rows. The violations query is not run
  * here: it is stored on the result, with its parameters inlined, and run page by page when a user
  * looks at the violating rows ({@link DqViolationsService}). A rule fails when its pass rate is below
- * the {@code threshold} of its configuration ({@value #DEFAULT_THRESHOLD}% when it sets none). A rule
+ * the {@code threshold} of its configuration ({@value #DEFAULT_THRESHOLD}% when it sets none). A
+ * {@link DqRuleType#CROSS_SOURCE_AGGREGATED} rule is measured apart, by {@link DqCrossSourceReconciler}: it
+ * compares two data sources, fails when any compared pair of values differs, and keeps what it compared
+ * on the result instead of a violations query. A rule
  * that cannot be translated or executed is not fatal — it is recorded as
  * {@link DqCheckResultStatus#SKIPPED} with the reason and the run carries on.
  */
@@ -76,6 +81,7 @@ public class DqCheckExecutorService {
 
     private final DataManager dataManager;
     private final DqSqlQueryBuilder queryBuilder;
+    private final DqCrossSourceReconciler crossSourceReconciler;
     private final DqDataSourceProvider dataSourceProvider;
     private final DqRuleFilterService ruleFilterService;
     private final DqCheckRunService checkRunService;
@@ -88,6 +94,7 @@ public class DqCheckExecutorService {
 
     public DqCheckExecutorService(DataManager dataManager,
                                   DqSqlQueryBuilder queryBuilder,
+                                  DqCrossSourceReconciler crossSourceReconciler,
                                   DqDataSourceProvider dataSourceProvider,
                                   DqRuleFilterService ruleFilterService,
                                   DqCheckRunService checkRunService,
@@ -99,6 +106,7 @@ public class DqCheckExecutorService {
                                   TaskExecutor taskExecutor) {
         this.dataManager = dataManager;
         this.queryBuilder = queryBuilder;
+        this.crossSourceReconciler = crossSourceReconciler;
         this.dataSourceProvider = dataSourceProvider;
         this.ruleFilterService = ruleFilterService;
         this.checkRunService = checkRunService;
@@ -282,15 +290,33 @@ public class DqCheckExecutorService {
     }
 
     /**
-     * Compares an aggregate of the rule's data source against the same aggregate of a second one.
-     * The query builder does not translate this type yet, so the rule is recorded as skipped until
-     * it does.
-     * <p>
-     * TODO this type will not fit {@link #executeRowLevelCheck}: it needs the second query run
-     *  against {@code ruleConfig.secondaryDataSourceId} and the two results compared here.
+     * Compares a row of aggregates of the rule's data source with a row of a second data source, pair
+     * of columns by pair. The pairs are the "records" of the result: the rule fails when any of them
+     * differs, whatever the threshold — the form sets none for this type. What was compared is kept on
+     * the result; there is no violations query, the rows being in two databases.
      */
     private DqCheckRunResult executeCheckCrossSourceAggregated(DqCheckRun run, DqRule rule) {
-        return executeRowLevelCheck(run, rule);
+        DqCrossSourceReconciler.Queries queries = crossSourceReconciler.queries(rule);
+
+        long startedAt = System.currentTimeMillis();
+        DqReconciliation reconciliation = crossSourceReconciler.reconcile(queries);
+        long executionMs = System.currentTimeMillis() - startedAt;
+
+        Metrics metrics = new Metrics(BigInteger.valueOf(reconciliation.getPairs().size()),
+                BigInteger.valueOf(reconciliation.mismatches().size()));
+
+        DqCheckRunResult result = dataManager.create(DqCheckRunResult.class);
+        result.setCheckRun(run);
+        result.setRule(rule);
+        result.setStatus(metrics.failed().signum() > 0 ? DqCheckResultStatus.FAILED : DqCheckResultStatus.PASSED);
+        result.setTotalRecords(metrics.total());
+        result.setFailedRecords(metrics.failed());
+        result.setPassRate(passRate(metrics));
+        result.setExecutionMs(executionMs);
+        result.setExecutedQuery(queries.toDisplayString());
+        result.setReconciliation(crossSourceReconciler.toJson(reconciliation));
+
+        return saveResult(result);
     }
 
     // ---------------------------------------------------------------------
@@ -368,8 +394,19 @@ public class DqCheckExecutorService {
         return result;
     }
 
-    /** A custom SQL rule names no table: its description leaves the location out. */
+    /**
+     * A custom SQL rule names no table: its description leaves the location out. A cross-source rule
+     * has no threshold to fall below: its description names the pairs that differ.
+     */
     private String issueDescription(DqRule rule, DqCheckRunResult result) {
+        if (rule.getRuleType() == DqRuleType.CROSS_SOURCE_AGGREGATED) {
+            DqReconciliation reconciliation = crossSourceReconciler.fromJson(result.getReconciliation());
+            String mismatches = reconciliation == null ? "" : reconciliation.mismatches().stream()
+                    .map(pair -> pair.getPrimaryAlias() + " / " + pair.getSecondaryAlias())
+                    .collect(Collectors.joining(", "));
+            return messages.formatMessage(DqCheckExecutorService.class, "dqCheckExecutor.issueDescriptionCrossSource",
+                    result.getFailedRecords(), result.getTotalRecords(), mismatches);
+        }
         BigDecimal threshold = BigDecimal.valueOf(threshold(rule)).setScale(RATE_SCALE, RoundingMode.HALF_UP);
         if (!StringUtils.hasText(rule.getTableName())) {
             return messages.formatMessage(DqCheckExecutorService.class, "dqCheckExecutor.issueDescriptionNoTarget",

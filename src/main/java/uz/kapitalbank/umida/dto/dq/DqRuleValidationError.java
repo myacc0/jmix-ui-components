@@ -27,6 +27,10 @@ public record DqRuleValidationError(@Nullable String field, String message) {
     public static final String FIELD_REF_COLUMN = "refColumn";
     public static final String FIELD_SQL = "sql";
     public static final String FIELD_VIOLATIONS_SQL = "violationsSql";
+    public static final String FIELD_CROSS_PRIMARY_SQL = "crossPrimarySql";
+    public static final String FIELD_CROSS_DATA_SOURCE = "crossDataSource";
+    public static final String FIELD_CROSS_DATA_SOURCE_SQL = "crossDataSourceSql";
+    public static final String FIELD_CROSS_COLUMN_PAIRS = "crossColumnPairs";
 
     public static DqRuleValidationError of(String message) {
         return new DqRuleValidationError(null, message);

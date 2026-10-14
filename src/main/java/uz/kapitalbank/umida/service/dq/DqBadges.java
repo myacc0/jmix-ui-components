@@ -50,7 +50,12 @@ public class DqBadges {
             return null;
         }
 
-        Span badge = new Span(messages.getMessage(value));
+        return badge(classPrefix, value, messages.getMessage(value));
+    }
+
+    /** A badge coloured as the value but saying something of its own, e.g. "matches" for a passed pair. */
+    public <E extends Enum<E> & EnumClass<String>> Span badge(String classPrefix, E value, String text) {
+        Span badge = new Span(text);
         badge.addClassNames(BADGE, classPrefix + value.getId());
         return badge;
     }

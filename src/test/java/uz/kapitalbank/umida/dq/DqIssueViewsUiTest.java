@@ -48,7 +48,9 @@ import uz.kapitalbank.umida.view.dq.DqIssueCloseView;
 import uz.kapitalbank.umida.view.dq.DqIssueDetailView;
 import uz.kapitalbank.umida.view.dq.DqIssueListView;
 import uz.kapitalbank.umida.view.dq.DqRuleDetailView;
+import uz.kapitalbank.umida.view.dq.DqReconciliationFragment;
 import uz.kapitalbank.umida.view.dq.DqViolationsFragment;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -215,6 +217,56 @@ public class DqIssueViewsUiTest {
         Span pageStatusLabel = (Span) UiComponentUtils.getComponent(fragment, "pageStatusLabel");
         assertEquals(VIOLATING_ROWS, violationsGrid.getGenericDataView().getItems().count());
         assertTrue(pageStatusLabel.getText().contains(String.valueOf(VIOLATING_ROWS)), pageStatusLabel.getText());
+    }
+
+    @Test
+    void anIssueOfACrossSourceRuleShowsTheReconciliationInsteadOfViolatingRows() {
+        DqRule crossSourceRule = testData.createRule(testData.createDomain(), "issue cross source",
+                DqRuleType.CROSS_SOURCE_AGGREGATED, null, "{}", r -> r.setTableName(null));
+        DqCheckRunResult failed = dataManager.create(DqCheckRunResult.class);
+        failed.setCheckRun(result.getCheckRun());
+        failed.setRule(crossSourceRule);
+        failed.setStatus(DqCheckResultStatus.FAILED);
+        failed.setTotalRecords(BigInteger.ONE);
+        failed.setFailedRecords(BigInteger.ONE);
+        failed.setPassRate(new BigDecimal("0.00"));
+        failed.setReconciliation("{\"primary\": {\"dataSource\": \"main\", \"row\": {\"cnt\": 10}},"
+                + " \"secondary\": {\"dataSource\": \"main\", \"row\": {\"total\": 11}},"
+                + " \"pairs\": [{\"primaryAlias\": \"cnt\", \"primaryValue\": 10, \"secondaryAlias\": \"total\","
+                + " \"secondaryValue\": 11, \"matched\": false}]}");
+        DqCheckRunResult savedResult = testData.track(dataManager.save(failed));
+        DqIssue newIssue = dataManager.create(DqIssue.class);
+        newIssue.setRule(crossSourceRule);
+        newIssue.setCheckResult(savedResult);
+        newIssue.setStatus(DqIssueStatus.OPEN);
+        DqIssue crossSourceIssue = testData.track(dataManager.save(newIssue));
+
+        DataGrid<DqIssue> grid = openList();
+        DqIssueListView listView = UiTestUtils.getCurrentView();
+        JmixButton reconciliationButton = UiTestUtils.getComponent(listView, "reconciliationButton");
+        JmixButton violationsButton = UiTestUtils.getComponent(listView, "violationsButton");
+        grid.select(gridItem(grid));
+        assertFalse(reconciliationButton.isEnabled(), "a row-level rule compared nothing");
+        grid.select(grid.getGenericDataView().getItems()
+                .filter(item -> crossSourceIssue.getId().equals(item.getId()))
+                .findFirst()
+                .orElseGet(() -> fail("the cross-source issue is not listed")));
+        assertTrue(reconciliationButton.isEnabled());
+        assertFalse(violationsButton.isEnabled(), "a cross-source rule has no violating rows to read");
+
+        viewNavigators.detailView(UiTestUtils.getCurrentView(), DqIssue.class)
+                .editEntity(crossSourceIssue)
+                .withViewClass(DqIssueDetailView.class)
+                .navigate();
+        DqIssueDetailView view = UiTestUtils.getCurrentView();
+
+        VerticalLayout violationsBox = UiTestUtils.getComponent(view, "violationsBox");
+        VerticalLayout reconciliationBox = UiTestUtils.getComponent(view, "reconciliationBox");
+        assertFalse(violationsBox.isVisible());
+        assertTrue(reconciliationBox.isVisible());
+        DqReconciliationFragment fragment = UiTestUtils.getComponent(view, "reconciliationFragment");
+        Grid<?> pairsGrid = (Grid<?>) UiComponentUtils.getComponent(fragment, "reconciliationDataGrid");
+        assertEquals(1, pairsGrid.getGenericDataView().getItems().count());
     }
 
     @Test

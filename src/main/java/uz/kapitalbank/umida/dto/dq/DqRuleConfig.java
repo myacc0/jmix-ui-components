@@ -39,10 +39,14 @@ public class DqRuleConfig {
     // the failed records themselves, with the columns to show; paged when the violations are viewed
     private String violationsSql;
 
-    // ----- CROSS_SOURCE -----
+    // ----- CROSS_SOURCE_AGGREGATED -----
+    // one row of aggregates from the rule's own data source
     private String crossPrimarySql;
+    // the second data source and its one row of aggregates
     private String crossDataSource;
     private String crossDataSourceSql;
+    // the columns compared: a column of the first row against a column of the second, by their aliases
+    private List<CrossColumnPair> crossColumnPairs;
 
     public Double getThreshold() {
         return threshold;
@@ -172,6 +176,14 @@ public class DqRuleConfig {
         this.crossDataSourceSql = crossDataSourceSql;
     }
 
+    public List<CrossColumnPair> getCrossColumnPairs() {
+        return crossColumnPairs;
+    }
+
+    public void setCrossColumnPairs(List<CrossColumnPair> crossColumnPairs) {
+        this.crossColumnPairs = crossColumnPairs;
+    }
+
     @Override
     public String toString() {
         return "DqRuleConfig{" +
@@ -187,6 +199,51 @@ public class DqRuleConfig {
                 ", refColumn='" + refColumn + '\'' +
                 ", allowNull=" + allowNull +
                 ", sql='" + sql + '\'' +
+                ", violationsSql='" + violationsSql + '\'' +
+                ", crossPrimarySql='" + crossPrimarySql + '\'' +
+                ", crossDataSource='" + crossDataSource + '\'' +
+                ", crossDataSourceSql='" + crossDataSourceSql + '\'' +
+                ", crossColumnPairs=" + crossColumnPairs +
                 '}';
+    }
+
+    /**
+     * Two columns that must hold the same value: one of the row the first data source returns, one of
+     * the row the second returns, each named by its alias in its query.
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class CrossColumnPair {
+        private String primaryAlias;
+        private String secondaryAlias;
+
+        public CrossColumnPair() {
+        }
+
+        public CrossColumnPair(String primaryAlias, String secondaryAlias) {
+            this.primaryAlias = primaryAlias;
+            this.secondaryAlias = secondaryAlias;
+        }
+
+        public String getPrimaryAlias() {
+            return primaryAlias;
+        }
+
+        public void setPrimaryAlias(String primaryAlias) {
+            this.primaryAlias = primaryAlias;
+        }
+
+        public String getSecondaryAlias() {
+            return secondaryAlias;
+        }
+
+        public void setSecondaryAlias(String secondaryAlias) {
+            this.secondaryAlias = secondaryAlias;
+        }
+
+        @Override
+        public String toString() {
+            return primaryAlias + "=" + secondaryAlias;
+        }
     }
 }
