@@ -5,11 +5,13 @@ import uz.kapitalbank.umida.dto.dq.DqRuleFilter;
 import uz.kapitalbank.umida.dto.SelectDto;
 import uz.kapitalbank.umida.entity.dq.DqCheckRun;
 import uz.kapitalbank.umida.entity.dq.DqRule;
+import uz.kapitalbank.umida.service.dq.DqBadges;
 import uz.kapitalbank.umida.service.dq.DqCheckExecutorService;
 import uz.kapitalbank.umida.service.dq.DqDataSourceProvider;
 import uz.kapitalbank.umida.service.dq.DqRuleFilterService;
 import uz.kapitalbank.umida.view.main.MainView;
 import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.router.Route;
 import io.jmix.core.Metadata;
 import io.jmix.flowui.Notifications;
@@ -45,6 +47,9 @@ public class DqCheckRunNewView extends StandardView {
     private DqCheckExecutorService checkExecutorService;
 
     @Autowired
+    private DqBadges dqBadges;
+
+    @Autowired
     private Notifications notifications;
 
     @Autowired
@@ -69,14 +74,11 @@ public class DqCheckRunNewView extends StandardView {
     private JmixComboBox<String> tableNameField;
 
     @ViewComponent
-    private JmixComboBox<String> columnNameField;
-
-    @ViewComponent
     private JmixButton runButton;
 
     /**
      * Guards against re-entrancy while the controller resets dependent filter attributes
-     * (table on data source change, column on table change): those writes fire their own
+     * (table on data source change): those writes fire their own
      * item-property-change events which must not cascade further.
      */
     private boolean cascading;
@@ -104,12 +106,9 @@ public class DqCheckRunNewView extends StandardView {
         }
         cascading = true;
         try {
-            switch (event.getProperty()) {
-                case "dataSource" -> applyDataSource((String) event.getValue());
-                case "tableName" -> applyTableName((String) event.getValue());
-                default -> {
-                    // the remaining attributes only narrow down the query
-                }
+            // the remaining attributes only narrow down the query
+            if ("dataSource".equals(event.getProperty())) {
+                applyDataSource((String) event.getValue());
             }
         } finally {
             cascading = false;
@@ -125,6 +124,16 @@ public class DqCheckRunNewView extends StandardView {
     @Subscribe(id = "dqRulesDc", target = Target.DATA_CONTAINER)
     public void onDqRulesDcCollectionChange(final CollectionContainer.CollectionChangeEvent<DqRule> event) {
         runButton.setEnabled(!event.getSource().getItems().isEmpty());
+    }
+
+    @Supply(to = "dqRulesDataGrid.dimension", subject = "renderer")
+    private Renderer<DqRule> dqRulesDataGridDimensionRenderer() {
+        return dqBadges.renderer(DqBadges.DIMENSION, DqRule::getDimension);
+    }
+
+    @Supply(to = "dqRulesDataGrid.severity", subject = "renderer")
+    private Renderer<DqRule> dqRulesDataGridSeverityRenderer() {
+        return dqBadges.renderer(DqBadges.SEVERITY, DqRule::getSeverity);
     }
 
     /**
@@ -152,26 +161,14 @@ public class DqCheckRunNewView extends StandardView {
 
     /**
      * Table names come from the metadata of the selected data source, so a data source change
-     * invalidates the table and column already chosen.
+     * invalidates the table already chosen.
      */
     private void applyDataSource(String dataSource) {
         tableNameField.setItems(dataSource != null
                 ? dataSourceProvider.getDataSourceTables(dataSource)
                 : List.of());
-        columnNameField.setItems(List.of());
 
-        DqRuleFilter filter = ruleFilterDc.getItem();
-        filter.setTableName(null);
-        filter.setColumnName(null);
-    }
-
-    private void applyTableName(String tableName) {
-        String dataSource = ruleFilterDc.getItem().getDataSource();
-        columnNameField.setItems(dataSource != null && tableName != null
-                ? dataSourceProvider.getTableColumns(dataSource, tableName)
-                : List.of());
-
-        ruleFilterDc.getItem().setColumnName(null);
+        ruleFilterDc.getItem().setTableName(null);
     }
 
     /**

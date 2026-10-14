@@ -51,7 +51,7 @@ public class DqRuleFilter {
     private String tableName;
 
     @JmixProperty
-    private String columnName;
+    private String ruleCode;
 
     public void setDataProduct(DictDataProduct dataProduct) {
         this.dataProduct = dataProduct;
@@ -125,12 +125,12 @@ public class DqRuleFilter {
         this.tableName = tableName;
     }
 
-    public String getColumnName() {
-        return columnName;
+    public String getRuleCode() {
+        return ruleCode;
     }
 
-    public void setColumnName(String columnName) {
-        this.columnName = columnName;
+    public void setRuleCode(String ruleCode) {
+        this.ruleCode = ruleCode;
     }
 
 }

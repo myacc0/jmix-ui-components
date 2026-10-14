@@ -4,6 +4,7 @@ import uz.kapitalbank.umida.dto.dq.DqRuleFilter;
 import io.jmix.core.querycondition.JpqlCondition;
 import io.jmix.core.querycondition.LogicalCondition;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,7 +29,7 @@ public class DqRuleFilterService {
     public static final String PARAM_SEVERITY = "severity";
     public static final String PARAM_RULE_TYPE = "ruleType";
     public static final String PARAM_TABLE_NAME = "tableName";
-    public static final String PARAM_COLUMN_NAME = "columnName";
+    public static final String PARAM_RULE_CODE = "ruleCode";
 
     /**
      * Returns the condition to assign to the rules loader once, at view init. The actual filtering
@@ -44,7 +45,7 @@ public class DqRuleFilterService {
                 condition("{E}.severity = :" + PARAM_SEVERITY),
                 condition("{E}.ruleType = :" + PARAM_RULE_TYPE),
                 condition("{E}.tableName = :" + PARAM_TABLE_NAME),
-                condition("{E}.columnName = :" + PARAM_COLUMN_NAME)
+                condition("{E}.code like :" + PARAM_RULE_CODE)
         );
     }
 
@@ -62,8 +63,16 @@ public class DqRuleFilterService {
         parameters.put(PARAM_SEVERITY, filter.getSeverity());
         parameters.put(PARAM_RULE_TYPE, filter.getRuleType());
         parameters.put(PARAM_TABLE_NAME, filter.getTableName());
-        parameters.put(PARAM_COLUMN_NAME, filter.getColumnName());
+        parameters.put(PARAM_RULE_CODE, containsPattern(filter.getRuleCode()));
         return parameters;
+    }
+
+    /**
+     * Turns the entered text into a case-insensitive "contains" pattern; blank text yields null so
+     * that the condition is dropped.
+     */
+    private String containsPattern(String text) {
+        return StringUtils.hasText(text) ? "(?i)%" + text.trim() + "%" : null;
     }
 
     private JpqlCondition condition(String where) {

@@ -28,10 +28,10 @@ import uz.kapitalbank.umida.service.dq.DqBadges;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
 import uz.kapitalbank.umida.test_support.DqTestData;
 import uz.kapitalbank.umida.view.dq.DqCheckRunListView;
+import uz.kapitalbank.umida.view.dq.DqCheckRunNewView;
 import uz.kapitalbank.umida.view.dq.DqIssueListView;
 import uz.kapitalbank.umida.view.dq.DqRuleListView;
 
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -90,6 +90,16 @@ public class DqBadgeColumnsUiTest {
     @Test
     void ruleListBadgesDimensionAndSeverity() {
         DataGrid<DqRule> grid = openGrid(DqRuleListView.class, "dqRulesDataGrid");
+
+        assertBadge(grid, "dimension", rule, DqBadges.DIMENSION + "validity",
+                messages.getMessage(DqDimension.VALIDITY));
+        assertBadge(grid, "severity", rule, DqBadges.SEVERITY + "critical",
+                messages.getMessage(DqSeverity.CRITICAL));
+    }
+
+    @Test
+    void newCheckRunRuleGridBadgesDimensionAndSeverity() {
+        DataGrid<DqRule> grid = openGrid(DqCheckRunNewView.class, "dqRulesDataGrid");
 
         assertBadge(grid, "dimension", rule, DqBadges.DIMENSION + "validity",
                 messages.getMessage(DqDimension.VALIDITY));

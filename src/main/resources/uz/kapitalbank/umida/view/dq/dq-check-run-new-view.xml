@@ -8,14 +8,13 @@
         <collection id="dqRulesDc" class="uz.kapitalbank.umida.entity.dq.DqRule">
             <fetchPlan>
                 <property name="id"/>
+                <property name="code"/>
                 <property name="name"/>
                 <property name="dataSource"/>
                 <property name="tableName"/>
-                <property name="columnName"/>
                 <property name="dimension"/>
                 <property name="ruleType"/>
                 <property name="severity"/>
-                <property name="active"/>
                 <property name="group" fetchPlan="_instance_name"/>
                 <property name="domain" fetchPlan="_instance_name"/>
                 <property name="dataProduct" fetchPlan="_instance_name"/>
@@ -42,6 +41,15 @@
                     required="true"
                     requiredMessage="msg://dqCheckRunNewView.dataSourceRequired"
                     label="msg://uz.kapitalbank.umida.entity.dq/DqRule.dataSource"/>
+            <comboBox id="tableNameField"
+                      property="tableName"
+                      label="msg://uz.kapitalbank.umida.entity.dq/DqRule.tableName"
+                      clearButtonVisible="true"/>
+            <textField id="ruleCodeField"
+                       property="ruleCode"
+                       label="msg://uz.kapitalbank.umida.entity.dq/DqRule.code"
+                       valueChangeMode="LAZY"
+                       clearButtonVisible="true"/>
             <entityPicker id="groupField"
                           property="group"
                           label="msg://uz.kapitalbank.umida.entity.dq/DqRule.group">
@@ -66,6 +74,11 @@
                     <action id="entityClearAction" type="entity_clear"/>
                 </actions>
             </entityPicker>
+            <select id="ruleTypeField"
+                    property="ruleType"
+                    emptySelectionAllowed="true"
+                    emptySelectionCaption="msg://form.select.not.selected"
+                    label="msg://uz.kapitalbank.umida.entity.dq/DqRule.ruleType"/>
             <select id="dimensionField"
                     property="dimension"
                     emptySelectionAllowed="true"
@@ -76,19 +89,6 @@
                     emptySelectionAllowed="true"
                     emptySelectionCaption="msg://form.select.not.selected"
                     label="msg://uz.kapitalbank.umida.entity.dq/DqRule.severity"/>
-            <select id="ruleTypeField"
-                    property="ruleType"
-                    emptySelectionAllowed="true"
-                    emptySelectionCaption="msg://form.select.not.selected"
-                    label="msg://uz.kapitalbank.umida.entity.dq/DqRule.ruleType"/>
-            <comboBox id="tableNameField"
-                      property="tableName"
-                      label="msg://uz.kapitalbank.umida.entity.dq/DqRule.tableName"
-                      clearButtonVisible="true"/>
-            <comboBox id="columnNameField"
-                      property="columnName"
-                      label="msg://uz.kapitalbank.umida.entity.dq/DqRule.columnName"
-                      clearButtonVisible="true"/>
         </formLayout>
 
         <hbox id="viewActions" width="100%" justifyContent="START">
@@ -109,15 +109,14 @@
                       dataContainer="dqRulesDc"
                       columnReorderingAllowed="true">
                 <columns resizable="true">
+                    <column property="code" autoWidth="true" flexGrow="0"/>
                     <column property="name" autoWidth="true" flexGrow="0"/>
                     <column property="group" autoWidth="true" flexGrow="0"/>
                     <column property="dataSource" autoWidth="true" flexGrow="0"/>
                     <column property="tableName" autoWidth="true" flexGrow="0"/>
-                    <column property="columnName" autoWidth="true" flexGrow="0"/>
                     <column property="dimension" autoWidth="true" flexGrow="0"/>
                     <column property="ruleType" autoWidth="true" flexGrow="0"/>
                     <column property="severity" autoWidth="true" flexGrow="0"/>
-                    <column property="active" autoWidth="true" flexGrow="0"/>
                     <column property="domain" autoWidth="true" flexGrow="0"/>
                     <column property="dataProduct" autoWidth="true" flexGrow="0"/>
                 </columns>

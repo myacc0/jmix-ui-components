@@ -111,6 +111,18 @@ public class DqCheckExecutorServiceTests {
     }
 
     @Test
+    void theRuleCodeFilterSelectsTheRulesWhoseCodeContainsTheText() {
+        DqRuleFilter filter = filter();
+        // a part of the code in another case: the match is "contains", case-insensitive
+        filter.setRuleCode(passingRule.getCode().substring(3).toUpperCase());
+
+        DqCheckRun run = awaitFinished(checkExecutorService.startCheckRun(filter));
+
+        assertEquals(1, run.getRulesTotal());
+        assertEquals(1, run.getRulesPassed());
+    }
+
+    @Test
     void storesAResultPerRule() {
         DqCheckRun run = awaitFinished(checkExecutorService.startCheckRun(filter()));
         List<DqCheckRunResult> results = loadResults(run);
