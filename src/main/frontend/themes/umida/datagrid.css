@@ -3,6 +3,6 @@
  * rule. The whole cell is faded, badges included. The part name comes from the grid's part name
  * generator (DqCheckDetailView, DqCheckRunListView).
  */
-vaadin-grid::part(dq-inactive-row) {
+vaadin-grid::part(inactive-row) {
     opacity: 0.5;
 }

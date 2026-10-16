@@ -99,7 +99,7 @@ public class DqCheckDetailView extends StandardDetailView<DqCheck> {
     /** An inactive rule is shown dimmed: it stays in the check, but the runs leave it out. */
     @Install(to = "rulesDataGrid", subject = "partNameGenerator")
     private String rulesDataGridPartNameGenerator(final DqRule rule) {
-        return Boolean.TRUE.equals(rule.getActive()) ? null : "dq-inactive-row";
+        return Boolean.TRUE.equals(rule.getActive()) ? null : "inactive-row";
     }
 
     @Supply(to = "rulesDataGrid.dimension", subject = "renderer")
