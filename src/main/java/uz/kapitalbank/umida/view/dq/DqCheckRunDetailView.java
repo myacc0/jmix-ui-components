@@ -1,6 +1,7 @@
 package uz.kapitalbank.umida.view.dq;
 
 import uz.kapitalbank.umida.service.dq.DqBadges;
+import uz.kapitalbank.umida.entity.dq.DqCheck;
 import uz.kapitalbank.umida.entity.dq.DqCheckRun;
 import uz.kapitalbank.umida.entity.dq.DqCheckRunResult;
 import uz.kapitalbank.umida.enums.dq.DqRuleType;
@@ -47,10 +48,19 @@ public class DqCheckRunDetailView extends StandardDetailView<DqCheckRun> {
     @ViewComponent
     private DescriptionList.Description statusValue;
 
+    @ViewComponent
+    private DescriptionList.Description checkValue;
+
     @Subscribe(id = "dqCheckRunDc", target = Target.DATA_CONTAINER)
     public void onDqCheckRunDcItemChange(final InstanceContainer.ItemChangeEvent<DqCheckRun> event) {
         DqCheckRun checkRun = event.getItem();
         dqBadges.show(statusValue, DqBadges.RUN_STATUS, checkRun != null ? checkRun.getStatus() : null);
+        checkValue.setText(checkRun != null ? checkCaption(checkRun.getCheck()) : "");
+    }
+
+    /** The code and the name of the check; empty for a run made before checks existed. */
+    private static String checkCaption(@Nullable DqCheck check) {
+        return check == null ? "" : check.getCode() + " — " + check.getName();
     }
 
     @Supply(to = "checkResultsDataGrid.status", subject = "renderer")

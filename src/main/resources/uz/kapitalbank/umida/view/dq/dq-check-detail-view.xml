@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://dqCheckDetailView.title"
+      focusComponent="form">
+    <data>
+        <instance id="dqCheckDc"
+                  class="uz.kapitalbank.umida.entity.dq.DqCheck">
+            <fetchPlan extends="_base">
+                <!-- only which rules the check holds: the grid loads what it shows of them by id -->
+                <property name="rules" fetchPlan="_instance_name"/>
+            </fetchPlan>
+            <loader id="dqCheckDl"/>
+        </instance>
+        <collection id="rulesDc" class="uz.kapitalbank.umida.entity.dq.DqRule">
+            <fetchPlan>
+                <property name="id"/>
+                <property name="code"/>
+                <property name="name"/>
+                <property name="active"/>
+                <property name="dataSource"/>
+                <property name="tableName"/>
+                <property name="dimension"/>
+                <property name="ruleType"/>
+                <property name="severity"/>
+                <property name="group" fetchPlan="_instance_name"/>
+                <property name="domain" fetchPlan="_instance_name"/>
+                <property name="dataProduct" fetchPlan="_instance_name"/>
+            </fetchPlan>
+            <!-- loaded by the controller, which binds :ruleIds to the rules of the edited check -->
+            <loader id="rulesDl" readOnly="true">
+                <query>
+                    <![CDATA[select e from umida_DqRule e where e.id in :ruleIds order by e.code]]>
+                </query>
+            </loader>
+        </collection>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+    </facets>
+    <actions>
+        <action id="saveCloseAction" type="detail_saveClose"/>
+        <action id="closeAction" type="detail_close"/>
+    </actions>
+    <layout>
+        <formLayout id="form" dataContainer="dqCheckDc" width="50%">
+            <responsiveSteps>
+                <responsiveStep minWidth="0" columns="1"/>
+            </responsiveSteps>
+            <textField id="codeField" property="code" readOnly="true"/>
+            <textField id="nameField" property="name"/>
+            <textArea id="descriptionField" property="description" minRows="3" colspan="2"/>
+        </formLayout>
+
+        <hbox id="rulesButtonsPanel" classNames="buttons-panel" width="100%">
+            <startSlot>
+                <button id="addRulesButton" themeNames="primary" action="rulesDataGrid.addRulesAction" text="" title="msg:///actions.Add"/>
+                <button id="removeRulesButton" action="rulesDataGrid.removeRulesAction" text="" title="msg:///actions.Remove"/>
+            </startSlot>
+            <endSlot>
+                <simplePagination id="rulesPagination" dataLoader="rulesDl" itemsPerPageDefaultValue="20"/>
+            </endSlot>
+        </hbox>
+        <dataGrid id="rulesDataGrid"
+                  width="100%"
+                  minHeight="20em"
+                  dataContainer="rulesDc"
+                  selectionMode="MULTI"
+                  columnReorderingAllowed="true">
+            <actions>
+                <action id="addRulesAction"
+                        text="msg://dqCheckDetailView.addRulesAction"
+                        icon="vaadin:plus"/>
+                <action id="removeRulesAction"
+                        type="list_itemTracking"
+                        text="msg://dqCheckDetailView.removeRulesAction"
+                        icon="vaadin:minus"/>
+            </actions>
+            <columns resizable="true">
+                <column property="code" autoWidth="true" flexGrow="0"/>
+                <column property="name" autoWidth="true" flexGrow="0"/>
+                <column property="group" autoWidth="true" flexGrow="0"/>
+                <column property="dataSource" autoWidth="true" flexGrow="0"/>
+                <column property="tableName" autoWidth="true" flexGrow="0"/>
+                <column property="dimension" autoWidth="true" flexGrow="0"/>
+                <column property="ruleType" autoWidth="true" flexGrow="0"/>
+                <column property="severity" autoWidth="true" flexGrow="0"/>
+                <column property="domain" autoWidth="true" flexGrow="0"/>
+                <column property="dataProduct" autoWidth="true" flexGrow="0"/>
+            </columns>
+        </dataGrid>
+
+        <hbox id="detailActions" css="padding-bottom: 20px">
+            <button id="saveAndCloseButton" themeNames="primary" action="saveCloseAction" text="msg:///actions.Save"/>
+            <button id="closeButton" action="closeAction"/>
+        </hbox>
+    </layout>
+</view>

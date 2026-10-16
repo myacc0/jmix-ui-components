@@ -40,6 +40,13 @@ public class DqCheckRunResult {
     @ManyToOne(fetch = FetchType.LAZY)
     private DqRule rule;
 
+    /**
+     * The data source the rule was evaluated against, as it was at the run: the violating records are
+     * read back from it later, whatever the rule points to by then.
+     */
+    @Column(name = "DATA_SOURCE", length = 100)
+    private String dataSource;
+
     @Column(name = "STATUS", nullable = false, length = 20)
     @NotNull
     private String status;
@@ -77,6 +84,14 @@ public class DqCheckRunResult {
     @Column(name = "CREATED_AT", nullable = false, columnDefinition = "TIMESTAMP")
     @NotNull
     private LocalDateTime createdAt;
+
+    public String getDataSource() {
+        return dataSource;
+    }
+
+    public void setDataSource(String dataSource) {
+        this.dataSource = dataSource;
+    }
 
     public LocalDateTime getCreatedAt() {
         return createdAt;

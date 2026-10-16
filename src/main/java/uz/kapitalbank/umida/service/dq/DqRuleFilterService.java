@@ -6,11 +6,14 @@ import io.jmix.core.querycondition.LogicalCondition;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
- * Translates the {@link DqRuleFilter} model of the "run check" page into a query condition
+ * Translates the {@link DqRuleFilter} model of the rule selection dialog into a query condition
  * over {@code DqRule}.
  * <p>
  * Every condition is created with {@code skipNullOrEmpty()}, so a condition whose parameter is
@@ -30,10 +33,11 @@ public class DqRuleFilterService {
     public static final String PARAM_RULE_TYPE = "ruleType";
     public static final String PARAM_TABLE_NAME = "tableName";
     public static final String PARAM_RULE_CODE = "ruleCode";
+    public static final String PARAM_EXCLUDED_IDS = "excludedIds";
 
     /**
      * Returns the condition to assign to the rules loader once, at view init. The actual filtering
-     * is driven by the parameters produced by {@link #createRuleParameters(DqRuleFilter)}.
+     * is driven by the parameters produced by {@link #createRuleParameters(DqRuleFilter, Collection)}.
      * Inactive rules are never selected, whatever the filter.
      */
     public LogicalCondition createRuleCondition() {
@@ -47,16 +51,21 @@ public class DqRuleFilterService {
                 condition("{E}.severity = :" + PARAM_SEVERITY),
                 condition("{E}.ruleType = :" + PARAM_RULE_TYPE),
                 condition("{E}.tableName = :" + PARAM_TABLE_NAME),
-                condition("{E}.code like :" + PARAM_RULE_CODE)
+                condition("{E}.code like :" + PARAM_RULE_CODE),
+                condition("{E}.id not in :" + PARAM_EXCLUDED_IDS)
         );
     }
 
     /**
      * Maps the filter attributes to loader parameters. Null values are kept in the map: the query
      * builder treats a null-valued parameter as absent and drops the condition that uses it.
+     *
+     * @param excludedIds the rules to leave out, such as those a check already holds; empty leaves
+     *                    nothing out
      */
-    public Map<String, Object> createRuleParameters(DqRuleFilter filter) {
+    public Map<String, Object> createRuleParameters(DqRuleFilter filter, Collection<UUID> excludedIds) {
         Map<String, Object> parameters = new HashMap<>();
+        parameters.put(PARAM_EXCLUDED_IDS, excludedIds.isEmpty() ? null : List.copyOf(excludedIds));
         parameters.put(PARAM_DATA_SOURCE, filter.getDataSource());
         parameters.put(PARAM_GROUP, filter.getGroup());
         parameters.put(PARAM_DOMAIN, filter.getDomain());

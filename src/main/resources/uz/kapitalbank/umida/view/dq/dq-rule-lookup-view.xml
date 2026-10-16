@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <view xmlns="http://jmix.io/schema/flowui/view"
-      title="msg://dqCheckRunNewView.title"
-      focusComponent="dataSourceField">
+      title="msg://dqRuleLookupView.title"
+      focusComponent="dqRulesDataGrid">
     <!-- the page only reads: the filter is a DTO and the rules are shown read-only -->
     <data readOnly="true">
         <instance id="ruleFilterDc" class="uz.kapitalbank.umida.dto.dq.DqRuleFilter"/>
         <collection id="dqRulesDc" class="uz.kapitalbank.umida.entity.dq.DqRule">
+            <!-- the same attributes as the rule grid of the check editor, which shows the selected rules -->
             <fetchPlan>
                 <property name="id"/>
                 <property name="code"/>
                 <property name="name"/>
+                <property name="active"/>
                 <property name="dataSource"/>
                 <property name="tableName"/>
                 <property name="dimension"/>
@@ -21,13 +23,14 @@
             </fetchPlan>
             <loader id="dqRulesDl" readOnly="true">
                 <query>
-                    <![CDATA[select e from umida_DqRule e]]>
+                    <![CDATA[select e from umida_DqRule e order by e.code]]>
                 </query>
             </loader>
         </collection>
     </data>
     <actions>
-        <action id="closeAction" type="view_close"/>
+        <action id="selectAction" type="lookup_select"/>
+        <action id="discardAction" type="lookup_discard"/>
     </actions>
     <layout>
         <formLayout id="ruleFilterForm" dataContainer="ruleFilterDc" width="100%">
@@ -38,8 +41,8 @@
             </responsiveSteps>
             <select id="dataSourceField"
                     property="dataSource"
-                    required="true"
-                    requiredMessage="msg://dqCheckRunNewView.dataSourceRequired"
+                    emptySelectionAllowed="true"
+                    emptySelectionCaption="msg://form.select.not.selected"
                     label="msg://uz.kapitalbank.umida.entity.dq/DqRule.dataSource"/>
             <comboBox id="tableNameField"
                       property="tableName"
@@ -91,36 +94,34 @@
                     label="msg://uz.kapitalbank.umida.entity.dq/DqRule.severity"/>
         </formLayout>
 
-        <hbox id="viewActions" width="100%" justifyContent="START">
-            <button id="runButton" themeNames="primary" text="msg://dqCheckRunNewView.runButton" enabled="false"/>
-            <button id="cancelButton" action="closeAction"/>
-        </hbox>
-
-        <hbox id="rulesPanel" width="100%" justifyContent="BETWEEN" padding="false" css="margin-top: 20px">
-            <h5 text="msg://rules.in.check.run"/>
+        <hbox id="rulesPanel" width="100%" justifyContent="END" padding="false">
             <simplePagination id="pagination" dataLoader="dqRulesDl" itemsPerPageDefaultValue="20"/>
         </hbox>
 
-        <vbox css="padding: 0 0 20px 0">
-            <dataGrid id="dqRulesDataGrid"
-                      width="100%"
-                      minHeight="20em"
-                      pageSize="20"
-                      dataContainer="dqRulesDc"
-                      columnReorderingAllowed="true">
-                <columns resizable="true">
-                    <column property="code" autoWidth="true" flexGrow="0"/>
-                    <column property="name" autoWidth="true" flexGrow="0"/>
-                    <column property="group" autoWidth="true" flexGrow="0"/>
-                    <column property="dataSource" autoWidth="true" flexGrow="0"/>
-                    <column property="tableName" autoWidth="true" flexGrow="0"/>
-                    <column property="dimension" autoWidth="true" flexGrow="0"/>
-                    <column property="ruleType" autoWidth="true" flexGrow="0"/>
-                    <column property="severity" autoWidth="true" flexGrow="0"/>
-                    <column property="domain" autoWidth="true" flexGrow="0"/>
-                    <column property="dataProduct" autoWidth="true" flexGrow="0"/>
-                </columns>
-            </dataGrid>
-        </vbox>
+        <dataGrid id="dqRulesDataGrid"
+                  width="100%"
+                  minHeight="20em"
+                  pageSize="20"
+                  dataContainer="dqRulesDc"
+                  selectionMode="MULTI"
+                  columnReorderingAllowed="true">
+            <columns resizable="true">
+                <column property="code" autoWidth="true" flexGrow="0"/>
+                <column property="name" autoWidth="true" flexGrow="0"/>
+                <column property="group" autoWidth="true" flexGrow="0"/>
+                <column property="dataSource" autoWidth="true" flexGrow="0"/>
+                <column property="tableName" autoWidth="true" flexGrow="0"/>
+                <column property="dimension" autoWidth="true" flexGrow="0"/>
+                <column property="ruleType" autoWidth="true" flexGrow="0"/>
+                <column property="severity" autoWidth="true" flexGrow="0"/>
+                <column property="domain" autoWidth="true" flexGrow="0"/>
+                <column property="dataProduct" autoWidth="true" flexGrow="0"/>
+            </columns>
+        </dataGrid>
+
+        <hbox id="lookupActions" css="padding-bottom: 20px">
+            <button id="selectButton" action="selectAction" text="msg://dqRuleLookupView.selectButton"/>
+            <button id="discardButton" action="discardAction"/>
+        </hbox>
     </layout>
 </view>

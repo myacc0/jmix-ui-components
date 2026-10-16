@@ -1,5 +1,7 @@
 package uz.kapitalbank.umida.dq;
 
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.router.QueryParameters;
 import uz.kapitalbank.umida.UmidaApplication;
 import uz.kapitalbank.umida.entity.dq.DqCheckRun;
 import uz.kapitalbank.umida.enums.dq.DqCheckRunStatus;
@@ -48,7 +50,7 @@ public class DqCheckRunListUiTest {
     void theJournalListsTheEndedRunsAndTheRunningTabTheOthers() {
         OffsetDateTime startedAt = OffsetDateTime.now();
         for (DqCheckRunStatus status : DqCheckRunStatus.values()) {
-            checkRuns.add(dataManager.save(newCheckRun(status, "main", startedAt)));
+            checkRuns.add(dataManager.save(newCheckRun(status, startedAt)));
         }
 
         DqCheckRunListView listView = openList();
@@ -75,14 +77,15 @@ public class DqCheckRunListUiTest {
     }
 
     @Test
-    void theJournalIsSortedByStartNewestFirstThenByDataSource() {
+    void theJournalIsSortedByStartNewestFirst() {
         // in the future, so that these runs open the first page whatever else is stored
-        OffsetDateTime later = OffsetDateTime.now().plusYears(100);
-        OffsetDateTime earlier = later.minusDays(1);
-        DqCheckRun earlierRun = dataManager.save(newCheckRun(DqCheckRunStatus.SUCCESS, "main", earlier));
-        DqCheckRun laterMain = dataManager.save(newCheckRun(DqCheckRunStatus.FAILED, "main", later));
-        DqCheckRun laterDwh = dataManager.save(newCheckRun(DqCheckRunStatus.CANCELLED, "dwh", later));
-        checkRuns.addAll(List.of(earlierRun, laterMain, laterDwh));
+        OffsetDateTime latest = OffsetDateTime.now().plusYears(100);
+        OffsetDateTime later = latest.minusHours(1);
+        OffsetDateTime earlier = latest.minusDays(1);
+        DqCheckRun earlierRun = dataManager.save(newCheckRun(DqCheckRunStatus.SUCCESS, earlier));
+        DqCheckRun latestRun = dataManager.save(newCheckRun(DqCheckRunStatus.FAILED, latest));
+        DqCheckRun laterRun = dataManager.save(newCheckRun(DqCheckRunStatus.CANCELLED, later));
+        checkRuns.addAll(List.of(earlierRun, latestRun, laterRun));
 
         DataGrid<DqCheckRun> journal = UiTestUtils.getComponent(openList(), "dqCheckRunsDataGrid");
 
@@ -90,7 +93,7 @@ public class DqCheckRunListUiTest {
                 .map(DqCheckRun::getId)
                 .filter(id -> checkRuns.stream().anyMatch(run -> run.getId().equals(id)))
                 .toList();
-        assertEquals(List.of(laterDwh.getId(), laterMain.getId(), earlierRun.getId()), order);
+        assertEquals(List.of(latestRun.getId(), laterRun.getId(), earlierRun.getId()), order);
     }
 
     @Test
@@ -99,7 +102,7 @@ public class DqCheckRunListUiTest {
         DataGrid<DqCheckRun> running = UiTestUtils.getComponent(listView, "runningCheckRunsDataGrid");
 
         DqCheckRun startedMeanwhile = dataManager.save(
-                newCheckRun(DqCheckRunStatus.RUNNING, "main", OffsetDateTime.now()));
+                newCheckRun(DqCheckRunStatus.RUNNING, OffsetDateTime.now()));
         checkRuns.add(startedMeanwhile);
         assertFalse(contains(running, startedMeanwhile), "the tab was loaded before the run started");
 
@@ -111,10 +114,10 @@ public class DqCheckRunListUiTest {
 
     @Test
     void anEndedRunCanBeOpenedFromTheJournal() {
-        DqCheckRun checkRun = dataManager.save(newCheckRun(DqCheckRunStatus.SUCCESS, "main", OffsetDateTime.now()));
+        DqCheckRun checkRun = dataManager.save(newCheckRun(DqCheckRunStatus.SUCCESS, OffsetDateTime.now()));
         checkRuns.add(checkRun);
 
-        DqCheckRunListView listView = openList();
+        DqCheckRunListView listView = openList("journalTab");
         JmixButton readButton = UiTestUtils.getComponent(listView, "readButton");
         assertFalse(readButton.isEnabled(), "nothing is selected yet, so there is nothing to open");
 
@@ -131,9 +134,18 @@ public class DqCheckRunListUiTest {
         return UiTestUtils.getCurrentView();
     }
 
-    private DqCheckRun newCheckRun(DqCheckRunStatus status, String dataSource, OffsetDateTime startedAt) {
+    /** The list opened on the tab named in the URL; only the content of the selected tab is attached. */
+    private DqCheckRunListView openList(String tabId) {
+        viewNavigators.view(UiTestUtils.getCurrentView(), DqCheckRunListView.class)
+                .withQueryParameters(QueryParameters.of("tab", tabId))
+                .navigate();
+        // the tab sheet attaches the content of the selected tab right before the response
+        UI.getCurrent().getInternals().getStateTree().runExecutionsBeforeClientResponse();
+        return UiTestUtils.getCurrentView();
+    }
+
+    private DqCheckRun newCheckRun(DqCheckRunStatus status, OffsetDateTime startedAt) {
         DqCheckRun checkRun = dataManager.create(DqCheckRun.class);
-        checkRun.setDataSource(dataSource);
         checkRun.setTriggered(DqCheckRunTrigger.SYSTEM);
         checkRun.setStartedAt(startedAt);
         checkRun.setStatus(status);

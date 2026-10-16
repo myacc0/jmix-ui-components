@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import uz.kapitalbank.umida.UmidaApplication;
 import uz.kapitalbank.umida.entity.dict.DictDataDomain;
+import uz.kapitalbank.umida.entity.dq.DqCheck;
 import uz.kapitalbank.umida.entity.dq.DqCheckRun;
 import uz.kapitalbank.umida.entity.dq.DqCheckRunResult;
 import uz.kapitalbank.umida.entity.dq.DqRule;
@@ -43,6 +44,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -78,6 +80,7 @@ public class DqCheckRunDetailUiTest {
 
     private DqTestData testData;
     private DqRule rule;
+    private DqCheck check;
     private DqCheckRun checkRun;
     private final List<DqCheckRunResult> results = new ArrayList<>();
 
@@ -87,8 +90,13 @@ public class DqCheckRunDetailUiTest {
         DictDataDomain domain = testData.createDomain();
         rule = testData.createRule(domain, "detail ui", DqRuleType.NOT_NULL, "short_name", "{}");
 
+        check = dataManager.create(DqCheck.class);
+        check.setName("dq test detail ui check");
+        check.setRules(new HashSet<>(List.of(rule)));
+        check = testData.track(dataManager.save(check));
+
         checkRun = dataManager.create(DqCheckRun.class);
-        checkRun.setDataSource("main");
+        checkRun.setCheck(check);
         checkRun.setTriggered(DqCheckRunTrigger.SYSTEM);
         checkRun.setStartedAt(STARTED_AT);
         checkRun.setFinishedAt(OffsetDateTime.now());
@@ -107,7 +115,8 @@ public class DqCheckRunDetailUiTest {
         openResultsGrid();
         DqCheckRunDetailView detailView = UiTestUtils.getCurrentView();
 
-        assertEquals("main", valueText(detailView, "dataSourceValue"));
+        assertEquals(check.getCode() + " — " + check.getName(), valueText(detailView, "checkValue"),
+                "the run shows the check it ran");
         assertEquals("2", valueText(detailView, "rulesTotalValue"));
         assertEquals("1", valueText(detailView, "rulesFailedValue"));
         assertEquals("", valueText(detailView, "rulesSkippedValue"), "an unset attribute shows nothing");
@@ -282,6 +291,7 @@ public class DqCheckRunDetailUiTest {
         DqCheckRunResult result = dataManager.create(DqCheckRunResult.class);
         result.setCheckRun(checkRun);
         result.setRule(rule);
+        result.setDataSource("main");
         result.setStatus(status);
         result.setTotalRecords(BigInteger.valueOf(100));
         result.setFailedRecords(BigInteger.valueOf(status == DqCheckResultStatus.FAILED ? VIOLATING_ROWS : 0));

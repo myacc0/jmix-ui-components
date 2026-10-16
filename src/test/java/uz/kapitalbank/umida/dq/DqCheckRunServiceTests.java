@@ -119,7 +119,6 @@ public class DqCheckRunServiceTests {
 
     private DqCheckRun createRun(DqCheckRunTrigger trigger, OrgStructureEmployee employee) {
         DqCheckRun run = dataManager.create(DqCheckRun.class);
-        run.setDataSource("main");
         run.setTriggered(trigger);
         run.setTriggeredBy(employee);
         run.setStartedAt(OffsetDateTime.now());

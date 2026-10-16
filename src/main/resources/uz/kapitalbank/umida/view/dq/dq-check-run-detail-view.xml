@@ -5,6 +5,9 @@
         <instance id="dqCheckRunDc"
                   class="uz.kapitalbank.umida.entity.dq.DqCheckRun">
             <fetchPlan extends="_base">
+                <property name="check" fetchPlan="_instance_name">
+                    <property name="code"/>
+                </property>
                 <property name="checkResults" fetchPlan="_base">
                     <property name="rule" fetchPlan="_instance_name">
                         <property name="code"/>
@@ -24,9 +27,9 @@
         <action id="closeAction" type="detail_close" text="msg://backAction" icon="vaadin:arrow-left"/>
     </actions>
     <layout>
-        <descriptionList id="detailsList" classNames="property-list" width="100%" maxWidth="60em">
-            <term text="msg://uz.kapitalbank.umida.entity.dq/DqCheckRun.dataSource"/>
-            <description id="dataSourceValue" dataContainer="dqCheckRunDc" property="dataSource"/>
+        <descriptionList id="detailsList" classNames="property-list" width="100%">
+            <term text="msg://uz.kapitalbank.umida.entity.dq/DqCheckRun.check"/>
+            <description id="checkValue"/>
             <term text="msg://uz.kapitalbank.umida.entity.dq/DqCheckRun.startedAt"/>
             <description id="startedAtValue" dataContainer="dqCheckRunDc" property="startedAt"/>
             <term text="msg://uz.kapitalbank.umida.entity.dq/DqCheckRun.finishedAt"/>

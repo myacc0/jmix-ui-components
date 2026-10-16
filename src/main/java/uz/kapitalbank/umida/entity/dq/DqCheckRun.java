@@ -19,7 +19,8 @@ import java.util.UUID;
 
 @JmixEntity
 @Table(name = "UMIDA_DQ_CHECK_RUN", indexes = {
-        @Index(name = "IDX_UMIDA_DQ_CHECK_RUN_TRIGGERED_BY", columnList = "TRIGGERED_BY_ID")
+        @Index(name = "IDX_UMIDA_DQ_CHECK_RUN_TRIGGERED_BY", columnList = "TRIGGERED_BY_ID"),
+        @Index(name = "IDX_UMIDA_DQ_CHECK_RUN_CHECK", columnList = "CHECK_ID")
 })
 @Entity(name = "umida_DqCheckRun")
 public class DqCheckRun {
@@ -28,9 +29,11 @@ public class DqCheckRun {
     @Id
     private UUID id;
 
-    @Column(name = "DATA_SOURCE", nullable = false, length = 100)
-    @NotNull
-    private String dataSource;
+    /** The check whose rules were run; empty for a run made before checks existed. */
+    @OnDeleteInverse(DeletePolicy.UNLINK)
+    @JoinColumn(name = "CHECK_ID")
+    @ManyToOne(fetch = FetchType.LAZY)
+    private DqCheck check;
 
     @Column(name = "TRIGGERED", nullable = false, length = 50)
     @NotNull
@@ -175,12 +178,12 @@ public class DqCheckRun {
         this.status = status == null ? null : status.getId();
     }
 
-    public String getDataSource() {
-        return dataSource;
+    public DqCheck getCheck() {
+        return check;
     }
 
-    public void setDataSource(String dataSource) {
-        this.dataSource = dataSource;
+    public void setCheck(DqCheck check) {
+        this.check = check;
     }
 
     public UUID getId() {

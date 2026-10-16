@@ -94,7 +94,7 @@ public class DqViolationsService {
         DqCheckRunResult result = dataManager.load(DqCheckRunResult.class)
                 .id(checkResultId)
                 .fetchPlan(fp -> fp.add("violationsQuery")
-                        .add("checkRun", checkRun -> checkRun.add("dataSource"))
+                        .add("dataSource")
                         .add("rule", rule -> rule.add("ruleType")))
                 .one();
 
@@ -117,7 +117,10 @@ public class DqViolationsService {
             }
         }
 
-        String dataSource = result.getCheckRun().getDataSource();
+        String dataSource = result.getDataSource();
+        if (!StringUtils.hasText(dataSource)) {
+            throw new IllegalStateException("Check result " + checkResultId + " has no data source");
+        }
         return new ViolationsQuery(sql, userWritten, dataSource,
                 dataSourceProvider.resolveDialect(dataSource),
                 dataSourceProvider.getJdbcTemplate(dataSource));

@@ -2,9 +2,9 @@ package uz.kapitalbank.umida.service.dq;
 
 import uz.kapitalbank.umida.dto.dq.DqReconciliation;
 import uz.kapitalbank.umida.dto.dq.DqRuleConfig;
-import uz.kapitalbank.umida.dto.dq.DqRuleFilter;
 import uz.kapitalbank.umida.dto.dq.DqRuleQueries;
 import uz.kapitalbank.umida.dto.dq.DqSqlQuery;
+import uz.kapitalbank.umida.entity.dq.DqCheck;
 import uz.kapitalbank.umida.entity.dq.DqCheckRun;
 import uz.kapitalbank.umida.entity.dq.DqCheckRunResult;
 import uz.kapitalbank.umida.entity.dq.DqIssue;
@@ -39,12 +39,12 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Runs a data quality check: takes the rule filter of the "run check" page, records a
- * {@link DqCheckRun}, evaluates every matching {@link DqRule} against its data source and stores a
+ * Runs a data quality check: takes a {@link DqCheck}, records a {@link DqCheckRun} of it, evaluates
+ * every active {@link DqRule} of the check against the data source of the rule and stores a
  * {@link DqCheckRunResult} per rule, and keeps the {@link DqIssue}s of the rules in step with the
  * results ({@link DqIssueService#issuesFor}).
  * <p>
- * The run is asynchronous. {@link #startCheckRun(DqRuleFilter)} persists the run with status
+ * The run is asynchronous. {@link #startCheckRun(DqCheck)} persists the run with status
  * {@link DqCheckRunStatus#RUNNING} and returns immediately; the rules are evaluated on a worker
  * thread, under the identity of the user who triggered the run, and the run is updated with the
  * totals when it ends. A run left in {@code RUNNING} therefore means the application died mid-run.
@@ -83,7 +83,7 @@ public class DqCheckExecutorService {
     private final DqSqlQueryBuilder queryBuilder;
     private final DqCrossSourceReconciler crossSourceReconciler;
     private final DqDataSourceProvider dataSourceProvider;
-    private final DqRuleFilterService ruleFilterService;
+    private final DqCheckService checkService;
     private final DqCheckRunService checkRunService;
     private final DqIssueService issueService;
     private final CurrentAuthentication currentAuthentication;
@@ -96,7 +96,7 @@ public class DqCheckExecutorService {
                                   DqSqlQueryBuilder queryBuilder,
                                   DqCrossSourceReconciler crossSourceReconciler,
                                   DqDataSourceProvider dataSourceProvider,
-                                  DqRuleFilterService ruleFilterService,
+                                  DqCheckService checkService,
                                   DqCheckRunService checkRunService,
                                   DqIssueService issueService,
                                   CurrentAuthentication currentAuthentication,
@@ -108,7 +108,7 @@ public class DqCheckExecutorService {
         this.queryBuilder = queryBuilder;
         this.crossSourceReconciler = crossSourceReconciler;
         this.dataSourceProvider = dataSourceProvider;
-        this.ruleFilterService = ruleFilterService;
+        this.checkService = checkService;
         this.checkRunService = checkRunService;
         this.issueService = issueService;
         this.currentAuthentication = currentAuthentication;
@@ -119,28 +119,24 @@ public class DqCheckExecutorService {
     }
 
     /**
-     * Records a check run for the rules matching the filter and starts evaluating them in the
+     * Records a run of the check for its active rules and starts evaluating them in the
      * background. The run is a {@link DqCheckRunTrigger#MANUAL} one, triggered by the employee the
      * current user is linked to — none for a user without an employee, such as {@code admin}.
      *
      * @return the persisted run, with status {@link DqCheckRunStatus#RUNNING} — the totals are filled
      * in later, so reload it to observe the outcome
-     * @throws IllegalArgumentException when the filter selects no data source or matches no rule
+     * @throws IllegalArgumentException when the check has no active rule
      */
-    public DqCheckRun startCheckRun(DqRuleFilter filter) {
-        if (filter == null || !StringUtils.hasText(filter.getDataSource())) {
-            throw new IllegalArgumentException("Data source is not selected");
-        }
-
-        List<DqRule> rules = loadRules(filter);
+    public DqCheckRun startCheckRun(DqCheck check) {
+        List<DqRule> rules = checkService.loadActiveRules(check.getId());
         if (rules.isEmpty()) {
-            throw new IllegalArgumentException("No rules match the filter");
+            throw new IllegalArgumentException("Check " + check.getCode() + " has no active rule");
         }
 
         String username = currentAuthentication.getUser().getUsername();
 
         DqCheckRun run = dataManager.create(DqCheckRun.class);
-        run.setDataSource(filter.getDataSource());
+        run.setCheck(check);
         run.setRulesTotal(rules.size());
         run.setTriggered(DqCheckRunTrigger.MANUAL);
         run.setTriggeredBy(checkRunService.findEmployeeOfUser(username).orElse(null));
@@ -308,6 +304,7 @@ public class DqCheckExecutorService {
         DqCheckRunResult result = dataManager.create(DqCheckRunResult.class);
         result.setCheckRun(run);
         result.setRule(rule);
+        result.setDataSource(rule.getDataSource());
         result.setStatus(metrics.failed().signum() > 0 ? DqCheckResultStatus.FAILED : DqCheckResultStatus.PASSED);
         result.setTotalRecords(metrics.total());
         result.setFailedRecords(metrics.failed());
@@ -352,6 +349,7 @@ public class DqCheckExecutorService {
         DqCheckRunResult result = dataManager.create(DqCheckRunResult.class);
         result.setCheckRun(run);
         result.setRule(rule);
+        result.setDataSource(rule.getDataSource());
         result.setStatus(failed ? DqCheckResultStatus.FAILED : DqCheckResultStatus.PASSED);
         result.setTotalRecords(metrics.total());
         result.setFailedRecords(metrics.failed());
@@ -389,6 +387,7 @@ public class DqCheckExecutorService {
         DqCheckRunResult result = dataManager.create(DqCheckRunResult.class);
         result.setCheckRun(run);
         result.setRule(rule);
+        result.setDataSource(rule.getDataSource());
         result.setStatus(DqCheckResultStatus.SKIPPED);
         result.setErrorMessage(reason);
         return result;
@@ -441,15 +440,6 @@ public class DqCheckExecutorService {
     // ---------------------------------------------------------------------
     // helpers
     // ---------------------------------------------------------------------
-
-    private List<DqRule> loadRules(DqRuleFilter filter) {
-        return dataManager.load(DqRule.class)
-                .query("select e from umida_DqRule e")
-                .condition(ruleFilterService.createRuleCondition())
-                .parameters(ruleFilterService.createRuleParameters(filter))
-                .sort(Sort.by("name"))
-                .list();
-    }
 
     /**
      * The share of non-violating rows, in percent. A table with no rows has nothing to violate the

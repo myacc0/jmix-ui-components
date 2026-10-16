@@ -3,36 +3,34 @@ package uz.kapitalbank.umida.view.dq;
 
 import uz.kapitalbank.umida.dto.dq.DqRuleFilter;
 import uz.kapitalbank.umida.dto.SelectDto;
-import uz.kapitalbank.umida.entity.dq.DqCheckRun;
 import uz.kapitalbank.umida.entity.dq.DqRule;
 import uz.kapitalbank.umida.service.dq.DqBadges;
-import uz.kapitalbank.umida.service.dq.DqCheckExecutorService;
 import uz.kapitalbank.umida.service.dq.DqDataSourceProvider;
 import uz.kapitalbank.umida.service.dq.DqRuleFilterService;
-import uz.kapitalbank.umida.view.main.MainView;
-import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.data.renderer.Renderer;
-import com.vaadin.flow.router.Route;
 import io.jmix.core.Metadata;
-import io.jmix.flowui.Notifications;
-import io.jmix.flowui.ViewNavigators;
 import io.jmix.flowui.component.combobox.JmixComboBox;
 import io.jmix.flowui.component.select.JmixSelect;
-import io.jmix.flowui.kit.component.button.JmixButton;
-import io.jmix.flowui.model.CollectionContainer;
 import io.jmix.flowui.model.CollectionLoader;
 import io.jmix.flowui.model.InstanceContainer;
 import io.jmix.flowui.view.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.Collections;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
-@Route(value = "dq-check-run-new-view", layout = MainView.class)
-@ViewController(id = "umida_DqCheckRunNewView")
-@ViewDescriptor(path = "dq-check-run-new-view.xml")
-public class DqCheckRunNewView extends StandardView {
+/**
+ * Picks the rules to add to a check: the active rules narrowed down by the filter, several at a time.
+ * The rules the check already holds are left out, see {@link #setExcludedRuleIds}.
+ */
+@ViewController(id = "umida_DqRule.lookup")
+@ViewDescriptor(path = "dq-rule-lookup-view.xml")
+@LookupComponent("dqRulesDataGrid")
+@DialogMode(width = "80em", resizable = true)
+public class DqRuleLookupView extends StandardListView<DqRule> {
 
     @Autowired
     private Metadata metadata;
@@ -44,25 +42,10 @@ public class DqCheckRunNewView extends StandardView {
     private DqRuleFilterService ruleFilterService;
 
     @Autowired
-    private DqCheckExecutorService checkExecutorService;
-
-    @Autowired
     private DqBadges dqBadges;
-
-    @Autowired
-    private Notifications notifications;
-
-    @Autowired
-    private ViewNavigators viewNavigators;
-
-    @ViewComponent
-    private MessageBundle messageBundle;
 
     @ViewComponent
     private InstanceContainer<DqRuleFilter> ruleFilterDc;
-
-    @ViewComponent
-    private CollectionContainer<DqRule> dqRulesDc;
 
     @ViewComponent
     private CollectionLoader<DqRule> dqRulesDl;
@@ -73,8 +56,7 @@ public class DqCheckRunNewView extends StandardView {
     @ViewComponent
     private JmixComboBox<String> tableNameField;
 
-    @ViewComponent
-    private JmixButton runButton;
+    private Set<UUID> excludedRuleIds = Set.of();
 
     /**
      * Guards against re-entrancy while the controller resets dependent filter attributes
@@ -83,11 +65,17 @@ public class DqCheckRunNewView extends StandardView {
      */
     private boolean cascading;
 
+    /** The rules not to offer, as the check holds them already. Set before the view is shown. */
+    public void setExcludedRuleIds(Collection<UUID> excludedRuleIds) {
+        this.excludedRuleIds = Set.copyOf(excludedRuleIds);
+    }
+
     @Subscribe
     public void onInit(final InitEvent event) {
         List<SelectDto> dataSources = dataSourceProvider.getDataSourceList();
         dataSourceField.setItems(dataSources.stream().map(SelectDto::getId).collect(Collectors.toList()));
-        dataSourceField.setItemLabelGenerator(id -> dataSources.stream()
+        // the data source is optional: the empty item is labeled too, and must not be labeled null
+        dataSourceField.setItemLabelGenerator(id -> id == null ? "" : dataSources.stream()
                 .filter(dto -> dto.getId().equals(id))
                 .map(SelectDto::getName)
                 .findFirst()
@@ -97,6 +85,11 @@ public class DqCheckRunNewView extends StandardView {
         dqRulesDl.setCondition(ruleFilterService.createRuleCondition());
 
         ruleFilterDc.setItem(metadata.create(DqRuleFilter.class));
+    }
+
+    @Subscribe
+    public void onBeforeShow(final BeforeShowEvent event) {
+        reloadRules();
     }
 
     @Subscribe(id = "ruleFilterDc", target = Target.DATA_CONTAINER)
@@ -116,16 +109,6 @@ public class DqCheckRunNewView extends StandardView {
         reloadRules();
     }
 
-    /**
-     * There is nothing to run while the filter yields no rules, so the button follows the grid
-     * content instead of validating on click. It starts disabled (see the descriptor) because the
-     * grid is empty until a data source is chosen.
-     */
-    @Subscribe(id = "dqRulesDc", target = Target.DATA_CONTAINER)
-    public void onDqRulesDcCollectionChange(final CollectionContainer.CollectionChangeEvent<DqRule> event) {
-        runButton.setEnabled(!event.getSource().getItems().isEmpty());
-    }
-
     @Supply(to = "dqRulesDataGrid.dimension", subject = "renderer")
     private Renderer<DqRule> dqRulesDataGridDimensionRenderer() {
         return dqBadges.renderer(DqBadges.DIMENSION, DqRule::getDimension);
@@ -134,29 +117,6 @@ public class DqCheckRunNewView extends StandardView {
     @Supply(to = "dqRulesDataGrid.severity", subject = "renderer")
     private Renderer<DqRule> dqRulesDataGridSeverityRenderer() {
         return dqBadges.renderer(DqBadges.SEVERITY, DqRule::getSeverity);
-    }
-
-    /**
-     * Starts the check run and leaves for the run list: the run is executed in the background, so
-     * there is nothing further to do on this page and its outcome shows up in the list.
-     */
-    @Subscribe(id = "runButton", subject = "clickListener")
-    public void onRunButtonClick(final ClickEvent<JmixButton> event) {
-        DqCheckRun checkRun;
-        try {
-            checkRun = checkExecutorService.startCheckRun(ruleFilterDc.getItem());
-        } catch (RuntimeException e) {
-            notifications.create(messageBundle.getMessage("dqCheckRunNewView.runFailed"), e.getMessage())
-                    .withType(Notifications.Type.ERROR)
-                    .show();
-            return;
-        }
-
-        notifications.create(messageBundle.formatMessage("dqCheckRunNewView.runStarted", checkRun.getRulesTotal()))
-                .withType(Notifications.Type.SUCCESS)
-                .show();
-
-        viewNavigators.view(this, DqCheckRunListView.class).navigate();
     }
 
     /**
@@ -171,17 +131,9 @@ public class DqCheckRunNewView extends StandardView {
         ruleFilterDc.getItem().setTableName(null);
     }
 
-    /**
-     * Reloads the rule grid for the current filter. The data source is mandatory: until it is
-     * chosen there is nothing to run a check against, so the grid stays empty.
-     */
+    /** Reloads the rule grid for the current filter. */
     private void reloadRules() {
-        DqRuleFilter filter = ruleFilterDc.getItem();
-        if (filter.getDataSource() == null) {
-            dqRulesDc.setItems(Collections.emptyList());
-            return;
-        }
-        dqRulesDl.setParameters(ruleFilterService.createRuleParameters(filter));
+        dqRulesDl.setParameters(ruleFilterService.createRuleParameters(ruleFilterDc.getItem(), excludedRuleIds));
         // a changed filter yields a different result set, so start from the first page again
         dqRulesDl.setFirstResult(0);
         dqRulesDl.load();

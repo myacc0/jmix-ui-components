@@ -14,9 +14,9 @@ import uz.kapitalbank.umida.enums.dq.DqSeverity;
 import java.util.UUID;
 
 /**
- * Non-persistent model of the rule filter on the "run check" page. Only {@code dataSource}
- * is mandatory: the check run is always executed against a single data source, the remaining
- * attributes narrow down the rules taken from it.
+ * Non-persistent model of the rule filter of the dialog the rules of a check are picked in. Every
+ * attribute is optional and only narrows down the rules offered: a check may hold rules of several
+ * data sources, each rule being run against its own.
  */
 @JmixEntity(name = "umida_DqRuleFilter", annotatedPropertiesOnly = true)
 public class DqRuleFilter {
@@ -26,7 +26,7 @@ public class DqRuleFilter {
     @JmixProperty(mandatory = true)
     private UUID id;
 
-    @JmixProperty(mandatory = true)
+    @JmixProperty
     private String dataSource;
 
     @JmixProperty

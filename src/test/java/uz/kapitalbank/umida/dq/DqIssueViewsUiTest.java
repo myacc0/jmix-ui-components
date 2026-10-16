@@ -117,7 +117,6 @@ public class DqIssueViewsUiTest {
         });
 
         DqCheckRun run = dataManager.create(DqCheckRun.class);
-        run.setDataSource("main");
         run.setTriggered(DqCheckRunTrigger.SYSTEM);
         run.setStartedAt(OffsetDateTime.now());
         run.setStatus(DqCheckRunStatus.SUCCESS);
@@ -126,6 +125,7 @@ public class DqIssueViewsUiTest {
 
         DqCheckRunResult failed = dataManager.create(DqCheckRunResult.class);
         failed.setCheckRun(run);
+        failed.setDataSource("main");
         failed.setRule(rule);
         failed.setStatus(DqCheckResultStatus.FAILED);
         failed.setTotalRecords(BigInteger.valueOf(100));

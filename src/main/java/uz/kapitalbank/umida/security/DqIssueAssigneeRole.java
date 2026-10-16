@@ -46,18 +46,15 @@ public interface DqIssueAssigneeRole {
 
     /**
      * The latest failed check of the issue and the query that reads its violating rows, or what a
-     * cross-source rule compared.
+     * cross-source rule compared, with the data source the violations query runs against.
      */
     @EntityAttributePolicy(entityClass = DqCheckRunResult.class,
-            attributes = {"status", "failedRecords", "violationsQuery", "reconciliation", "checkRun"},
+            attributes = {"status", "failedRecords", "violationsQuery", "reconciliation", "dataSource", "checkRun"},
             action = EntityAttributePolicyAction.VIEW)
     @EntityPolicy(entityClass = DqCheckRunResult.class, actions = EntityPolicyAction.READ)
     void dqCheckRunResult();
 
-    /** The data source the violations query runs against. */
-    @EntityAttributePolicy(entityClass = DqCheckRun.class,
-            attributes = "dataSource",
-            action = EntityAttributePolicyAction.VIEW)
+    /** The run a result belongs to, referenced by {@code DqCheckRunResult.checkRun}. */
     @EntityPolicy(entityClass = DqCheckRun.class, actions = EntityPolicyAction.READ)
     void dqCheckRun();
 

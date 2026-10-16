@@ -18,10 +18,13 @@ public class DqRuleEventListener {
 
     private final DqRuleService ruleService;
     private final DqIssueService issueService;
+    private final DqCheckService checkService;
 
-    public DqRuleEventListener(DqRuleService ruleService, DqIssueService issueService) {
+    public DqRuleEventListener(DqRuleService ruleService, DqIssueService issueService,
+                               DqCheckService checkService) {
         this.ruleService = ruleService;
         this.issueService = issueService;
+        this.checkService = checkService;
     }
 
     @EventListener
@@ -33,9 +36,14 @@ public class DqRuleEventListener {
      * In the transaction that saves the rule: a rule moved to other data closes its open issues, as
      * they describe data the rule no longer checks; a reassigned rule moves the issues still open to
      * its new assignee. The closing goes first, so the issues it closes keep the assignee they had.
+     * A deleted rule takes with it the checks it was the last rule of.
      */
     @EventListener
     public void onDqRuleChanged(final EntityChangedEvent<DqRule> event) {
+        if (event.getType() == EntityChangedEvent.Type.DELETED) {
+            checkService.removeChecksLeftWithoutRules(event.getEntityId());
+            return;
+        }
         if (event.getType() != EntityChangedEvent.Type.UPDATED) {
             return;
         }

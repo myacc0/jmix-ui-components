@@ -2,7 +2,6 @@ package uz.kapitalbank.umida.dq;
 
 import io.jmix.core.DataManager;
 import io.jmix.core.FetchPlan;
-import io.jmix.core.Metadata;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,7 +9,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import uz.kapitalbank.umida.dto.dq.DqReconciliation;
-import uz.kapitalbank.umida.dto.dq.DqRuleFilter;
 import uz.kapitalbank.umida.entity.dict.DictDataDomain;
 import uz.kapitalbank.umida.entity.dq.*;
 import uz.kapitalbank.umida.enums.dq.*;
@@ -27,6 +25,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,8 +36,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * {@code umida_dict_data_domain}, the table behind {@link DictDataDomain}, so the SQL the builder
  * produces is actually executed.
  * <p>
- * The rules are tied to a domain created by the test and the filter selects that domain, so a run
- * covers exactly the rules of the test case and nothing a developer left in the database. Row counts
+ * The rules are tied to a domain created by the test and the check that is run holds the rules of that
+ * domain, so a run covers exactly the rules of the test case and nothing a developer left in the
+ * database. Row counts
  * are never asserted for the same reason — only the outcome that the test data guarantees: the
  * inserted domain has no parent, so a "parent is set" rule always finds at least one violation.
  */
@@ -53,9 +53,6 @@ public class DqCheckExecutorServiceTests {
 
     @Autowired
     DataManager dataManager;
-
-    @Autowired
-    Metadata metadata;
 
     @Autowired
     DqViolationsService violationsService;
@@ -76,6 +73,8 @@ public class DqCheckExecutorServiceTests {
     private DqRule passingRule;
     private DqRule failingRule;
     private DqRule misconfiguredRule;
+    /** The check {@link #check} saved last. */
+    private DqCheck lastCheck;
     /** Rules a single test case adds on top of the three above, whose issues must go before they do. */
     private final List<DqRule> extraRules = new ArrayList<>();
 
@@ -94,13 +93,13 @@ public class DqCheckExecutorServiceTests {
 
     @Test
     void runsEveryRuleAndClosesTheRunWithItsTotals() {
-        DqCheckRun run = awaitFinished(checkExecutorService.startCheckRun(filter()));
+        DqCheckRun run = awaitFinished(startRun());
 
         assertEquals(DqCheckRunStatus.SUCCESS, run.getStatus());
         assertNull(run.getErrorMessage());
         assertNotNull(run.getFinishedAt());
-        assertEquals("main", run.getDataSource());
         assertEquals(DqCheckRunTrigger.MANUAL, run.getTriggered());
+        assertEquals(lastCheck.getId(), checkOf(run).getId(), "the run belongs to the check it ran");
 
         assertEquals(3, run.getRulesTotal());
         assertEquals(1, run.getRulesPassed());
@@ -111,31 +110,40 @@ public class DqCheckExecutorServiceTests {
     }
 
     @Test
-    void anInactiveRuleIsLeftOutOfTheRun() {
+    void anInactiveRuleOfTheCheckIsLeftOutOfTheRun() {
+        // the check holds it, see check(): a rule may turn inactive after it was added
         testData.createRule(domain, "inactive", DqRuleType.NOT_NULL, "parent_id", "{}",
                 rule -> rule.setActive(false));
 
-        DqCheckRun run = awaitFinished(checkExecutorService.startCheckRun(filter()));
+        DqCheckRun run = awaitFinished(startRun());
 
         // only the three active rules of the set-up
         assertEquals(3, run.getRulesTotal());
     }
 
     @Test
-    void theRuleCodeFilterSelectsTheRulesWhoseCodeContainsTheText() {
-        DqRuleFilter filter = filter();
-        // a part of the code in another case: the match is "contains", case-insensitive
-        filter.setRuleCode(passingRule.getCode().substring(3).toUpperCase());
+    void aDeletedRuleIsNoLongerPartOfTheCheck() {
+        DqCheck check = check(domain);
+        dataManager.remove(dataManager.load(DqRule.class).id(misconfiguredRule.getId()).one());
 
-        DqCheckRun run = awaitFinished(checkExecutorService.startCheckRun(filter));
+        DqCheckRun run = awaitFinished(checkExecutorService.startCheckRun(check));
 
-        assertEquals(1, run.getRulesTotal());
-        assertEquals(1, run.getRulesPassed());
+        assertEquals(2, run.getRulesTotal());
+        assertEquals(0, run.getRulesSkipped());
+    }
+
+    @Test
+    void eachResultRecordsTheDataSourceOfItsRule() {
+        DqCheckRun run = awaitFinished(startRun());
+
+        List<DqCheckRunResult> results = loadResults(run);
+        assertEquals(3, results.size());
+        results.forEach(result -> assertEquals("main", result.getDataSource()));
     }
 
     @Test
     void storesAResultPerRule() {
-        DqCheckRun run = awaitFinished(checkExecutorService.startCheckRun(filter()));
+        DqCheckRun run = awaitFinished(startRun());
         List<DqCheckRunResult> results = loadResults(run);
         assertEquals(3, results.size());
 
@@ -168,7 +176,7 @@ public class DqCheckExecutorServiceTests {
 
     @Test
     void theViolatingRowsAreReadPageByPageWithTheStoredQuery() {
-        DqCheckRun run = awaitFinished(checkExecutorService.startCheckRun(filter()));
+        DqCheckRun run = awaitFinished(startRun());
         DqCheckRunResult failed = resultOf(loadResults(run), failingRule);
 
         long count = violationsService.countViolations(failed.getId());
@@ -186,7 +194,7 @@ public class DqCheckExecutorServiceTests {
 
     @Test
     void opensAnIssueForAFailedRuleOnly() {
-        DqCheckRun run = awaitFinished(checkExecutorService.startCheckRun(filter()));
+        DqCheckRun run = awaitFinished(startRun());
 
         assertTrue(loadIssues(passingRule).isEmpty());
         assertTrue(loadIssues(misconfiguredRule).isEmpty(), "a skipped rule says nothing about the data");
@@ -208,10 +216,10 @@ public class DqCheckExecutorServiceTests {
 
     @Test
     void reusesTheOpenIssueOnTheNextRun() {
-        awaitFinished(checkExecutorService.startCheckRun(filter()));
+        awaitFinished(startRun());
         DqIssue firstIssue = loadIssues(failingRule).get(0);
 
-        DqCheckRun secondRun = awaitFinished(checkExecutorService.startCheckRun(filter()));
+        DqCheckRun secondRun = awaitFinished(startRun());
 
         List<DqIssue> issues = loadIssues(failingRule);
         assertEquals(1, issues.size(), "the rule keeps failing, so the open issue must be reused");
@@ -225,12 +233,12 @@ public class DqCheckExecutorServiceTests {
 
     @Test
     void closesTheOpenIssueAsFixedOnceTheRulePasses() {
-        awaitFinished(checkExecutorService.startCheckRun(filter()));
+        awaitFinished(startRun());
         assertEquals(DqIssueStatus.OPEN, loadIssues(failingRule).get(0).getStatus());
 
         // a zero threshold stands for the data being fixed: the same violations no longer fail the rule
         failingRule = updateRuleConfig(failingRule, "{\"threshold\": 0}");
-        awaitFinished(checkExecutorService.startCheckRun(filter()));
+        awaitFinished(startRun());
 
         List<DqIssue> issues = loadIssues(failingRule);
         assertEquals(1, issues.size());
@@ -241,20 +249,20 @@ public class DqCheckExecutorServiceTests {
 
     @Test
     void aDismissedIssueSuppressesNewOnesUntilTheKeyFieldsChange() {
-        awaitFinished(checkExecutorService.startCheckRun(filter()));
+        awaitFinished(startRun());
         DqIssue issue = loadIssues(failingRule).get(0);
         issue.setClosingReason(DqIssueClosingReason.WONTFIX);
         issueService.markClosed(issue);
         dataManager.save(issue);
 
-        awaitFinished(checkExecutorService.startCheckRun(filter()));
+        awaitFinished(startRun());
         List<DqIssue> issues = loadIssues(failingRule);
         assertEquals(1, issues.size(), "the failure was dismissed, so it opens no new issue");
         assertEquals(DqIssueClosingReason.WONTFIX, issues.get(0).getClosingReason());
 
         // another config makes it another check, whose failures are worth an issue again
         failingRule = updateRuleConfig(failingRule, "{\"threshold\": 100}");
-        awaitFinished(checkExecutorService.startCheckRun(filter()));
+        awaitFinished(startRun());
         assertEquals(1, loadIssues(failingRule).stream()
                 .filter(i -> i.getStatus() == DqIssueStatus.OPEN)
                 .count());
@@ -276,7 +284,7 @@ public class DqCheckExecutorServiceTests {
                 "{\"samplesQueryColumns\": [\"id\"]}");
         extraRules.add(notBlankRule);
 
-        DqCheckRun run = awaitFinished(checkExecutorService.startCheckRun(filter(blankDomain)));
+        DqCheckRun run = awaitFinished(startRun(blankDomain));
         DqCheckRunResult result = resultOf(loadResults(run), notBlankRule);
         assertEquals(DqCheckResultStatus.FAILED, result.getStatus(), result.getErrorMessage());
 
@@ -316,7 +324,7 @@ public class DqCheckExecutorServiceTests {
                 rule -> rule.setDbSchema("public"));
         extraRules.add(nullRejectedRule);
 
-        DqCheckRun run = awaitFinished(checkExecutorService.startCheckRun(filter(referencedDomain)));
+        DqCheckRun run = awaitFinished(startRun(referencedDomain));
         List<DqCheckRunResult> results = loadResults(run);
 
         DqCheckRunResult nullAllowed = resultOf(results, nullAllowedRule);
@@ -348,7 +356,7 @@ public class DqCheckExecutorServiceTests {
                 "select count(*), count(*) filter (where short_name is null) from umida_dict_data_domain",
                 "select id from umida_dict_data_domain where short_name is null");
 
-        List<DqCheckRunResult> results = loadResults(awaitFinished(checkExecutorService.startCheckRun(filter())));
+        List<DqCheckRunResult> results = loadResults(awaitFinished(startRun()));
 
         DqCheckRunResult failed = resultOf(results, failing);
         assertEquals(DqCheckResultStatus.FAILED, failed.getStatus(), failed.getErrorMessage());
@@ -373,7 +381,7 @@ public class DqCheckExecutorServiceTests {
         DqRule writing = customSqlRule("custom writing", "select nextval('umida_dq_rule_code_seq'), 0",
                 "select 1");
 
-        List<DqCheckRunResult> results = loadResults(awaitFinished(checkExecutorService.startCheckRun(filter())));
+        List<DqCheckRunResult> results = loadResults(awaitFinished(startRun()));
 
         DqCheckRunResult skipped = resultOf(results, writing);
         assertEquals(DqCheckResultStatus.SKIPPED, skipped.getStatus());
@@ -387,7 +395,7 @@ public class DqCheckExecutorServiceTests {
                 "with d as (select id, short_name from umida_dict_data_domain where id = '" + domain.getId() + "')"
                         + " select * from d order by id limit 5 -- the domain of this test");
 
-        DqCheckRunResult result = resultOf(loadResults(awaitFinished(checkExecutorService.startCheckRun(filter()))),
+        DqCheckRunResult result = resultOf(loadResults(awaitFinished(startRun())),
                 rule);
 
         assertEquals(DqCheckResultStatus.FAILED, result.getStatus(), result.getErrorMessage());
@@ -409,7 +417,7 @@ public class DqCheckExecutorServiceTests {
                         + " {\"primaryAlias\": \"AMOUNT\", \"secondaryAlias\": \"sum_amount\"},"
                         + " {\"primaryAlias\": \"missing\", \"secondaryAlias\": \"nothing\"}]");
 
-        DqCheckRunResult result = resultOf(loadResults(awaitFinished(checkExecutorService.startCheckRun(filter()))),
+        DqCheckRunResult result = resultOf(loadResults(awaitFinished(startRun())),
                 rule);
 
         assertEquals(DqCheckResultStatus.FAILED, result.getStatus(), result.getErrorMessage());
@@ -444,7 +452,7 @@ public class DqCheckExecutorServiceTests {
                 "select count(*) as total from umida_dict_data_domain",
                 "[{\"primaryAlias\": \"cnt\", \"secondaryAlias\": \"total\"}]");
 
-        DqCheckRunResult result = resultOf(loadResults(awaitFinished(checkExecutorService.startCheckRun(filter()))),
+        DqCheckRunResult result = resultOf(loadResults(awaitFinished(startRun())),
                 rule);
 
         assertEquals(DqCheckResultStatus.PASSED, result.getStatus(), result.getErrorMessage());
@@ -464,7 +472,7 @@ public class DqCheckExecutorServiceTests {
         DqRule unknownAlias = crossSourceRule("cross unknown alias", "select 1 as a", "select 1 as b",
                 "[{\"primaryAlias\": \"a\", \"secondaryAlias\": \"c\"}]");
 
-        List<DqCheckRunResult> results = loadResults(awaitFinished(checkExecutorService.startCheckRun(filter())));
+        List<DqCheckRunResult> results = loadResults(awaitFinished(startRun()));
 
         for (DqRule rule : List.of(noRows, twoRows, unknownAlias)) {
             DqCheckRunResult result = resultOf(results, rule);
@@ -480,34 +488,51 @@ public class DqCheckExecutorServiceTests {
     }
 
     @Test
-    void rejectsAFilterThatMatchesNothing() {
-        DqRuleFilter filter = filter();
-        filter.setTableName("no_such_table_" + UUID.randomUUID().toString().replace("-", ""));
+    void rejectsACheckWithoutActiveRules() {
+        DictDataDomain inactiveDomain = testData.createDomain();
+        extraRules.add(testData.createRule(inactiveDomain, "inactive only", DqRuleType.NOT_NULL, "parent_id", "{}",
+                rule -> rule.setActive(false)));
+        DqCheck check = check(inactiveDomain);
 
-        assertThrows(IllegalArgumentException.class, () -> checkExecutorService.startCheckRun(filter));
-    }
-
-    @Test
-    void rejectsAFilterWithoutDataSource() {
-        DqRuleFilter filter = metadata.create(DqRuleFilter.class);
-
-        assertThrows(IllegalArgumentException.class, () -> checkExecutorService.startCheckRun(filter));
+        assertThrows(IllegalArgumentException.class, () -> checkExecutorService.startCheckRun(check));
     }
 
     // ---------------------------------------------------------------------
     // test data
     // ---------------------------------------------------------------------
 
-    private DqRuleFilter filter() {
-        return filter(domain);
+    /** Runs a check of the rules of the test domain. */
+    private DqCheckRun startRun() {
+        return startRun(domain);
     }
 
-    private DqRuleFilter filter(DictDataDomain ruleDomain) {
-        DqRuleFilter filter = metadata.create(DqRuleFilter.class);
-        filter.setDataSource("main");
-        // the domain is created by this test, so only its own rules are selected
-        filter.setDomain(ruleDomain);
-        return filter;
+    private DqCheckRun startRun(DictDataDomain ruleDomain) {
+        return checkExecutorService.startCheckRun(check(ruleDomain));
+    }
+
+    /**
+     * A check holding every rule of the domain, inactive ones included. The domain is created by this
+     * test, so the check holds only its own rules.
+     */
+    private DqCheck check(DictDataDomain ruleDomain) {
+        List<DqRule> rules = dataManager.load(DqRule.class)
+                .query("select r from umida_DqRule r where r.domain = :domain")
+                .parameter("domain", ruleDomain)
+                .list();
+        DqCheck check = dataManager.create(DqCheck.class);
+        check.setName("dq test check " + UUID.randomUUID());
+        check.setRules(new HashSet<>(rules));
+        // tracked after the rules, so that cleanup removes the check first
+        lastCheck = testData.track(dataManager.save(check));
+        return lastCheck;
+    }
+
+    private DqCheck checkOf(DqCheckRun run) {
+        return dataManager.load(DqCheckRun.class)
+                .id(run.getId())
+                .fetchPlan(fp -> fp.add("check"))
+                .one()
+                .getCheck();
     }
 
     // ---------------------------------------------------------------------

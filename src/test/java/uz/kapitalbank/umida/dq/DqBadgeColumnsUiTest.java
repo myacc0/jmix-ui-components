@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import uz.kapitalbank.umida.UmidaApplication;
 import uz.kapitalbank.umida.entity.dict.DictDataDomain;
+import uz.kapitalbank.umida.entity.dq.DqCheck;
 import uz.kapitalbank.umida.entity.dq.DqCheckRun;
 import uz.kapitalbank.umida.entity.dq.DqIssue;
 import uz.kapitalbank.umida.entity.dq.DqRule;
@@ -28,11 +29,13 @@ import uz.kapitalbank.umida.service.dq.DqBadges;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
 import uz.kapitalbank.umida.test_support.DqTestData;
 import uz.kapitalbank.umida.view.dq.DqCheckRunListView;
-import uz.kapitalbank.umida.view.dq.DqCheckRunNewView;
+import uz.kapitalbank.umida.view.dq.DqCheckDetailView;
 import uz.kapitalbank.umida.view.dq.DqIssueListView;
 import uz.kapitalbank.umida.view.dq.DqRuleListView;
 
 import java.time.OffsetDateTime;
+import java.util.HashSet;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -79,7 +82,6 @@ public class DqBadgeColumnsUiTest {
         issue = dataManager.save(issue);
 
         checkRun = dataManager.create(DqCheckRun.class);
-        checkRun.setDataSource("main");
         checkRun.setTriggered(DqCheckRunTrigger.SYSTEM);
         checkRun.setStartedAt(OffsetDateTime.now());
         checkRun.setStatus(DqCheckRunStatus.SUCCESS);
@@ -98,8 +100,18 @@ public class DqBadgeColumnsUiTest {
     }
 
     @Test
-    void newCheckRunRuleGridBadgesDimensionAndSeverity() {
-        DataGrid<DqRule> grid = openGrid(DqCheckRunNewView.class, "dqRulesDataGrid");
+    void checkRuleGridBadgesDimensionAndSeverity() {
+        DqCheck check = dataManager.create(DqCheck.class);
+        check.setName("dq badge check " + UUID.randomUUID());
+        check.setRules(new HashSet<>(List.of(rule)));
+        // tracked after the rule, so that cleanup removes the check first
+        check = testData.track(dataManager.save(check));
+
+        viewNavigators.detailView(UiTestUtils.getCurrentView(), DqCheck.class)
+                .editEntity(check)
+                .withViewClass(DqCheckDetailView.class)
+                .navigate();
+        DataGrid<DqRule> grid = UiTestUtils.getComponent(UiTestUtils.getCurrentView(), "rulesDataGrid");
 
         assertBadge(grid, "dimension", rule, DqBadges.DIMENSION + "validity",
                 messages.getMessage(DqDimension.VALIDITY));
