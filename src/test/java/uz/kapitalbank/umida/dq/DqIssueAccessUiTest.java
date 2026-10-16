@@ -119,7 +119,7 @@ public class DqIssueAccessUiTest {
         grid.select(shown.get(0));
         JmixButton closeIssueButton = UiTestUtils.getComponent(view, "closeIssueButton");
         JmixButton violationsButton = UiTestUtils.getComponent(view, "violationsButton");
-        assertTrue(closeIssueButton.isEnabled(), "a member may close the issue of the own subdivision");
+        assertTrue(closeIssueButton.isVisible() && closeIssueButton.isEnabled(), "a member may close the issue of the own subdivision");
         assertTrue(violationsButton.isEnabled());
 
         violationsButton.click();
@@ -143,7 +143,7 @@ public class DqIssueAccessUiTest {
                 .navigate();
         DqIssueDetailView detail = UiTestUtils.getCurrentView();
         JmixButton closeIssueButton = UiTestUtils.getComponent(detail, "closeIssueButton");
-        assertTrue(closeIssueButton.isEnabled());
+        assertTrue(closeIssueButton.isVisible() && closeIssueButton.isEnabled());
 
         viewNavigators.detailView(UiTestUtils.getCurrentView(), DqIssue.class)
                 .editEntity(ownIssue)

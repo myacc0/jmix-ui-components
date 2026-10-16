@@ -64,7 +64,8 @@
                             <button id="createCheckButton" themeNames="primary" action="dqChecksDataGrid.createAction" text="" title="msg:///actions.Create"/>
                             <button id="editCheckButton" action="dqChecksDataGrid.editAction" text="" title="msg:///actions.Edit"/>
                             <button id="removeCheckButton" action="dqChecksDataGrid.removeAction" text="" title="msg:///actions.Remove"/>
-                            <button id="runCheckButton" themeNames="primary" action="dqChecksDataGrid.runAction"/>
+                            <button id="runCheckButton" themeNames="primary" action="dqChecksDataGrid.runAction" text="" title="msg://dqCheckRunListView.runAction"/>
+                            <checkbox id="mineField" label="msg://mineField.label" css="display: flex; align-items: center"/>
                         </startSlot>
                         <endSlot>
                             <simplePagination id="checksPagination" dataLoader="dqChecksDl"/>
@@ -85,8 +86,8 @@
                                     icon="vaadin:play"/>
                         </actions>
                         <columns resizable="true">
-                            <column property="code" autoWidth="true" flexGrow="0"/>
-                            <column property="name" autoWidth="true" flexGrow="0"/>
+                            <column property="code" autoWidth="true" flexGrow="0" filterable="true"/>
+                            <column property="name" autoWidth="true" flexGrow="0" filterable="true"/>
                             <column key="rules"
                                     header="msg://dqCheckRunListView.rulesColumn"
                                     sortable="false" autoWidth="true" flexGrow="0"/>
@@ -143,15 +144,11 @@
                             <action id="readAction" type="list_read"/>
                         </actions>
                         <columns resizable="true">
-                            <column property="check.code"
-                                    header="msg://uz.kapitalbank.umida.entity.dq/DqCheckRun.check"
-                                    autoWidth="true" flexGrow="0"/>
-                            <column property="startedAt" autoWidth="true" flexGrow="0"/>
-                            <column property="finishedAt" autoWidth="true" flexGrow="0"/>
-                            <column property="status" autoWidth="true" flexGrow="0"/>
-                            <column key="triggeredBy"
-                                    header="msg://uz.kapitalbank.umida.entity.dq/DqCheckRun.triggeredBy"
-                                    sortable="false" autoWidth="true" flexGrow="0"/>
+                            <column property="check.code" header="msg://uz.kapitalbank.umida.entity.dq/DqCheckRun.check" autoWidth="true" flexGrow="0" filterable="true"/>
+                            <column property="startedAt" autoWidth="true" flexGrow="0" filterable="true"/>
+                            <column property="finishedAt" autoWidth="true" flexGrow="0" filterable="true"/>
+                            <column property="status" autoWidth="true" flexGrow="0" filterable="true"/>
+                            <column key="triggeredBy" header="msg://uz.kapitalbank.umida.entity.dq/DqCheckRun.triggeredBy" sortable="false" autoWidth="true" flexGrow="0"/>
                             <column property="rulesTotal" autoWidth="true" flexGrow="0"/>
                             <column property="rulesPassed" autoWidth="true" flexGrow="0"/>
                             <column property="rulesFailed" autoWidth="true" flexGrow="0"/>

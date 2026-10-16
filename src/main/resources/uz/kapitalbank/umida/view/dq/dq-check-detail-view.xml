@@ -75,7 +75,7 @@
                         text="msg://dqCheckDetailView.removeRulesAction"
                         icon="vaadin:minus"/>
             </actions>
-            <columns resizable="true">
+            <columns resizable="true" filterable="true">
                 <column property="code" autoWidth="true" flexGrow="0"/>
                 <column property="name" autoWidth="true" flexGrow="0"/>
                 <column property="group" autoWidth="true" flexGrow="0"/>

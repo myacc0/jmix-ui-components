@@ -10,9 +10,12 @@ import com.vaadin.flow.router.Route;
 import io.jmix.flowui.DialogWindows;
 import io.jmix.flowui.component.grid.DataGrid;
 import io.jmix.flowui.kit.action.ActionPerformedEvent;
+import io.jmix.flowui.model.CollectionContainer;
 import io.jmix.flowui.model.CollectionLoader;
+import io.jmix.flowui.model.InstanceContainer;
 import io.jmix.flowui.view.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.Nullable;
 
 
 @Route(value = "dq-issues", layout = MainView.class)
@@ -30,6 +33,9 @@ public class DqIssueListView extends StandardListView<DqIssue> {
 
     @ViewComponent
     private CollectionLoader<DqIssue> dqIssuesDl;
+
+    @ViewComponent
+    private CollectionContainer<DqIssue> dqIssuesDc;
 
     @Autowired
     private DqBadges dqBadges;
@@ -52,15 +58,43 @@ public class DqIssueListView extends StandardListView<DqIssue> {
         return dqBadges.renderer(DqBadges.SEVERITY, dqIssue -> dqIssue.getRule().getSeverity());
     }
 
+    @Subscribe
+    public void onInit(final InitEvent event) {
+        updateCloseIssueActionVisibility();
+    }
+
     /** Only an open issue can be closed, and only by a user of the subdivision its rule is assigned to. */
     @Install(to = "dqIssuesDataGrid.closeIssueAction", subject = "enabledRule")
     private boolean closeIssueActionEnabledRule() {
-        return dqIssueService.canClose(dqIssuesDataGrid.getSingleSelectedItem());
+        return dqIssueService.canClose(selectedIssue());
+    }
+
+    @Subscribe(id = "dqIssuesDc", target = Target.DATA_CONTAINER)
+    public void onDqIssuesDcItemChange(final InstanceContainer.ItemChangeEvent<DqIssue> event) {
+        updateCloseIssueActionVisibility();
+    }
+
+    /** A reload keeps the selection but brings a fresh instance of the selected issue, maybe closed meanwhile. */
+    @Subscribe(id = "dqIssuesDc", target = Target.DATA_CONTAINER)
+    public void onDqIssuesDcCollectionChange(final CollectionContainer.CollectionChangeEvent<DqIssue> event) {
+        updateCloseIssueActionVisibility();
+    }
+
+    /** The close button is not shown at all for an issue the current user cannot close. */
+    private void updateCloseIssueActionVisibility() {
+        dqIssuesDataGrid.getAction("closeIssueAction").setVisible(dqIssueService.canClose(selectedIssue()));
+    }
+
+    /** The loaded instance of the selected issue: after a reload the grid may still hold the previous one. */
+    @Nullable
+    private DqIssue selectedIssue() {
+        DqIssue selected = dqIssuesDataGrid.getSingleSelectedItem();
+        return selected != null ? dqIssuesDc.getItemOrNull(selected.getId()) : null;
     }
 
     @Subscribe("dqIssuesDataGrid.closeIssueAction")
     public void onDqIssuesDataGridCloseIssue(final ActionPerformedEvent event) {
-        DqIssue issue = dqIssuesDataGrid.getSingleSelectedItem();
+        DqIssue issue = selectedIssue();
         if (!dqIssueService.canClose(issue)) {
             return;
         }

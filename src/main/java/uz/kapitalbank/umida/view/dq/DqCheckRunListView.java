@@ -7,13 +7,19 @@ import uz.kapitalbank.umida.service.dq.DqCheckExecutorService;
 import uz.kapitalbank.umida.service.dq.DqCheckRunService;
 import uz.kapitalbank.umida.service.dq.DqCheckService;
 import uz.kapitalbank.umida.view.main.MainView;
+import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.data.renderer.TextRenderer;
 import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.router.Route;
+import io.jmix.core.querycondition.Condition;
+import io.jmix.core.querycondition.LogicalCondition;
+import io.jmix.core.querycondition.PropertyCondition;
+import io.jmix.core.security.CurrentAuthentication;
 import io.jmix.flowui.Notifications;
+import io.jmix.flowui.component.checkbox.JmixCheckbox;
 import io.jmix.flowui.component.grid.DataGrid;
 import io.jmix.flowui.component.tabsheet.JmixTabSheet;
 import io.jmix.flowui.facet.UrlQueryParametersFacet;
@@ -61,6 +67,9 @@ public class DqCheckRunListView extends StandardListView<DqCheckRun> {
     @Autowired
     private DqCheckRunService checkRunService;
 
+    @Autowired
+    private CurrentAuthentication currentAuthentication;
+
     @ViewComponent
     private CollectionLoader<DqCheckRun> dqCheckRunsDl;
 
@@ -85,6 +94,12 @@ public class DqCheckRunListView extends StandardListView<DqCheckRun> {
     /** Rule counts of the loaded checks, by check id. */
     private final Map<UUID, DqCheckService.RuleCounts> ruleCounts = new HashMap<>();
 
+    /**
+     * The "mine" filter of the catalog: the checks created by the current user. It carries no value
+     * while the checkbox is clear, and the loader then skips it.
+     */
+    private final PropertyCondition mineCondition = PropertyCondition.equal("createdBy", null).skipNullOrEmpty();
+
     @Subscribe(id = "dqCheckRunsDl", target = Target.DATA_LOADER)
     public void onDqCheckRunsDlPostLoad(final CollectionLoader.PostLoadEvent<DqCheckRun> event) {
         triggeredByCaptions.putAll(checkRunService.getTriggeredByCaptions(event.getLoadedEntities()));
@@ -99,6 +114,26 @@ public class DqCheckRunListView extends StandardListView<DqCheckRun> {
     public void onInit(final InitEvent event) {
         ViewControllerUtils.getViewFacet(this, UrlQueryParametersFacet.class)
                 .registerBinder(new SelectedTabBinder());
+        addMineCondition();
+    }
+
+    /** Adds the "mine" filter next to the conditions of the column header filters, which share the root condition. */
+    private void addMineCondition() {
+        Condition root = dqChecksDl.getCondition();
+        LogicalCondition and = root instanceof LogicalCondition logical ? logical : LogicalCondition.and();
+        if (root != null && root != and) {
+            and.add(root);
+        }
+        and.add(mineCondition);
+        dqChecksDl.setCondition(and);
+    }
+
+    @Subscribe("mineField")
+    public void onMineFieldValueChange(final AbstractField.ComponentValueChangeEvent<JmixCheckbox, Boolean> event) {
+        mineCondition.setParameterValue(Boolean.TRUE.equals(event.getValue())
+                ? currentAuthentication.getUser().getUsername()
+                : null);
+        dqChecksDl.load();
     }
 
     @Subscribe(id = "dqChecksDl", target = Target.DATA_LOADER)

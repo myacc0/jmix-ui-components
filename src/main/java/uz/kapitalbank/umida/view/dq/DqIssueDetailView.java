@@ -97,7 +97,7 @@ public class DqIssueDetailView extends StandardDetailView<DqIssue> {
      */
     private void refresh() {
         DqIssue issue = getEditedEntity();
-        closeIssueButton.setEnabled(dqIssueService.canClose(issue));
+        closeIssueButton.setVisible(dqIssueService.canClose(issue));
 
         boolean crossSource = issue.getRule() != null
                 && issue.getRule().getRuleType() == DqRuleType.CROSS_SOURCE_AGGREGATED;

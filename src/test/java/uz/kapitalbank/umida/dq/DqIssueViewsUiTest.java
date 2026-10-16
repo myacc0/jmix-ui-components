@@ -172,7 +172,7 @@ public class DqIssueViewsUiTest {
 
         grid.select(gridItem(grid));
 
-        assertFalse(closeIssueButton.isEnabled(), "admin is not an employee of the assignee subdivision");
+        assertFalse(closeIssueButton.isVisible(), "admin is not an employee of the assignee subdivision");
         assertTrue(violationsButton.isEnabled(), "the latest check of the issue failed with a query");
 
         violationsButton.click();
@@ -211,7 +211,7 @@ public class DqIssueViewsUiTest {
         assertTrue(severityBadge.hasClassName(DqBadges.SEVERITY + rule.getSeverity().getId()));
 
         JmixButton closeIssueButton = UiTestUtils.getComponent(view, "closeIssueButton");
-        assertFalse(closeIssueButton.isEnabled(), "admin is not an employee of the assignee subdivision");
+        assertFalse(closeIssueButton.isVisible(), "admin is not an employee of the assignee subdivision");
 
         DqViolationsFragment fragment = UiTestUtils.getComponent(view, "violationsFragment");
         Grid<?> violationsGrid = (Grid<?>) UiComponentUtils.getComponent(fragment, "violationsDataGrid");
