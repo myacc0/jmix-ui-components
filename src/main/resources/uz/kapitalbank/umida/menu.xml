@@ -63,7 +63,11 @@
         <item view="umida_TableSynchronizer.list"
               title="msg://uz.kapitalbank.umida.view.starrockssync/tableSynchronizerListView.title"/>
     </menu>
-    <menu id="datatools" icon="umida-icons:edit" title="msg://uz.kapitalbank.umida/menu.datatools.title">
+    <menu id="audit" title="msg://uz.kapitalbank.umida/menu.audit.title" icon="umida-icons:audit">
+        <item view="entityLog.view" title="msg://io.jmix.auditflowui.view.entitylog/entityLogView.menu"/>
+        <item view="userSession.view" title="msg://io.jmix.auditflowui.view.entitylog/UserSessionsView.menu"/>
+    </menu>
+    <menu id="datatools" title="msg://uz.kapitalbank.umida/menu.datatools.title" icon="umida-icons:edit">
         <item view="datatl_entityInspectorListView"
               title="msg://io.jmix.datatoolsflowui.view.entityinspector/listTitle"/>
         <item view="datatl_dataModelListView"
