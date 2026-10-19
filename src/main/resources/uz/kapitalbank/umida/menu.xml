@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <menu-config xmlns="http://jmix.io/schema/flowui/menu">
 
-    <item view="umida_MainView" id="mainView" description="msg://uz.kapitalbank.umida/menu_config.mainView.description"
+    <item view="umida_MainView" id="mainView" icon="umida-icons:home"
+          description="msg://uz.kapitalbank.umida/menu_config.mainView.description"
           title="msg://uz.kapitalbank.umida/menu_config.mainView.title"/>
-    <menu id="orgstructure" description="msg://uz.kapitalbank.umida/menu_config.orgstructure.description"
+    <menu id="orgstructure" icon="umida-icons:structure" description="msg://uz.kapitalbank.umida/menu_config.orgstructure.description"
           title="msg://uz.kapitalbank.umida/menu_config.orgstructure.title">
         <item view="umida_OrgStructure" title="msg://uz.kapitalbank.umida.view.orgstructure/OrgStructureView.title"/>
         <item view="umida_DataDomainStructure"
@@ -11,7 +12,7 @@
         <item view="umida_DataProductStructure"
               title="msg://uz.kapitalbank.umida.view.orgstructure/dataProductStructureView.title"/>
     </menu>
-    <menu id="catalog" description="msg://uz.kapitalbank.umida/menu_config.catalog.description"
+    <menu id="catalog" icon="umida-icons:text" description="msg://uz.kapitalbank.umida/menu_config.catalog.description"
           title="msg://uz.kapitalbank.umida/menu_config.catalog.title">
         <item view="umida_DictDataDomain.list"
               title="msg://uz.kapitalbank.umida.view.catalog/dictDataDomainListView.title"/>
@@ -26,14 +27,14 @@
         <item view="umida_OrgStructurePosition.list"
               title="msg://uz.kapitalbank.umida.view.catalog/orgStructurePositionListView.title"/>
     </menu>
-    <menu id="dq" description="msg://uz.kapitalbank.umida/menu_config.dq.description"
+    <menu id="dq" icon="umida-icons:data-quality" description="msg://uz.kapitalbank.umida/menu_config.dq.description"
           title="msg://uz.kapitalbank.umida/menu_config.dq.title">
         <item view="umida_DqRuleGroup.list" title="msg://uz.kapitalbank.umida.view.dq/dqRuleGroupListView.title"/>
         <item view="umida_DqRule.list" title="msg://uz.kapitalbank.umida.view.dq/dqRuleListView.title"/>
         <item view="umida_DqCheckRun.list" title="msg://uz.kapitalbank.umida.view.dq/dqCheckRunListView.title"/>
         <item view="umida_DqIssue.list" title="msg://uz.kapitalbank.umida.view.dq/dqIssueListView.title"/>
     </menu>
-    <menu id="hr" description="msg://uz.kapitalbank.umida/menu_config.hr.description"
+    <menu id="hr" icon="umida-icons:frame-person" description="msg://uz.kapitalbank.umida/menu_config.hr.description"
           title="msg://uz.kapitalbank.umida/menu_config.hr.title">
         <menu id="work-discipline" description="msg://uz.kapitalbank.umida/menu_config.work-discipline.description"
               title="msg://uz.kapitalbank.umida/menu_config.work-discipline.title">
@@ -42,27 +43,27 @@
                   title="msg://uz.kapitalbank.umida/menu_config.work-discipline-exceptions.title"/>
         </menu>
     </menu>
-    <menu id="reports" title="msg://io.jmix.reportsflowui/menu.reports.title">
+    <menu id="reports" icon="umida-icons:reports" title="msg://io.jmix.reportsflowui/menu.reports.title">
         <item view="report_Report.list" title="msg://io.jmix.reportsflowui/reportListView.menu"/>
         <item view="report_ReportGroup.list" title="msg://io.jmix.reportsflowui/reportGroupListView.menu"/>
         <item view="report_ReportRunView" title="msg://io.jmix.reportsflowui/reportRunView.menu"/>
         <item view="report_ReportTableView" title="msg://io.jmix.reportsflowui/reportTableView.menu"/>
     </menu>
-    <menu id="security" title="msg://uz.kapitalbank.umida/menu.security.title">
+    <menu id="security" icon="umida-icons:security" title="msg://uz.kapitalbank.umida/menu.security.title">
         <item view="umida_User.list" title="msg://uz.kapitalbank.umida.view.user/UserListView.title"/>
         <item view="sec_ResourceRoleModel.list"
               title="msg://io.jmix.securityflowui.view.resourcerole/resourceRoleModelListView.menu"/>
         <item view="sec_RowLevelRoleModel.list"
               title="msg://io.jmix.securityflowui.view.rowlevelrole/rowLevelRoleModelListView.menu"/>
     </menu>
-    <menu id="quartz" title="msg://uz.kapitalbank.umida/menu.quartz.title">
+    <menu id="quartz" icon="umida-icons:clock" title="msg://uz.kapitalbank.umida/menu.quartz.title">
         <item view="quartz_JobModel.list" title="msg://io.jmix.quartzflowui.view.jobs/jobModelListView.menu"/>
         <item view="umida_QuartzJobExecution.list"
               title="msg://uz.kapitalbank.umida.view.quartz/quartzJobExecutionListView.title"/>
         <item view="umida_TableSynchronizer.list"
               title="msg://uz.kapitalbank.umida.view.starrockssync/tableSynchronizerListView.title"/>
     </menu>
-    <menu id="datatools" title="msg://uz.kapitalbank.umida/menu.datatools.title">
+    <menu id="datatools" icon="umida-icons:edit" title="msg://uz.kapitalbank.umida/menu.datatools.title">
         <item view="datatl_entityInspectorListView"
               title="msg://io.jmix.datatoolsflowui.view.entityinspector/listTitle"/>
         <item view="datatl_dataModelListView"
