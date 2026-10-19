@@ -1,8 +1,0 @@
-/*
- * A grid row that takes no part in a check run: an inactive rule of a check, a check with no active
- * rule. The whole cell is faded, badges included. The part name comes from the grid's part name
- * generator (DqCheckDetailView, DqCheckRunListView).
- */
-vaadin-grid::part(inactive-row) {
-    opacity: 0.5;
-}

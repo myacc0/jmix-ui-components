@@ -55,14 +55,14 @@ vaadin-grid-cell-content .dq-badge {
 .dq-badge.dq-issue-closing-reason-fixed,
 .dq-badge.dq-run-status-success,
 .dq-badge.dq-result-status-passed {
-    background-color: var(--lumo-success-color-10pct, rgba(62, 229, 130, 0.1));
-    color: var(--lumo-success-text-color, hsl(145, 100%, 32%));
+    background-color: hsl(142, 62%, 92%);
+    color: hsl(142, 58%, 28%);
 }
 
 .dq-badge.dq-severity-critical,
 .dq-badge.dq-run-status-failed,
 .dq-badge.dq-result-status-failed {
-    background-color: hsla(0, 98%, 59%, 0.2);
+    background-color: hsla(0, 98%, 59%, 0.4);
     color: var(--lumo-error-text-color, hsl(3, 89%, 42%));
 }
 
@@ -70,14 +70,14 @@ vaadin-grid-cell-content .dq-badge {
 .dq-badge.dq-issue-status-open,
 .dq-badge.dq-result-status-warning {
     /* Lumo has no --lumo-warning-color-10pct, so the tint is mixed here */
-    background-color: rgba(255, 170, 0, 0.15);
-    background-color: color-mix(in srgb, var(--lumo-warning-color, hsl(45, 100%, 60%)) 18%, transparent);
+    background-color: rgba(255, 170, 0, 0.65);
+    background-color: color-mix(in srgb, var(--lumo-warning-color, hsl(45, 100%, 60%)) 68%, transparent);
     color: var(--lumo-warning-text-color, hsl(45, 100%, 31%));
 }
 
 /* one step past the warning amber and one step short of the critical red */
 .dq-badge.dq-severity-high {
-    background-color: hsl(22, 90%, 90%);
+    background-color: hsl(18, 80%, 80%);
     color: hsl(22, 85%, 36%);
 }
 

@@ -108,8 +108,3 @@ vaadin-dialog-overlay::part(title) {
     flex-direction: column;
     line-height: 1.4;
 }
-.data-asset-card-stewards {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}

@@ -40,6 +40,10 @@ vaadin-dialog-overlay.employee-card-dialog .jmix-dialog-window-close-button {
     margin: 0;
 }
 
+.employee-card-view {
+    padding: 15px 15px;
+}
+
 /* --- summary row: photo on the left, name / position / contacts on the right --- */
 .employee-card-summary {
     /* keeps the texts clear of the floating close button */
@@ -73,6 +77,7 @@ vaadin-dialog-overlay.employee-card-dialog .jmix-dialog-window-close-button {
     margin-top: 5px;
     font-size: var(--lumo-font-size-s);
     color: var(--lumo-secondary-text-color);
+    line-height: 1.2;
 }
 .employee-card-subtitle .employee-card-subtitle-separator {
     display: inline-block;

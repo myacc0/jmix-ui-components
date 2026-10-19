@@ -1,0 +1,47 @@
+html {
+    --lumo-clickable-cursor: pointer;
+}
+
+html {
+    --lumo-primary-color: rgb(255, 213, 15);
+    --lumo-primary-color-10pct: rgba(255, 213, 15, 0.1);
+    --lumo-primary-color-50pct: rgba(255, 213, 15, 0.5);
+    --lumo-primary-text-color: #131313;
+    --lumo-primary-contrast-color: #131313;
+
+    --lumo-error-color: rgb(202, 32, 39);
+    --lumo-error-color-10pct: rgba(202, 32, 39, 0.1);
+    --lumo-error-color-50pct: rgba(202, 32, 39, 0.5);
+
+    --lumo-warning-text-color: #fff;
+    --lumo-warning-contrast-color: #fff;
+    --lumo-warning-color: rgb(249, 178, 37);
+    --lumo-warning-color-10pct: rgba(249, 178, 37, 0.25);
+
+    --lumo-success-contrast-color: #fff;
+    --lumo-success-text-color: #fff;
+    --lumo-success-color: rgb(22, 160, 0);
+    --lumo-success-color-10pct: rgba(22, 160, 0, 0.25);
+    --lumo-success-color-50pct: rgba(22, 160, 0, 0.5);
+
+    --lumo-font-size: var(--lumo-font-size-s);
+    --lumo-font-size-m: 0.875rem;
+    --lumo-font-size-l: 1rem;
+    --lumo-font-size-xl: 1.125rem;
+    --lumo-font-size-xxl: 1.375rem;
+    --lumo-font-size-xxxl: 1.75rem;
+
+    --lumo-size-m: 1.875rem;
+    --lumo-size-l: 2.25rem;
+    --lumo-size-xl: 2.75rem;
+    --lumo-size-xxl: 3.5rem;
+
+    --lumo-space-m: 0.5rem;
+    --lumo-space-l: 1rem;
+    --lumo-space-xl: 1.5rem;
+    --lumo-space-xxl: 2.5rem;
+}
+
+vaadin-app-layout::part(drawer) {
+    width: 260px;
+}

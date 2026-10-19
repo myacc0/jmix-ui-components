@@ -1,0 +1,28 @@
+/*
+ * A grid row that takes no part in a check run: an inactive rule of a check, a check with no active
+ * rule. The whole cell is faded, badges included. The part name comes from the grid's part name
+ * generator (DqCheckDetailView, DqCheckRunListView).
+ */
+vaadin-grid::part(inactive-row) {
+    opacity: 0.5;
+}
+vaadin-grid.jmix-tree-data-grid[theme~="no-header"]::part(header) {
+    display: none;
+}
+vaadin-grid {
+    font-size: 14px;
+}
+vaadin-grid vaadin-grid-cell-content {
+    cursor: pointer;
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+vaadin-grid vaadin-grid-cell-content:hover {
+    background-color: var(--lumo-primary-color-10pct);
+    color: var(--lumo-primary-text-color);
+}
+vaadin-grid::part(selected-row-cell) {
+    --lumo-grid-selected-row-color: none;
+    background-color: var(--lumo-primary-color);
+    color: var(--lumo-primary-text-color);
+}
