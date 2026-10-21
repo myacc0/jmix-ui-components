@@ -1,5 +1,102 @@
-/* Predefined styles for the LoginView */
-
-.jmix-login-main-layout {
-  background-color: var(--lumo-shade-5pct);
+/* the form sits in the empty left part of the "Dune" scene, which occupies the right 70% of the screen */
+.umida-login-layout {
+  justify-content: center;
+  align-items: flex-start;
+  padding-inline-start: clamp(var(--lumo-space-l), 8vw, 160px);
+  box-sizing: border-box;
 }
+
+.umida-login-form {
+  position: relative;
+  z-index: 1;
+  border-radius: var(--lumo-border-radius-l);
+  box-shadow: 0 24px 64px rgba(60, 60, 50, .14), 0 2px 8px rgba(60, 60, 50, .08);
+  background-color: var(--lumo-base-color);
+  overflow: hidden;
+}
+
+/* narrow screens: the scene is enlarged behind the form, the form is centered */
+@media (max-width: 900px) {
+  .umida-login-layout {
+    align-items: center;
+    padding-inline: var(--lumo-space-m);
+  }
+}
+
+
+/* ==========================================================================
+   UMIDA login background — "Dune"
+   Fixed full-screen layer with a floating isometric scene (component LoginBackground). Does NOT contain a login form.
+   Image URLs are relative to the document base: the files live in META-INF/resources/public/images/login.
+   All selectors / variables are prefixed with "umida-" so they cannot clash with Lumo/Vaadin styles.
+   ========================================================================== */
+
+.umida-login-bg {
+  /* drop-shadow colour of the floating elements (r,g,b) */
+  --umida-shc: 60, 60, 50;
+
+  position: fixed;
+  inset: 0;
+  z-index: 0;                 /* the login form must sit above: position:relative; z-index:1 */
+  overflow: hidden;
+  pointer-events: none;
+  background-color: #e8e8e3;
+  background-image:
+          url("public/images/login/dune-noise.svg"),
+          url("public/images/login/dune-shape.svg"),
+          radial-gradient(60% 60% at 75% 55%, rgba(255, 255, 255, .7), transparent 70%),
+          linear-gradient(135deg, #e4e4df 0%, #e8e8e3 45%, #ebebe6 100%);
+  background-size: 160px 160px, 100% 100%, 100% 100%, 100% 100%;
+}
+
+/* the scene occupies the right 70% of the screen and fades in from the left edge (empty area = login form) */
+.umida-scene {
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 30%;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 8%);
+  mask-image: linear-gradient(to right, transparent 0, #000 8%);
+}
+
+/* design canvas 3600x2400; --umida-u = size of one canvas unit in px */
+.umida-stage {
+  --umida-sw: clamp(1100px, 88vw, 2100px);
+  --umida-u: calc(var(--umida-sw) / 3600);
+  position: absolute;
+  left: 53%; top: 50%;
+  width: var(--umida-sw);
+  aspect-ratio: 3600 / 2400;
+  transform: translate(-50%, -50%);
+}
+
+.umida-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* each element: outer = mouse parallax, inner = slow floating */
+.umida-it {
+  position: absolute;
+  transform: translate3d(calc(var(--umida-px, 0) * var(--umida-d) * 1px),
+  calc(var(--umida-py, 0) * var(--umida-d) * 1px), 0);
+}
+.umida-fl {
+  width: 100%; height: 100%;
+  animation: umida-float var(--umida-dur) cubic-bezier(.45, .05, .55, .95) var(--umida-del) infinite;
+  will-change: transform;
+}
+.umida-it img,
+.umida-it svg { user-select: none; -webkit-user-drag: none; }
+
+@keyframes umida-float {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  30% { transform: translate3d(calc(var(--umida-dx) * var(--umida-u)), calc(var(--umida-amp) * var(--umida-u) * -1), 0); }
+  65% { transform: translate3d(calc(var(--umida-dx) * var(--umida-u) * -.7), calc(var(--umida-amp) * var(--umida-u) * -.35), 0); }
+}
+
+/* narrow screens: the scene is enlarged and stays BEHIND the form (nothing is pushed below it) */
+@media (max-width: 900px) {
+  .umida-scene { left: 0; -webkit-mask-image: none; mask-image: none; }
+  .umida-stage { --umida-sw: max(190vw, 132vh); left: 50%; }
+}
+
+/* switch animation off: OS setting "reduce motion" or attribute data-motion="off" on .umida-login-bg */
+@media (prefers-reduced-motion: reduce) { .umida-fl { animation: none; will-change: auto; } }
+.umida-login-bg[data-motion="off"] .umida-fl { animation: none; will-change: auto; }

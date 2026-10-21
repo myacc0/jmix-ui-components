@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
+import uz.kapitalbank.umida.component.loginbg.LoginBackground;
 
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -60,6 +61,7 @@ public class LoginView extends StandardView implements LocaleChangeObserver {
 
     @Subscribe
     public void onInit(final InitEvent event) {
+        getContent().addComponentAsFirst(new LoginBackground());
         initLocales();
         initDefaultCredentials();
     }

@@ -2,8 +2,9 @@
 <view xmlns="http://jmix.io/schema/flowui/view"
       focusComponent="login"
       title="msg://LoginView.title">
-    <layout justifyContent="CENTER" alignItems="CENTER" classNames="jmix-login-main-layout">
+    <layout classNames="jmix-login-main-layout umida-login-layout">
         <loginForm id="login"
+                   classNames="umida-login-form"
                    forgotPasswordButtonVisible="false">
             <form title="msg://loginForm.headerTitle"
                   username="msg://loginForm.username"
