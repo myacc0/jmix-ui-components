@@ -3,19 +3,22 @@
       focusComponent="login"
       title="msg://LoginView.title">
     <layout classNames="jmix-login-main-layout umida-login-layout">
-        <loginForm id="login"
-                   classNames="umida-login-form"
-                   forgotPasswordButtonVisible="false">
-            <form title="msg://loginForm.headerTitle"
-                  username="msg://loginForm.username"
-                  password="msg://loginForm.password"
-                  rememberMe="msg://loginForm.rememberMe"
-                  submit="msg://loginForm.submit"
-                  forgotPassword="msg://loginForm.forgotPassword"/>
-            <errorMessage title="msg://loginForm.errorTitle"
-                          message="msg://loginForm.badCredentials"
-                          username="msg://loginForm.errorUsername"
-                          password="msg://loginForm.errorPassword"/>
-        </loginForm>
+        <div classNames="umida-login-form-wrapper">
+            <div classNames="umida-login-form-logo">
+                <image resource="public/images/logo.svg"/>
+            </div>
+            <loginForm id="login" forgotPasswordButtonVisible="false" classNames="umida-login-form">
+                <form title=""
+                      username="msg://loginForm.username"
+                      password="msg://loginForm.password"
+                      rememberMe="msg://loginForm.rememberMe"
+                      submit="msg://loginForm.submit"
+                      forgotPassword="msg://loginForm.forgotPassword"/>
+                <errorMessage title="msg://loginForm.errorTitle"
+                              message="msg://loginForm.badCredentials"
+                              username="msg://loginForm.errorUsername"
+                              password="msg://loginForm.errorPassword"/>
+            </loginForm>
+        </div>
     </layout>
 </view>

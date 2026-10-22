@@ -56,7 +56,7 @@
             <div classNames="jmix-initial-layout-content">
                 <h1 text="msg://applicationTitle.text"
                     classNames="jmix-initial-layout-title"/>
-                <image resource="public/images/logo.png"
+                <image resource="public/images/logo.svg"
                        classNames="jmix-initial-layout-logo"/>
             </div>
             <!--

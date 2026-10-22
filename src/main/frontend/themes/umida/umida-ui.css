@@ -2,6 +2,10 @@ html {
     --lumo-clickable-cursor: pointer;
 }
 
+* {
+    box-sizing: border-box;
+}
+
 html {
     --lumo-primary-color: rgb(255, 213, 15);
     --lumo-primary-color-10pct: rgba(255, 213, 15, 0.1);
