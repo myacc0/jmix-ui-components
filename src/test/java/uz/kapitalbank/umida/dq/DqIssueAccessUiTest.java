@@ -29,6 +29,7 @@ import uz.kapitalbank.umida.entity.dq.DqCheckRun;
 import uz.kapitalbank.umida.entity.dq.DqCheckRunResult;
 import uz.kapitalbank.umida.entity.dq.DqIssue;
 import uz.kapitalbank.umida.entity.dq.DqRule;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureAssignments;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructurePosition;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
@@ -44,6 +45,7 @@ import uz.kapitalbank.umida.view.dq.DqIssueDetailView;
 import uz.kapitalbank.umida.view.dq.DqIssueListView;
 import uz.kapitalbank.umida.view.dq.DqViolationsFragment;
 
+import java.time.LocalDate;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.OffsetDateTime;
@@ -213,8 +215,14 @@ public class DqIssueAccessUiTest {
         OrgStructurePosition position = dataManager.create(OrgStructurePosition.class);
         position.setId(UUID.randomUUID().toString());
         position.setSubdivision(subdivision);
-        position.setEmployee(employee);
-        testData.track(dataManager.save(position));
+        position = testData.track(dataManager.save(position));
+
+        OrgStructureAssignments assignment = dataManager.create(OrgStructureAssignments.class);
+        assignment.setId(UUID.randomUUID().toString());
+        assignment.setPosition(position);
+        assignment.setEmployee(employee);
+        assignment.setStartDate(LocalDate.now().minusYears(1));
+        testData.track(dataManager.save(assignment));
 
         User user = dataManager.create(User.class);
         user.setUsername("dq-access-ui-" + UUID.randomUUID());

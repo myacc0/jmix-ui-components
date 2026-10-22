@@ -13,6 +13,7 @@ import uz.kapitalbank.umida.entity.User;
 import uz.kapitalbank.umida.entity.dict.DictDataDomain;
 import uz.kapitalbank.umida.entity.dq.DqIssue;
 import uz.kapitalbank.umida.entity.dq.DqRule;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureAssignments;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructurePosition;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
@@ -267,8 +268,14 @@ public class DqIssueServiceTests {
         OrgStructurePosition position = dataManager.create(OrgStructurePosition.class);
         position.setId(UUID.randomUUID().toString());
         position.setSubdivision(subdivision);
-        position.setEmployee(employee);
-        testData.track(dataManager.save(position));
+        position = testData.track(dataManager.save(position));
+
+        OrgStructureAssignments assignment = dataManager.create(OrgStructureAssignments.class);
+        assignment.setId(UUID.randomUUID().toString());
+        assignment.setPosition(position);
+        assignment.setEmployee(employee);
+        assignment.setStartDate(LocalDate.now().minusYears(1));
+        testData.track(dataManager.save(assignment));
 
         return createUser(employee);
     }

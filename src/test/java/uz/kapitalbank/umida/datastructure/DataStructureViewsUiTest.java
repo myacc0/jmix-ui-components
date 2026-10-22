@@ -2,6 +2,7 @@ package uz.kapitalbank.umida.datastructure;
 
 import uz.kapitalbank.umida.UmidaApplication;
 import uz.kapitalbank.umida.component.d3orgchart.D3OrgChart;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureAssignments;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.entity.dict.DictDataDomain;
 import uz.kapitalbank.umida.entity.dict.DictDataDomainSteward;
@@ -92,13 +93,18 @@ public class DataStructureViewsUiTest {
             e.setId(UUID.randomUUID().toString());
             e.setFullName("Steward " + suffix);
         });
-        create(OrgStructurePosition.class, p -> {
+        OrgStructurePosition headPosition = create(OrgStructurePosition.class, p -> {
             p.setId(UUID.randomUUID().toString());
             p.setSubdivision(owner);
             p.setJobTitle(title);
-            p.setEmployee(head);
             p.setIsheadofsubdivision(1);
             p.setStatus(OrgStructurePositionStatus.FILLED);
+        });
+        create(OrgStructureAssignments.class, a -> {
+            a.setId(UUID.randomUUID().toString());
+            a.setPosition(headPosition);
+            a.setEmployee(head);
+            a.setStartDate(LocalDate.now().minusYears(1));
         });
 
         rootDomain = create(DictDataDomain.class, d -> fillDomain(d, "Root domain " + suffix, null, owner));

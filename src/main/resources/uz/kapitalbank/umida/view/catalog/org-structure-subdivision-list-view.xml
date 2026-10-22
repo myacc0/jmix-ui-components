@@ -45,6 +45,8 @@
             <columns resizable="true" filterable="true">
                 <column property="name" autoWidth="true" flexGrow="0"/>
                 <column property="parent" autoWidth="true" flexGrow="0"/>
+                <column property="isActive" autoWidth="true" flexGrow="0"/>
+                <column property="endDate" autoWidth="true" flexGrow="0"/>
             </columns>
         </treeDataGrid>
         <hbox id="lookupActions" visible="false">

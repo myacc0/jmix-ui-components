@@ -3,7 +3,8 @@ package uz.kapitalbank.umida.dto.orgstructure;
 /**
  * One node of the d3-org-chart rendered in {@code OrgStructureView}.
  * <p>
- * A node is normally a {@code OrgStructurePosition}: the node title is the subdivision name, the
+ * A node is normally a current {@code OrgStructureAssignments} of an employee to a position, or a
+ * vacant {@code OrgStructurePosition}: the node title is the subdivision name, the
  * main line is the employee's full name and the sub-line is the job title. A subdivision
  * that has no head position gets a synthetic node carrying only the subdivision name,
  * so that the chart stays connected and single-rooted.

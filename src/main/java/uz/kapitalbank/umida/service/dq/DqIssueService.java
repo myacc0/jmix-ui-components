@@ -14,11 +14,12 @@ import org.springframework.stereotype.Service;
 import uz.kapitalbank.umida.entity.dq.DqCheckRunResult;
 import uz.kapitalbank.umida.entity.dq.DqIssue;
 import uz.kapitalbank.umida.entity.dq.DqRule;
-import uz.kapitalbank.umida.entity.orgstructure.OrgStructurePosition;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureAssignments;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.enums.dq.DqCheckResultStatus;
 import uz.kapitalbank.umida.enums.dq.DqIssueClosingReason;
 import uz.kapitalbank.umida.enums.dq.DqIssueStatus;
+import uz.kapitalbank.umida.service.orgstructure.OrgStructureJpql;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -272,20 +273,23 @@ public class DqIssueService {
     }
 
     /**
-     * Whether the employee linked to the current user holds a position in the subdivision the issue
-     * is assigned to ({@code DqIssue.assignee}). A user without an employee, such as {@code admin},
+     * Whether the employee linked to the current user is currently assigned to an active position in
+     * the subdivision the issue is assigned to ({@code DqIssue.assignee}). A user without an employee, such as {@code admin},
      * or an issue without an assignee, never qualifies.
      */
     public boolean isInAssigneeSubdivision(DqIssue issue) {
         if (issue.getId() == null) {
             return false;
         }
-        return dataManager.load(OrgStructurePosition.class)
-                .query("select p from umida_OrgStructurePosition p, umida_User u, umida_DqIssue i" +
+        return dataManager.load(OrgStructureAssignments.class)
+                .query("select a from umida_OrgStructureAssignments a, umida_User u, umida_DqIssue i" +
                         " where i.id = :issueId and u.username = :username" +
-                        " and p.subdivision = i.assignee and p.employee = u.employee")
+                        " and a.position.subdivision = i.assignee and a.employee = u.employee" +
+                        " and " + OrgStructureJpql.currentAssignment("a") +
+                        " and " + OrgStructureJpql.active("a.position"))
                 .parameter("issueId", issue.getId())
                 .parameter("username", currentAuthentication.getUser().getUsername())
+                .parameter(OrgStructureJpql.TODAY_PARAM, LocalDate.now())
                 .fetchPlanProperties("id")
                 .maxResults(1)
                 .optional()

@@ -1,6 +1,7 @@
 package uz.kapitalbank.umida.datastructure;
 
 import uz.kapitalbank.umida.dto.orgstructure.DataAssetChartNode;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureAssignments;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructurePosition;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.entity.dict.DictDataDomain;
@@ -262,11 +263,19 @@ class DataStructureServiceTests {
         position.setId(UUID.randomUUID().toString());
         position.setSubdivision(subdivision);
         position.setJobTitle(jobTitle);
-        position.setEmployee(employee);
         position.setLvl(lvl);
         position.setIsheadofsubdivision(ishead);
         position.setStatus(employee != null ? OrgStructurePositionStatus.FILLED : OrgStructurePositionStatus.VACANT);
-        track(dataManager.save(position));
+        position = track(dataManager.save(position));
+
+        if (employee != null) {
+            OrgStructureAssignments assignment = dataManager.create(OrgStructureAssignments.class);
+            assignment.setId(UUID.randomUUID().toString());
+            assignment.setPosition(position);
+            assignment.setEmployee(employee);
+            assignment.setStartDate(LocalDate.now().minusYears(1));
+            track(dataManager.save(assignment));
+        }
     }
 
     private DictDataDomain createDomain(String shortName, DictDataDomain parent, OrgStructureSubdivision owner) {

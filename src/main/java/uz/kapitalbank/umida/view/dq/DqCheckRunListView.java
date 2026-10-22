@@ -195,7 +195,7 @@ public class DqCheckRunListView extends StandardListView<DqCheckRun> {
     /** A check with no active rule is shown dimmed: it has nothing to run. */
     @Install(to = "dqChecksDataGrid", subject = "partNameGenerator")
     private String dqChecksDataGridPartNameGenerator(final DqCheck check) {
-        return isRunnable(check) ? null : "dq-inactive-row";
+        return isRunnable(check) ? null : "inactive-row";
     }
 
     @Install(to = "dqChecksDataGrid.runAction", subject = "enabledRule")

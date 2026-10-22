@@ -4,7 +4,7 @@ import uz.kapitalbank.umida.component.LoaderComponent;
 import uz.kapitalbank.umida.component.d3orgchart.D3OrgChart;
 import uz.kapitalbank.umida.dto.orgstructure.OrgChartNode;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
-import uz.kapitalbank.umida.entity.orgstructure.OrgStructurePosition;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureAssignments;
 import uz.kapitalbank.umida.service.orgstructure.OrgStructureService;
 import uz.kapitalbank.umida.view.main.MainView;
 import com.vaadin.flow.component.Component;
@@ -157,8 +157,8 @@ public class OrgStructureView extends StandardView {
                 });
 
         var searchResultSize = 20;
-        uiAsyncTasks.supplierConfigurer(() -> orgStructureService.getPositions(searchText, searchResultSize))
-                .withResultHandler(employees -> updateSearchPopover(employees, popover))
+        uiAsyncTasks.supplierConfigurer(() -> orgStructureService.searchCurrentAssignments(searchText, searchResultSize))
+                .withResultHandler(assignments -> updateSearchPopover(assignments, popover))
                 .withExceptionHandler(e -> {
                     popover.removeAll();
                     popover.add(new Span(messages.getMessage("something.went.wrong")));
@@ -168,9 +168,9 @@ public class OrgStructureView extends StandardView {
         return popover;
     }
 
-    private void updateSearchPopover(List<OrgStructurePosition> employees, Popover popover) {
-        JmixVirtualList<OrgStructurePosition> virtualList = uiComponents.create(JmixVirtualList.class);
-        virtualList.setItems(employees);
+    private void updateSearchPopover(List<OrgStructureAssignments> assignments, Popover popover) {
+        JmixVirtualList<OrgStructureAssignments> virtualList = uiComponents.create(JmixVirtualList.class);
+        virtualList.setItems(assignments);
         virtualList.setRenderer(createClientsListRenderer(popover));
         virtualList.addClassNames(LumoUtility.Padding.MEDIUM, "popover-inner-list");
 
@@ -178,16 +178,16 @@ public class OrgStructureView extends StandardView {
         popover.add(virtualList);
     }
 
-    private ComponentRenderer<Component, OrgStructurePosition> createClientsListRenderer(Popover popover) {
-        return new ComponentRenderer<>(employee -> {
+    private ComponentRenderer<Component, OrgStructureAssignments> createClientsListRenderer(Popover popover) {
+        return new ComponentRenderer<>(assignment -> {
             Div div = uiComponents.create(Div.class);
-            div.setText(employee.getEmployee().getFullName());
+            div.setText(assignment.getEmployee().getFullName());
             div.addClassNames(LumoUtility.TextOverflow.ELLIPSIS, LumoUtility.Whitespace.NOWRAP, "btn-list-item");
 
             div.addClickListener(click -> {
                 popover.close();
                 employeeSearchField.clear();
-                subdivisionsTreeDataGrid.select(employee.getSubdivision());
+                subdivisionsTreeDataGrid.select(assignment.getPosition().getSubdivision());
             });
             return div;
         });

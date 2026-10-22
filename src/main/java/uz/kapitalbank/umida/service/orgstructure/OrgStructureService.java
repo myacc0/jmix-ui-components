@@ -1,6 +1,7 @@
 package uz.kapitalbank.umida.service.orgstructure;
 
 import uz.kapitalbank.umida.dto.orgstructure.OrgChartNode;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureAssignments;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructurePosition;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
@@ -11,14 +12,23 @@ import io.jmix.core.DataManager;
 import io.jmix.core.FetchPlan;
 import io.jmix.core.Messages;
 import io.jmix.core.Sort;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.*;
+
+import static uz.kapitalbank.umida.service.orgstructure.OrgStructureJpql.TODAY_PARAM;
+import static uz.kapitalbank.umida.service.orgstructure.OrgStructureJpql.active;
+import static uz.kapitalbank.umida.service.orgstructure.OrgStructureJpql.currentAssignment;
 
 @Service
 public class OrgStructureService {
 
+    /** A vacant position: it has no current assignment. */
     protected static final String POSITION_NODE_PREFIX = "pos-";
+    /** An employee on a position: one node per current assignment. */
+    protected static final String ASSIGNMENT_NODE_PREFIX = "asg-";
     protected static final String SUBDIVISION_NODE_PREFIX = "dept-";
 
     private final DataManager dataManager;
@@ -34,10 +44,23 @@ public class OrgStructureService {
         this.employeePhotoService = employeePhotoService;
     }
 
-    public List<OrgStructurePosition> getPositions(String searchText, int size) {
-        return dataManager.load(OrgStructurePosition.class)
-                .query("select p from umida_OrgStructurePosition p where p.employee.fullName like :name")
+    /**
+     * The current assignments of the employees whose name contains {@code searchText}, on positions and in
+     * subdivisions that are not closed. An employee holding two positions is found twice.
+     */
+    public List<OrgStructureAssignments> searchCurrentAssignments(String searchText, int size) {
+        return dataManager.load(OrgStructureAssignments.class)
+                .query("select a from umida_OrgStructureAssignments a" +
+                        " where a.employee.fullName like :name" +
+                        " and " + currentAssignment("a") +
+                        " and " + active("a.position") +
+                        " and " + active("a.position.subdivision"))
                 .parameter("name", "(?i)%" + searchText + "%")
+                .parameter(TODAY_PARAM, LocalDate.now())
+                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE)
+                        .add("employee", FetchPlan.INSTANCE_NAME)
+                        .add("position", pfp -> pfp
+                                .add("subdivision", FetchPlan.INSTANCE_NAME)))
                 .sort(Sort.by(Sort.Order.asc("employee.fullName")))
                 .firstResult(0)
                 .maxResults(size)
@@ -67,10 +90,13 @@ public class OrgStructureService {
     /**
      * Collects the whole subdivision subtree below {@code rootSubdivisionId} (the root
      * subdivision itself included) together with the positions of every subdivision, and
-     * flattens it into d3-org-chart nodes.
+     * flattens it into d3-org-chart nodes. Closed subdivisions and positions are left out.
      * <p>
-     * Linking rules: the head position ({@code ishead = 1}) of a subdivision is the
-     * subdivision's anchor — its remaining positions become its children, and the anchor
+     * A position gives one node per current assignment, so a position held by two employees
+     * gives two nodes; a position without a current assignment gives a single vacant node.
+     * <p>
+     * Linking rules: a node of the head position ({@code ishead = 1}) of a subdivision is the
+     * subdivision's anchor — its remaining nodes become its children, and the anchor
      * of a child subdivision hangs under the anchor of its parent subdivision. A subdivision
      * without a head position gets a synthetic subdivision node as its anchor, which keeps
      * the result single-rooted as d3-org-chart requires.
@@ -87,7 +113,7 @@ public class OrgStructureService {
         }
 
         List<OrgStructureSubdivision> subtree = collectSubtree(rootSubdivision, subdivisionsById);
-        Map<String, List<OrgStructurePosition>> positionsBySubdivision = loadPositionsBySubdivision(subtree);
+        Map<String, List<Seat>> seatsBySubdivision = loadSeatsBySubdivision(subtree);
 
         List<OrgChartNode> nodes = new ArrayList<>();
         // anchor node id per subdivision; filled top-down, so a parent anchor is always
@@ -95,9 +121,10 @@ public class OrgStructureService {
         Map<String, String> anchorNodeIds = new HashMap<>();
 
         for (OrgStructureSubdivision subdivision : subtree) {
-            List<OrgStructurePosition> positions = positionsBySubdivision.getOrDefault(subdivision.getId(), List.of());
-            OrgStructurePosition headPosition = positions.stream()
-                    .filter(this::isHead)
+            List<Seat> seats = seatsBySubdivision.getOrDefault(subdivision.getId(), List.of());
+            // seats are sorted head first, a filled head before a vacant one
+            Seat headSeat = seats.stream()
+                    .filter(seat -> isHead(seat.position()))
                     .findFirst()
                     .orElse(null);
 
@@ -106,8 +133,8 @@ public class OrgStructureService {
                     : anchorNodeIds.get(referencedId(subdivision.getParent()));
 
             String anchorNodeId;
-            if (headPosition != null) {
-                OrgChartNode headNode = createPositionNode(headPosition, subdivision, parentNodeId);
+            if (headSeat != null) {
+                OrgChartNode headNode = createSeatNode(headSeat, subdivision, parentNodeId);
                 anchorNodeId = headNode.getId();
                 nodes.add(headNode);
             } else {
@@ -117,11 +144,11 @@ public class OrgStructureService {
             }
             anchorNodeIds.put(subdivision.getId(), anchorNodeId);
 
-            for (OrgStructurePosition position : positions) {
-                if (position.equals(headPosition)) {
+            for (Seat seat : seats) {
+                if (seat == headSeat) {
                     continue;
                 }
-                nodes.add(createPositionNode(position, subdivision, anchorNodeId));
+                nodes.add(createSeatNode(seat, subdivision, anchorNodeId));
             }
         }
 
@@ -130,7 +157,7 @@ public class OrgStructureService {
 
     private Map<String, OrgStructureSubdivision> loadSubdivisionsById() {
         List<OrgStructureSubdivision> subdivisions = dataManager.load(OrgStructureSubdivision.class)
-                .query("select d from umida_OrgStructureSubdivision d")
+                .query("select d from umida_OrgStructureSubdivision d where " + active("d"))
                 .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE)
                         .add("parent", FetchPlan.INSTANCE_NAME))
                 .list();
@@ -172,46 +199,77 @@ public class OrgStructureService {
         return subtree;
     }
 
-    private Map<String, List<OrgStructurePosition>> loadPositionsBySubdivision(List<OrgStructureSubdivision> subdivisions) {
+    /**
+     * The seats of the active positions of the given subdivisions: one per current assignment,
+     * a single vacant one for a position without a current assignment.
+     */
+    private Map<String, List<Seat>> loadSeatsBySubdivision(List<OrgStructureSubdivision> subdivisions) {
         List<String> subdivisionIds = subdivisions.stream()
                 .map(OrgStructureSubdivision::getId)
                 .toList();
 
         List<OrgStructurePosition> positions = dataManager.load(OrgStructurePosition.class)
-                .query("select p from umida_OrgStructurePosition p where p.subdivision.id in :subdivisionIds")
+                .query("select p from umida_OrgStructurePosition p" +
+                        " where p.subdivision.id in :subdivisionIds and " + active("p"))
                 .parameter("subdivisionIds", subdivisionIds)
                 .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE)
                         .add("subdivision", FetchPlan.INSTANCE_NAME)
-                        .add("jobTitle", FetchPlan.INSTANCE_NAME)
-                        // BASE, not INSTANCE_NAME: the employee card shows the e-mail too
-                        .add("employee", FetchPlan.BASE))
+                        .add("jobTitle", FetchPlan.INSTANCE_NAME))
                 .list();
 
-        // head first, then the most senior staff (higher lvl) first, then by employee name
-        Comparator<OrgStructurePosition> order = Comparator
-                .comparing((OrgStructurePosition p) -> isHead(p) ? 0 : 1)
-                .thenComparing(OrgStructurePosition::getLvl, Comparator.nullsLast(Comparator.reverseOrder()))
+        Map<String, List<OrgStructureAssignments>> assignmentsByPosition = new HashMap<>();
+        dataManager.load(OrgStructureAssignments.class)
+                .query("select a from umida_OrgStructureAssignments a" +
+                        " where a.position.subdivision.id in :subdivisionIds" +
+                        " and " + active("a.position") +
+                        " and " + currentAssignment("a"))
+                .parameter("subdivisionIds", subdivisionIds)
+                .parameter(TODAY_PARAM, LocalDate.now())
+                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE)
+                        .add("position", FetchPlan.INSTANCE_NAME)
+                        // BASE, not INSTANCE_NAME: the employee card shows the e-mail too
+                        .add("employee", FetchPlan.BASE))
+                .list()
+                .forEach(assignment -> assignmentsByPosition
+                        .computeIfAbsent(assignment.getPosition().getId(), key -> new ArrayList<>())
+                        .add(assignment));
+
+        // head first, then the most senior staff (higher lvl) first, then by employee name —
+        // a vacant seat goes after the filled ones of the same level
+        Comparator<Seat> order = Comparator
+                .comparing((Seat seat) -> isHead(seat.position()) ? 0 : 1)
+                .thenComparing(seat -> seat.position().getLvl(), Comparator.nullsLast(Comparator.reverseOrder()))
                 .thenComparing(this::employeeName, Comparator.nullsLast(Comparator.naturalOrder()));
 
-        Map<String, List<OrgStructurePosition>> positionsBySubdivision = new HashMap<>();
+        Map<String, List<Seat>> seatsBySubdivision = new HashMap<>();
         for (OrgStructurePosition position : positions) {
             String subdivisionId = referencedId(position.getSubdivision());
-            if (subdivisionId != null) {
-                positionsBySubdivision.computeIfAbsent(subdivisionId, key -> new ArrayList<>()).add(position);
+            if (subdivisionId == null) {
+                continue;
+            }
+            List<Seat> seats = seatsBySubdivision.computeIfAbsent(subdivisionId, key -> new ArrayList<>());
+            List<OrgStructureAssignments> assignments = assignmentsByPosition.getOrDefault(position.getId(), List.of());
+            if (assignments.isEmpty()) {
+                seats.add(new Seat(position, null));
+            } else {
+                assignments.forEach(assignment -> seats.add(new Seat(position, assignment)));
             }
         }
-        positionsBySubdivision.values().forEach(list -> list.sort(order));
+        seatsBySubdivision.values().forEach(list -> list.sort(order));
 
-        return positionsBySubdivision;
+        return seatsBySubdivision;
     }
 
-    private OrgChartNode createPositionNode(OrgStructurePosition position, OrgStructureSubdivision subdivision, String parentNodeId) {
+    private OrgChartNode createSeatNode(Seat seat, OrgStructureSubdivision subdivision, String parentNodeId) {
+        OrgStructurePosition position = seat.position();
         OrgChartNode node = new OrgChartNode();
-        node.setId(POSITION_NODE_PREFIX + position.getId());
+        node.setId(seat.assignment() != null
+                ? ASSIGNMENT_NODE_PREFIX + seat.assignment().getId()
+                : POSITION_NODE_PREFIX + position.getId());
         node.setParentId(parentNodeId);
         node.setOrgLevelName(subdivision.getName());
 
-        OrgStructureEmployee employee = position.getEmployee();
+        OrgStructureEmployee employee = seat.employee();
         node.setName(employee != null && employee.getFullName() != null
                 ? employee.getFullName()
                 : messages.getMessage(OrgStructureService.class, "orgChart.vacantPosition"));
@@ -249,12 +307,24 @@ public class OrgStructureService {
         return Objects.equals(position.getIsheadofsubdivision(), 1);
     }
 
-    private String employeeName(OrgStructurePosition position) {
-        return position.getEmployee() != null ? position.getEmployee().getFullName() : null;
+    private String employeeName(Seat seat) {
+        return seat.employee() != null ? seat.employee().getFullName() : null;
     }
 
     private String referencedId(OrgStructureSubdivision subdivision) {
         return subdivision != null ? subdivision.getId() : null;
+    }
+
+    /**
+     * A place on the chart: a position together with one of its current assignments, or a vacant
+     * position when {@code assignment} is {@code null}.
+     */
+    private record Seat(OrgStructurePosition position, @Nullable OrgStructureAssignments assignment) {
+
+        @Nullable
+        OrgStructureEmployee employee() {
+            return assignment != null ? assignment.getEmployee() : null;
+        }
     }
 
 }

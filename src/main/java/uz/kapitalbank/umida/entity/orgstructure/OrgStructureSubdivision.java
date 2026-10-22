@@ -4,6 +4,8 @@ import io.jmix.core.metamodel.annotation.InstanceName;
 import io.jmix.core.metamodel.annotation.JmixEntity;
 import jakarta.persistence.*;
 
+import java.time.LocalDate;
+
 @JmixEntity
 @Table(name = "UMIDA_ORG_STRUCTURE_SUBDIVISIONS", indexes = {
         @Index(name = "IDX_UMIDA_ORG_STRUCTURE_SUBDIVISION_PARENT", columnList = "PARENT_ID")
@@ -22,6 +24,28 @@ public class OrgStructureSubdivision {
     @JoinColumn(name = "PARENT_ID")
     @ManyToOne(fetch = FetchType.LAZY)
     private OrgStructureSubdivision parent;
+
+    @Column(name = "IS_ACTIVE", columnDefinition = "integer default 1")
+    private Integer isActive;
+
+    @Column(name = "END_DATE")
+    private LocalDate endDate;
+
+    public LocalDate getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDate endDate) {
+        this.endDate = endDate;
+    }
+
+    public Integer getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Integer isActive) {
+        this.isActive = isActive;
+    }
 
     public OrgStructureSubdivision getParent() {
         return parent;

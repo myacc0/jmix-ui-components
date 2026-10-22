@@ -9,13 +9,19 @@ import org.springframework.stereotype.Service;
 import uz.kapitalbank.umida.entity.User;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureJobTitle;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureAssignments;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructurePosition;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.service.orgstructure.EmployeePhotoService;
 
+import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
+
+import static uz.kapitalbank.umida.service.orgstructure.OrgStructureJpql.TODAY_PARAM;
+import static uz.kapitalbank.umida.service.orgstructure.OrgStructureJpql.active;
+import static uz.kapitalbank.umida.service.orgstructure.OrgStructureJpql.currentAssignment;
 
 /**
  * The profile of the logged-in user: who the user is in the org structure and the profile photo, which the user
@@ -101,18 +107,26 @@ public class UserProfileService {
                 employeePhotoService.getPhotoUrl(employee.getId()));
     }
 
-    /** The head position when the employee holds one, otherwise any. */
+    /**
+     * The position of a current assignment of the employee: a head position when the employee holds one,
+     * otherwise the one held the longest. Closed positions do not count.
+     */
     private Optional<OrgStructurePosition> findMainPosition(OrgStructureEmployee employee) {
-        return dataManager.load(OrgStructurePosition.class)
-                .query("select p from umida_OrgStructurePosition p where p.employee = :employee")
+        return dataManager.load(OrgStructureAssignments.class)
+                .query("select a from umida_OrgStructureAssignments a where a.employee = :employee" +
+                        " and " + currentAssignment("a") + " and " + active("a.position"))
                 .parameter("employee", employee)
+                .parameter(TODAY_PARAM, LocalDate.now())
                 .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE)
-                        .add("jobTitle", FetchPlan.INSTANCE_NAME)
-                        .add("subdivision", FetchPlan.INSTANCE_NAME))
+                        .add("position", pfp -> pfp.addFetchPlan(FetchPlan.BASE)
+                                .add("jobTitle", FetchPlan.INSTANCE_NAME)
+                                .add("subdivision", FetchPlan.INSTANCE_NAME)))
                 .list()
                 .stream()
-                .min(Comparator.comparing((OrgStructurePosition p) ->
-                        Objects.equals(p.getIsheadofsubdivision(), 1) ? 0 : 1));
+                .min(Comparator.comparing((OrgStructureAssignments a) ->
+                                Objects.equals(a.getPosition().getIsheadofsubdivision(), 1) ? 0 : 1)
+                        .thenComparing(OrgStructureAssignments::getStartDate))
+                .map(OrgStructureAssignments::getPosition);
     }
 
     /**

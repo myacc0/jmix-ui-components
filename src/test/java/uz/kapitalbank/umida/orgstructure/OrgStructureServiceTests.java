@@ -1,6 +1,7 @@
 package uz.kapitalbank.umida.orgstructure;
 
 import uz.kapitalbank.umida.dto.orgstructure.OrgChartNode;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureAssignments;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructurePosition;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
@@ -12,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import uz.kapitalbank.umida.service.orgstructure.EmployeePhotoService;
 import io.jmix.core.DataManager;
+import io.jmix.core.Messages;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,8 +26,10 @@ import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -55,11 +59,15 @@ class OrgStructureServiceTests {
     private OrgStructureService orgStructureService;
     @Autowired
     private EmployeePhotoService employeePhotoService;
+    @Autowired
+    private Messages messages;
 
     @Value("${jmix.localfs.storage-dir}")
     private String storageDir;
 
     private final List<Object> cleanup = new ArrayList<>();
+    /** The assignment {@link #createPosition} put on each position, by position id. */
+    private final Map<String, OrgStructureAssignments> assignmentsByPosition = new HashMap<>();
     private final List<Path> photoFiles = new ArrayList<>();
 
     @Test
@@ -82,10 +90,10 @@ class OrgStructureServiceTests {
 
         assertEquals(4, nodes.size());
 
-        OrgChartNode rootHeadNode = nodes.get("pos-" + rootHead.getId());
-        OrgChartNode rootStaffNode = nodes.get("pos-" + rootStaff.getId());
-        OrgChartNode childHeadNode = nodes.get("pos-" + childHead.getId());
-        OrgChartNode childStaffNode = nodes.get("pos-" + childStaff.getId());
+        OrgChartNode rootHeadNode = nodes.get(nodeId(rootHead));
+        OrgChartNode rootStaffNode = nodes.get(nodeId(rootStaff));
+        OrgChartNode childHeadNode = nodes.get(nodeId(childHead));
+        OrgChartNode childStaffNode = nodes.get(nodeId(childStaff));
         assertNotNull(rootHeadNode);
         assertNotNull(rootStaffNode);
         assertNotNull(childHeadNode);
@@ -134,11 +142,11 @@ class OrgStructureServiceTests {
         assertEquals("Headless " + suffix, syntheticNode.getOrgLevelName());
         assertEquals("", syntheticNode.getName());
         assertEquals("", syntheticNode.getPosition());
-        assertEquals("pos-" + rootHead.getId(), syntheticNode.getParentId());
+        assertEquals(nodeId(rootHead), syntheticNode.getParentId());
 
         // the synthetic node anchors both its own staff and the child subdivision below it
-        assertEquals(syntheticNode.getId(), nodes.get("pos-" + headlessStaff.getId()).getParentId());
-        assertEquals(syntheticNode.getId(), nodes.get("pos-" + grandChildHead.getId()).getParentId());
+        assertEquals(syntheticNode.getId(), nodes.get(nodeId(headlessStaff)).getParentId());
+        assertEquals(syntheticNode.getId(), nodes.get(nodeId(grandChildHead)).getParentId());
 
         assertEquals(1, countRoots(nodes.values()), "chart must stay single-rooted");
     }
@@ -177,9 +185,9 @@ class OrgStructureServiceTests {
         Map<String, OrgChartNode> nodes = nodesById(child.getId());
 
         assertEquals(1, nodes.size());
-        assertNotNull(nodes.get("pos-" + childHead.getId()));
-        assertNull(nodes.get("pos-" + siblingHead.getId()));
-        assertNull(nodes.get("pos-" + childHead.getId()).getParentId());
+        assertNotNull(nodes.get(nodeId(childHead)));
+        assertNull(nodes.get(nodeId(siblingHead)));
+        assertNull(nodes.get(nodeId(childHead)).getParentId());
     }
 
     @Test
@@ -198,7 +206,7 @@ class OrgStructureServiceTests {
 
         JsonNode node = parsed.get(0);
         // field names consumed by orgchart.js
-        assertEquals("pos-" + head.getId(), node.get("id").asText());
+        assertEquals(nodeId(head), node.get("id").asText());
         assertTrue(node.get("parentId").isNull());
         assertEquals("Root " + suffix, node.get("orgLevelName").asText());
         assertEquals("Root Head " + suffix, node.get("name").asText());
@@ -221,9 +229,109 @@ class OrgStructureServiceTests {
 
         Map<String, OrgChartNode> nodes = nodesById(root.getId());
 
-        assertEquals("/employee-photos/" + withPhoto.getId(), nodes.get("pos-" + head.getId()).getImage());
+        assertEquals("/employee-photos/" + withPhoto.getId(), nodes.get(nodeId(head)).getImage());
         // no photo file: orgchart.js falls back to the initials placeholder on a null image
-        assertNull(nodes.get("pos-" + staff.getId()).getImage());
+        assertNull(nodes.get(nodeId(staff)).getImage());
+    }
+
+    @Test
+    void leavesOutClosedSubdivisionsAndPositions() {
+        String suffix = UUID.randomUUID().toString();
+
+        OrgStructureSubdivision root = createSubdivision("Root " + suffix, null, 1);
+        OrgStructureSubdivision closedChild = createSubdivision("Closed Child " + suffix, root, 2);
+        close(closedChild);
+
+        OrgStructureJobTitle title = createJobTitle("Manager " + suffix);
+        OrgStructurePosition rootHead = createPosition(root, title, createEmployee("Root Head " + suffix), "10", 1);
+        OrgStructurePosition closedPosition = createPosition(root, title, createEmployee("Closed Staff " + suffix), "6", 0);
+        close(closedPosition);
+        OrgStructurePosition closedChildHead = createPosition(closedChild, title, createEmployee("Closed Child Head " + suffix), "8", 1);
+
+        Map<String, OrgChartNode> nodes = nodesById(root.getId());
+
+        assertEquals(1, nodes.size());
+        assertNotNull(nodes.get(nodeId(rootHead)));
+        assertNull(nodes.get(nodeId(closedPosition)));
+        assertNull(nodes.get("dept-" + closedChild.getId()));
+        assertNull(nodes.get(nodeId(closedChildHead)));
+        assertTrue(orgStructureService.getOrgChartNodes(closedChild.getId()).isEmpty());
+    }
+
+    @Test
+    void positionWithoutCurrentAssignmentIsVacant() {
+        String suffix = UUID.randomUUID().toString();
+        LocalDate today = LocalDate.now();
+
+        OrgStructureSubdivision root = createSubdivision("Root " + suffix, null, 1);
+        OrgStructureJobTitle title = createJobTitle("Specialist " + suffix);
+        OrgStructurePosition head = createPosition(root, title, createEmployee("Root Head " + suffix), "10", 1);
+
+        OrgStructurePosition ended = createPosition(root, title, null, "6", 0);
+        createAssignment(ended, createEmployee("Dismissed " + suffix), today.minusYears(1), today.minusDays(1));
+        OrgStructurePosition future = createPosition(root, title, null, "6", 0);
+        createAssignment(future, createEmployee("Future " + suffix), today.plusDays(1), null);
+        OrgStructurePosition lastDay = createPosition(root, title, null, "6", 0);
+        OrgStructureAssignments lastDayAssignment =
+                createAssignment(lastDay, createEmployee("Last Day " + suffix), today.minusYears(1), today);
+
+        Map<String, OrgChartNode> nodes = nodesById(root.getId());
+
+        assertEquals(4, nodes.size());
+        String vacant = messages.getMessage(OrgStructureService.class, "orgChart.vacantPosition");
+        // an assignment that has ended, or has not started yet, leaves the position vacant
+        assertEquals(vacant, nodes.get("pos-" + ended.getId()).getName());
+        assertNull(nodes.get("pos-" + ended.getId()).getEmployeeId());
+        assertEquals(vacant, nodes.get("pos-" + future.getId()).getName());
+        assertNull(nodes.get("pos-" + future.getId()).getEmployeeId());
+        // the end date is the last day on the position
+        OrgChartNode lastDayNode = nodes.get("asg-" + lastDayAssignment.getId());
+        assertNotNull(lastDayNode);
+        assertEquals("Last Day " + suffix, lastDayNode.getName());
+        assertEquals(nodeId(head), lastDayNode.getParentId());
+    }
+
+    @Test
+    void givesANodeToEveryCurrentAssignmentOfAPosition() {
+        String suffix = UUID.randomUUID().toString();
+
+        OrgStructureSubdivision root = createSubdivision("Root " + suffix, null, 1);
+        OrgStructureJobTitle title = createJobTitle("Specialist " + suffix);
+        OrgStructurePosition head = createPosition(root, title, createEmployee("Root Head " + suffix), "10", 1);
+        OrgStructurePosition shared = createPosition(root, title, createEmployee("First " + suffix), "6", 0);
+        OrgStructureAssignments second = createAssignment(shared, createEmployee("Second " + suffix),
+                LocalDate.now().minusMonths(1), null);
+
+        Map<String, OrgChartNode> nodes = nodesById(root.getId());
+
+        assertEquals(3, nodes.size());
+        OrgChartNode firstNode = nodes.get(nodeId(shared));
+        OrgChartNode secondNode = nodes.get("asg-" + second.getId());
+        assertEquals("First " + suffix, firstNode.getName());
+        assertEquals("Second " + suffix, secondNode.getName());
+        assertEquals(shared.getId(), secondNode.getPositionId());
+        assertEquals(nodeId(head), firstNode.getParentId());
+        assertEquals(nodeId(head), secondNode.getParentId());
+    }
+
+    @Test
+    void searchFindsOnlyCurrentAssignments() {
+        String suffix = UUID.randomUUID().toString();
+        LocalDate today = LocalDate.now();
+
+        OrgStructureSubdivision root = createSubdivision("Root " + suffix, null, 1);
+        OrgStructureJobTitle title = createJobTitle("Specialist " + suffix);
+        OrgStructurePosition current = createPosition(root, title, createEmployee("Searched Current " + suffix), "6", 0);
+        OrgStructurePosition ended = createPosition(root, title, null, "6", 0);
+        createAssignment(ended, createEmployee("Searched Ended " + suffix), today.minusYears(1), today.minusDays(1));
+
+        List<OrgStructureAssignments> found = orgStructureService.searchCurrentAssignments("searched current " + suffix, 20);
+        assertEquals(1, found.size());
+        assertEquals(assignmentsByPosition.get(current.getId()), found.get(0));
+        assertEquals("Searched Current " + suffix, found.get(0).getEmployee().getFullName());
+        assertEquals(root, found.get(0).getPosition().getSubdivision());
+
+        assertTrue(orgStructureService.searchCurrentAssignments("searched ended " + suffix, 20).isEmpty());
     }
 
     @Test
@@ -275,13 +383,47 @@ class OrgStructureServiceTests {
         position.setId(UUID.randomUUID().toString());
         position.setSubdivision(subdivision);
         position.setJobTitle(jobTitle);
-        position.setEmployee(orgStructureEmployee);
         position.setLvl(lvl);
         position.setIsheadofsubdivision(ishead);
-        position.setStatus(OrgStructurePositionStatus.FILLED);
+        position.setStatus(orgStructureEmployee != null ? OrgStructurePositionStatus.FILLED : OrgStructurePositionStatus.VACANT);
         OrgStructurePosition saved = dataManager.save(position);
         cleanup.add(saved);
+        if (orgStructureEmployee != null) {
+            assignmentsByPosition.put(saved.getId(),
+                    createAssignment(saved, orgStructureEmployee, LocalDate.now().minusYears(1), null));
+        }
         return saved;
+    }
+
+    private OrgStructureAssignments createAssignment(OrgStructurePosition position, OrgStructureEmployee employee,
+                                                     LocalDate startDate, LocalDate endDate) {
+        OrgStructureAssignments assignment = dataManager.create(OrgStructureAssignments.class);
+        assignment.setId(UUID.randomUUID().toString());
+        assignment.setPosition(position);
+        assignment.setEmployee(employee);
+        assignment.setStartDate(startDate);
+        assignment.setEndDate(endDate);
+        OrgStructureAssignments saved = dataManager.save(assignment);
+        cleanup.add(saved);
+        return saved;
+    }
+
+    /** The chart node of a position: of its assignment when {@link #createPosition} filled it, vacant otherwise. */
+    private String nodeId(OrgStructurePosition position) {
+        OrgStructureAssignments assignment = assignmentsByPosition.get(position.getId());
+        return assignment != null ? "asg-" + assignment.getId() : "pos-" + position.getId();
+    }
+
+    private void close(OrgStructureSubdivision subdivision) {
+        subdivision.setIsActive(0);
+        subdivision.setEndDate(LocalDate.now().minusDays(1));
+        cleanup.set(cleanup.indexOf(subdivision), dataManager.save(subdivision));
+    }
+
+    private void close(OrgStructurePosition position) {
+        position.setIsActive(0);
+        position.setEndDate(LocalDate.now().minusDays(1));
+        cleanup.set(cleanup.indexOf(position), dataManager.save(position));
     }
 
     /**
@@ -312,12 +454,14 @@ class OrgStructureServiceTests {
 
     @AfterEach
     void tearDown() throws IOException {
-        // reverse creation order: positions before the subdivisions/employees they reference,
+        // reverse creation order: assignments before their positions and employees, positions
+        // before the subdivisions/employees they reference,
         // and child subdivisions before their parents
         List<Object> reversed = new ArrayList<>(cleanup);
         Collections.reverse(reversed);
         reversed.forEach(dataManager::remove);
         cleanup.clear();
+        assignmentsByPosition.clear();
 
         for (Path file : photoFiles) {
             Files.deleteIfExists(file);

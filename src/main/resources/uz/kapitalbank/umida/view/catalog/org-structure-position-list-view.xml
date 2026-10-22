@@ -9,7 +9,6 @@
             <fetchPlan extends="_base">
                 <property name="subdivision" fetchPlan="_instance_name"/>
                 <property name="jobTitle" fetchPlan="_instance_name"/>
-                <property name="employee" fetchPlan="_instance_name"/>
             </fetchPlan>
             <loader id="orgStructurePositionsDl" readOnly="true">
                 <query>
@@ -46,12 +45,11 @@
             <columns resizable="true" filterable="true">
                 <column property="subdivision" autoWidth="true" flexGrow="0"/>
                 <column property="jobTitle" autoWidth="true" flexGrow="0"/>
-                <column property="employee" autoWidth="true" flexGrow="0"/>
                 <column property="lvl" autoWidth="true" flexGrow="0"/>
                 <column property="isheadofsubdivision" autoWidth="true" flexGrow="0"/>
                 <column property="status" autoWidth="true" flexGrow="0"/>
-                <column property="recruitmentDate" autoWidth="true" flexGrow="0"/>
-                <column property="dismissalDate" autoWidth="true" flexGrow="0"/>
+                <column property="isActive" autoWidth="true" flexGrow="0"/>
+                <column property="endDate" autoWidth="true" flexGrow="0"/>
             </columns>
         </dataGrid>
         <hbox id="lookupActions" visible="false">

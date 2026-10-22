@@ -1,6 +1,7 @@
 package uz.kapitalbank.umida.orgstructure;
 
 import uz.kapitalbank.umida.dto.orgstructure.OrgChartNode;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureAssignments;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructurePosition;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
@@ -29,6 +30,8 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
+import java.util.HashMap;
+import java.time.LocalDate;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -91,6 +94,7 @@ class OrgStructureEmployeePhotoS3StorageTests {
     private S3Client s3Client;
     private final List<String> createdKeys = new ArrayList<>();
     private final List<Object> cleanup = new ArrayList<>();
+    private final Map<String, OrgStructureAssignments> assignmentsByPosition = new HashMap<>();
 
     @BeforeEach
     void setUp() {
@@ -208,9 +212,9 @@ class OrgStructureEmployeePhotoS3StorageTests {
         Map<String, OrgChartNode> nodes = orgStructureService.getOrgChartNodes(root.getId()).stream()
                 .collect(Collectors.toMap(OrgChartNode::getId, Function.identity()));
 
-        assertEquals("/employee-photos/" + withPhoto.getId(), nodes.get("pos-" + head.getId()).getImage());
+        assertEquals("/employee-photos/" + withPhoto.getId(), nodes.get("asg-" + assignmentsByPosition.get(head.getId()).getId()).getImage());
         // no photo in the bucket: orgchart.js falls back to the initials placeholder on a null image
-        assertNull(nodes.get("pos-" + staff.getId()).getImage());
+        assertNull(nodes.get("asg-" + assignmentsByPosition.get(staff.getId()).getId()).getImage());
     }
 
     private OrgStructureSubdivision createSubdivision(String name) {
@@ -237,12 +241,20 @@ class OrgStructureEmployeePhotoS3StorageTests {
         position.setId(UUID.randomUUID().toString());
         position.setSubdivision(subdivision);
         position.setJobTitle(jobTitle);
-        position.setEmployee(employee);
         position.setLvl(lvl);
         position.setIsheadofsubdivision(ishead);
         position.setStatus(OrgStructurePositionStatus.FILLED);
         OrgStructurePosition saved = dataManager.save(position);
         cleanup.add(saved);
+
+        OrgStructureAssignments assignment = dataManager.create(OrgStructureAssignments.class);
+        assignment.setId(UUID.randomUUID().toString());
+        assignment.setPosition(saved);
+        assignment.setEmployee(employee);
+        assignment.setStartDate(LocalDate.now().minusYears(1));
+        OrgStructureAssignments savedAssignment = dataManager.save(assignment);
+        cleanup.add(savedAssignment);
+        assignmentsByPosition.put(saved.getId(), savedAssignment);
         return saved;
     }
 

@@ -63,7 +63,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class DqCheckUiTest {
 
     private static final long RUN_TIMEOUT_MS = 60_000;
-    private static final String DIMMED = "dq-inactive-row";
+    private static final String DIMMED = "inactive-row";
 
     @Autowired
     DataManager dataManager;

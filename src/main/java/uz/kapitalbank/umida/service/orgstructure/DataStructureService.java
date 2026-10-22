@@ -5,12 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jmix.core.DataManager;
 import io.jmix.core.FetchPlan;
 import io.jmix.core.Sort;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import uz.kapitalbank.umida.dto.orgstructure.DataAssetChartNode;
 import uz.kapitalbank.umida.entity.dict.DictDataDomain;
 import uz.kapitalbank.umida.entity.dict.DictDataDomainSteward;
 import uz.kapitalbank.umida.entity.dict.DictDataProduct;
 import uz.kapitalbank.umida.entity.dict.DictDataProductSteward;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureAssignments;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructurePosition;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
@@ -20,14 +22,18 @@ import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.function.Function;
 
+import static uz.kapitalbank.umida.service.orgstructure.OrgStructureJpql.TODAY_PARAM;
+import static uz.kapitalbank.umida.service.orgstructure.OrgStructureJpql.active;
+import static uz.kapitalbank.umida.service.orgstructure.OrgStructureJpql.currentAssignment;
+
 /**
  * Builds the d3-org-chart of the data domain and the data product hierarchies shown in
  * {@code DataDomainStructureView} and {@code DataProductStructureView}.
  * <p>
  * Both hierarchies are built the same way: every domain / product becomes one node hanging
  * under the node of its parent. A node shows the business owner subdivision, the head of
- * that subdivision — the employee of its {@code ishead = 1} position — with the photo of the
- * head, and carries the details {@code DataAssetCardView} shows: the long name, the
+ * that subdivision — the employee currently assigned to its active {@code ishead = 1} position — with
+ * the photo of the head, and carries the details {@code DataAssetCardView} shows: the long name, the
  * description, the dates and the names of the stewards that are active today.
  */
 @Service
@@ -145,7 +151,7 @@ public class DataStructureService {
                 .map(AssetRow::businessOwner)
                 .filter(Objects::nonNull)
                 .forEach(owner -> businessOwnerIds.add(owner.getId()));
-        Map<String, OrgStructurePosition> headsBySubdivision = loadHeadPositions(businessOwnerIds);
+        Map<String, Head> headsBySubdivision = loadHeads(businessOwnerIds);
         Map<Integer, List<String>> stewardNames = stewardNamesLoader.apply(subtreeIds);
 
         List<DataAssetChartNode> nodes = new ArrayList<>();
@@ -153,7 +159,7 @@ public class DataStructureService {
             // the selected element is the root of the chart even when it has a parent
             String parentId = Objects.equals(row.id(), root.id()) ? null : String.valueOf(row.parentId());
             OrgStructureSubdivision owner = row.businessOwner();
-            OrgStructurePosition head = owner != null ? headsBySubdivision.get(owner.getId()) : null;
+            Head head = owner != null ? headsBySubdivision.get(owner.getId()) : null;
             nodes.add(createNode(row, parentId, head, stewardNames.getOrDefault(row.id(), List.of())));
         }
         return nodes;
@@ -189,37 +195,60 @@ public class DataStructureService {
     }
 
     /**
-     * The head position of every given subdivision. When a subdivision has several head
-     * positions, a filled one wins over a vacant one, then the most senior (higher lvl).
+     * The head of every given subdivision: an active head position together with the employee currently
+     * assigned to it. When a subdivision has several heads, a filled one wins over a vacant one, then the
+     * most senior (higher lvl), then by employee name.
      */
-    private Map<String, OrgStructurePosition> loadHeadPositions(Set<String> subdivisionIds) {
+    private Map<String, Head> loadHeads(Set<String> subdivisionIds) {
         if (subdivisionIds.isEmpty()) {
             return Map.of();
         }
 
         List<OrgStructurePosition> positions = dataManager.load(OrgStructurePosition.class)
-                .query("select p from umida_OrgStructurePosition p where p.subdivision.id in :subdivisionIds and p.isheadofsubdivision = 1")
+                .query("select p from umida_OrgStructurePosition p" +
+                        " where p.subdivision.id in :subdivisionIds and p.isheadofsubdivision = 1 and " + active("p"))
                 .parameter("subdivisionIds", subdivisionIds)
                 .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE)
                         .add("subdivision", FetchPlan.INSTANCE_NAME)
-                        .add("jobTitle", FetchPlan.INSTANCE_NAME)
-                        // BASE, not INSTANCE_NAME: the card shows the e-mail too
-                        .add("employee", FetchPlan.BASE))
+                        .add("jobTitle", FetchPlan.INSTANCE_NAME))
                 .list();
 
-        Comparator<OrgStructurePosition> order = Comparator
-                .comparing((OrgStructurePosition p) -> p.getEmployee() != null ? 0 : 1)
-                .thenComparing(OrgStructurePosition::getLvl, Comparator.nullsLast(Comparator.reverseOrder()))
-                .thenComparing(p -> p.getEmployee() != null ? p.getEmployee().getFullName() : null,
+        Map<String, List<OrgStructureEmployee>> employeesByPosition = new HashMap<>();
+        if (!positions.isEmpty()) {
+            dataManager.load(OrgStructureAssignments.class)
+                    .query("select a from umida_OrgStructureAssignments a" +
+                            " where a.position.id in :positionIds and a.employee is not null and " + currentAssignment("a"))
+                    .parameter("positionIds", positions.stream().map(OrgStructurePosition::getId).toList())
+                    .parameter(TODAY_PARAM, LocalDate.now())
+                    .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE)
+                            .add("position", FetchPlan.INSTANCE_NAME)
+                            // BASE, not INSTANCE_NAME: the card shows the e-mail too
+                            .add("employee", FetchPlan.BASE))
+                    .list()
+                    .forEach(assignment -> employeesByPosition
+                            .computeIfAbsent(assignment.getPosition().getId(), key -> new ArrayList<>())
+                            .add(assignment.getEmployee()));
+        }
+
+        Comparator<Head> order = Comparator
+                .comparing((Head h) -> h.employee() != null ? 0 : 1)
+                .thenComparing(h -> h.position().getLvl(), Comparator.nullsLast(Comparator.reverseOrder()))
+                .thenComparing(h -> h.employee() != null ? h.employee().getFullName() : null,
                         Comparator.nullsLast(Comparator.naturalOrder()));
 
-        Map<String, OrgStructurePosition> headsBySubdivision = new HashMap<>();
+        Map<String, Head> headsBySubdivision = new HashMap<>();
         for (OrgStructurePosition position : positions) {
             if (position.getSubdivision() == null) {
                 continue;
             }
-            headsBySubdivision.merge(position.getSubdivision().getId(), position,
-                    (current, candidate) -> order.compare(candidate, current) < 0 ? candidate : current);
+            List<OrgStructureEmployee> employees = employeesByPosition.getOrDefault(position.getId(), List.of());
+            List<Head> candidates = employees.isEmpty()
+                    ? List.of(new Head(position, null))
+                    : employees.stream().map(employee -> new Head(position, employee)).toList();
+            for (Head candidate : candidates) {
+                headsBySubdivision.merge(position.getSubdivision().getId(), candidate,
+                        (current, next) -> order.compare(next, current) < 0 ? next : current);
+            }
         }
         return headsBySubdivision;
     }
@@ -277,20 +306,20 @@ public class DataStructureService {
         }
     }
 
-    private DataAssetChartNode createNode(AssetRow row, String parentId, OrgStructurePosition head, List<String> stewardNames) {
+    private DataAssetChartNode createNode(AssetRow row, String parentId, @Nullable Head head, List<String> stewardNames) {
         DataAssetChartNode node = new DataAssetChartNode();
         node.setId(String.valueOf(row.id()));
         node.setParentId(parentId);
         node.setName(row.shortName());
         node.setBusinessOwnerName(row.businessOwner() != null ? row.businessOwner().getName() : "");
 
-        OrgStructureEmployee headOrgStructureEmployee = head != null ? head.getEmployee() : null;
+        OrgStructureEmployee headOrgStructureEmployee = head != null ? head.employee() : null;
         node.setHeadName(headOrgStructureEmployee != null && headOrgStructureEmployee.getFullName() != null ? headOrgStructureEmployee.getFullName() : "");
         // null when the head has no photo in the file storage — the chart then renders the
         // initials of the domain / product name instead of an <img>
         node.setImage(headOrgStructureEmployee != null ? employeePhotoService.getPhotoUrl(headOrgStructureEmployee.getId()) : null);
         node.setHeadEmail(headOrgStructureEmployee != null ? headOrgStructureEmployee.getEmail() : null);
-        node.setHeadJobTitle(head != null && head.getJobTitle() != null ? head.getJobTitle().getName() : null);
+        node.setHeadJobTitle(head != null && head.position().getJobTitle() != null ? head.position().getJobTitle().getName() : null);
 
         node.setLongName(row.longName());
         node.setDescription(row.description());
@@ -307,5 +336,9 @@ public class DataStructureService {
     /** The attributes a domain and a data product have in common, so that one builder serves both. */
     private record AssetRow(Integer id, Integer parentId, String shortName, String longName, String description,
                             OffsetDateTime createdDate, LocalDate assignDate, OrgStructureSubdivision businessOwner) {
+    }
+
+    /** A head position of a subdivision and the employee holding it, {@code null} when it is vacant. */
+    private record Head(OrgStructurePosition position, @Nullable OrgStructureEmployee employee) {
     }
 }

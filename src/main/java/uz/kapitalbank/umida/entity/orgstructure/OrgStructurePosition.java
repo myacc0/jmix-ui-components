@@ -12,8 +12,7 @@ import java.time.LocalDate;
 @JmixEntity
 @Table(name = "UMIDA_ORG_STRUCTURE_POSITIONS", indexes = {
         @Index(name = "IDX_UMIDA_ORG_STRUCTURE_POSITION_SUBDIVISION", columnList = "SUBDIVISION_ID"),
-        @Index(name = "IDX_UMIDA_ORG_STRUCTURE_POSITION_JOB_TITLE", columnList = "JOBTITLE_ID"),
-        @Index(name = "IDX_UMIDA_ORG_STRUCTURE_POSITION_EMPLOYEE", columnList = "EMPLOYEE_ID")
+        @Index(name = "IDX_UMIDA_ORG_STRUCTURE_POSITION_JOB_TITLE", columnList = "JOBTITLE_ID")
 })
 @Entity(name = "umida_OrgStructurePosition")
 public class OrgStructurePosition {
@@ -31,11 +30,6 @@ public class OrgStructurePosition {
     @ManyToOne(fetch = FetchType.LAZY)
     private OrgStructureJobTitle jobTitle;
 
-    @OnDeleteInverse(DeletePolicy.UNLINK)
-    @JoinColumn(name = "EMPLOYEE_ID")
-    @ManyToOne(fetch = FetchType.LAZY)
-    private OrgStructureEmployee employee;
-
     @Column(name = "LVL", length = 50)
     private String lvl;
 
@@ -46,26 +40,26 @@ public class OrgStructurePosition {
     @Column(name = "STATUS", length = 50)
     private String status;
 
-    @Column(name = "RECRUITMENT_DATE")
-    private LocalDate recruitmentDate;
+    @Column(name = "IS_ACTIVE", columnDefinition = "integer default 1")
+    private Integer isActive;
 
-    @Column(name = "DISMISSAL_DATE")
-    private LocalDate dismissalDate;
+    @Column(name = "END_DATE")
+    private LocalDate endDate;
 
-    public LocalDate getDismissalDate() {
-        return dismissalDate;
+    public LocalDate getEndDate() {
+        return endDate;
     }
 
-    public void setDismissalDate(LocalDate dismissalDate) {
-        this.dismissalDate = dismissalDate;
+    public void setEndDate(LocalDate endDate) {
+        this.endDate = endDate;
     }
 
-    public LocalDate getRecruitmentDate() {
-        return recruitmentDate;
+    public Integer getIsActive() {
+        return isActive;
     }
 
-    public void setRecruitmentDate(LocalDate recruitmentDate) {
-        this.recruitmentDate = recruitmentDate;
+    public void setIsActive(Integer isActive) {
+        this.isActive = isActive;
     }
 
     public OrgStructurePositionStatus getStatus() {
@@ -90,14 +84,6 @@ public class OrgStructurePosition {
 
     public void setIsheadofsubdivision(Integer isheadofsubdivision) {
         this.isheadofsubdivision = isheadofsubdivision;
-    }
-
-    public OrgStructureEmployee getEmployee() {
-        return employee;
-    }
-
-    public void setEmployee(OrgStructureEmployee orgStructureEmployee) {
-        this.employee = orgStructureEmployee;
     }
 
     public OrgStructureJobTitle getJobTitle() {
