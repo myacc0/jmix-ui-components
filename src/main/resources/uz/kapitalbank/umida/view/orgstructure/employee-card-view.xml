@@ -1,5 +1,22 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <view xmlns="http://jmix.io/schema/flowui/view">
+    <data>
+        <collection id="assignmentsDc" class="uz.kapitalbank.umida.entity.orgstructure.OrgStructureAssignments">
+            <fetchPlan extends="_base">
+                <property name="position">
+                    <property name="jobTitle" fetchPlan="_instance_name"/>
+                    <property name="subdivision" fetchPlan="_instance_name"/>
+                </property>
+            </fetchPlan>
+            <loader id="assignmentsDl" readOnly="true">
+                <query>
+                    <![CDATA[select a from umida_OrgStructureAssignments a
+                    where a.employee.id = :employeeId
+                    order by a.startDate desc]]>
+                </query>
+            </loader>
+        </collection>
+    </data>
     <layout>
         <hbox id="employeeSummaryBox" classNames="employee-card-summary" width="100%"
               padding="false" spacing="true" alignItems="START">
@@ -27,7 +44,24 @@
                 <vbox id="profileTabContent" width="100%" height="100%" padding="false"/>
             </tab>
             <tab id="careerTab" label="msg://employeeCardView.careerTab">
-                <vbox id="careerTabContent" width="100%" height="100%" padding="false"/>
+                <vbox id="careerTabContent" width="100%" height="100%" padding="false">
+                    <dataGrid id="assignmentsDataGrid"
+                              width="100%"
+                              height="100%"
+                              dataContainer="assignmentsDc"
+                              themeNames="wrap-cell-content"
+                              emptyStateText="msg://employeeCardView.assignments.empty">
+                        <columns resizable="true">
+                            <column property="position.jobTitle"
+                                    header="msg://employeeCardView.assignments.jobTitle"/>
+                            <column property="position.subdivision"
+                                    header="msg://employeeCardView.assignments.subdivision"/>
+                            <column key="period"
+                                    header="msg://employeeCardView.assignments.period"
+                                    sortable="false" autoWidth="true" flexGrow="0"/>
+                        </columns>
+                    </dataGrid>
+                </vbox>
             </tab>
         </tabSheet>
     </layout>

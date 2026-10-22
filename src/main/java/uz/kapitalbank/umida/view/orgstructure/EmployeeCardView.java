@@ -1,13 +1,19 @@
 package uz.kapitalbank.umida.view.orgstructure;
 
 import uz.kapitalbank.umida.dto.orgstructure.OrgChartNode;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureAssignments;
 import uz.kapitalbank.umida.view.main.MainView;
 import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.data.renderer.Renderer;
+import com.vaadin.flow.data.renderer.TextRenderer;
 import com.vaadin.flow.router.Route;
+import io.jmix.core.metamodel.datatype.DatatypeFormatter;
 import io.jmix.flowui.component.image.JmixImage;
+import io.jmix.flowui.model.CollectionLoader;
 import io.jmix.flowui.view.*;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -15,12 +21,13 @@ import java.util.stream.Collectors;
 /**
  * Read-only employee card opened as a dialog when a d3-org-chart node is clicked in
  * {@code OrgStructureView}. Call {@link #setNode(OrgChartNode)} before opening — the
- * card is filled from the clicked chart node, not from a data container.
+ * card is filled from the clicked chart node, only the assignment history on the career tab
+ * is loaded by the employee id of the node.
  */
 @Route(value = "employee-card", layout = MainView.class)
 @ViewController(id = "umida_EmployeeCardView")
 @ViewDescriptor(path = "employee-card-view.xml")
-@DialogMode(width = "40em", height = "32em", resizable = true)
+@DialogMode(width = "720px", height = "480px")
 public class EmployeeCardView extends StandardView {
 
     /** Class name put on the dialog overlay by {@code OrgStructureView}, see employee-card-view.css. */
@@ -38,6 +45,12 @@ public class EmployeeCardView extends StandardView {
     private Span subdivisionLabel;
     @ViewComponent
     private Span contactsLabel;
+    @ViewComponent
+    private CollectionLoader<OrgStructureAssignments> assignmentsDl;
+    @ViewComponent
+    private MessageBundle messageBundle;
+    @Autowired
+    private DatatypeFormatter datatypeFormatter;
 
     public void setNode(OrgChartNode node) {
         if (node == null) {
@@ -49,6 +62,25 @@ public class EmployeeCardView extends StandardView {
         contactsLabel.setText(node.getEmail() != null ? node.getEmail() : "email@gmail.com");
 
         setPhoto(node);
+        loadAssignments(node);
+    }
+
+    /** A vacant position has no employee, its career tab stays empty. */
+    private void loadAssignments(OrgChartNode node) {
+        if (node.getEmployeeId() == null) {
+            return;
+        }
+        assignmentsDl.setParameter("employeeId", node.getEmployeeId());
+        assignmentsDl.load();
+    }
+
+    @Supply(to = "assignmentsDataGrid.period", subject = "renderer")
+    private Renderer<OrgStructureAssignments> assignmentsDataGridPeriodRenderer() {
+        return new TextRenderer<>(assignment -> datatypeFormatter.formatLocalDate(assignment.getStartDate())
+                + " — "
+                + (assignment.getEndDate() != null
+                        ? datatypeFormatter.formatLocalDate(assignment.getEndDate())
+                        : messageBundle.getMessage("employeeCardView.assignments.present")));
     }
 
     /**

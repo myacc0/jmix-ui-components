@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 @ViewController(id = "umida_DataAssetCardView")
 @ViewDescriptor(path = "data-asset-card-view.xml")
 // no fixed height: the dialog grows with the description and the steward list
-@DialogMode(width = "44em", resizable = true)
+@DialogMode(width = "640px")
 public class DataAssetCardView extends StandardView {
 
     private static final String EMPTY_VALUE = "—";
