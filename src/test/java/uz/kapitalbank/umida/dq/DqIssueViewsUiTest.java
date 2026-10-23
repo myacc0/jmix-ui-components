@@ -6,6 +6,8 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Anchor;
+import io.jmix.flowui.fragment.Fragment;
 import com.vaadin.flow.component.html.DescriptionList;
 import com.vaadin.flow.component.html.Span;
 import io.jmix.core.DataManager;
@@ -186,6 +188,7 @@ public class DqIssueViewsUiTest {
         DqViolationsFragment fragment = UiTestUtils.getComponent(violationsView, "violationsFragment");
         Grid<?> violationsGrid = (Grid<?>) UiComponentUtils.getComponent(fragment, "violationsDataGrid");
         assertEquals(VIOLATING_ROWS, violationsGrid.getGenericDataView().getItems().count());
+        assertExportDownloads(fragment);
     }
 
     @Test
@@ -218,6 +221,7 @@ public class DqIssueViewsUiTest {
         Span pageStatusLabel = (Span) UiComponentUtils.getComponent(fragment, "pageStatusLabel");
         assertEquals(VIOLATING_ROWS, violationsGrid.getGenericDataView().getItems().count());
         assertTrue(pageStatusLabel.getText().contains(String.valueOf(VIOLATING_ROWS)), pageStatusLabel.getText());
+        assertExportDownloads(fragment);
     }
 
     @Test
@@ -275,6 +279,23 @@ public class DqIssueViewsUiTest {
         DqReconciliationFragment fragment = UiTestUtils.getComponent(view, "reconciliationFragment");
         Grid<?> pairsGrid = (Grid<?>) UiComponentUtils.getComponent(fragment, "reconciliationDataGrid");
         assertEquals(1, pairsGrid.getGenericDataView().getItems().count());
+        assertExportDownloads(fragment);
+    }
+
+    /**
+     * The export button of a fragment showing rows is enabled, and a click hands a workbook to the
+     * downloader, which adds a link to the page for the browser to follow.
+     */
+    private static void assertExportDownloads(Fragment<?> fragment) {
+        JmixButton exportButton = (JmixButton) UiComponentUtils.getComponent(fragment, "exportButton");
+        assertTrue(exportButton.isEnabled(), "there are rows to export");
+        long linksBefore = UI.getCurrent().getChildren().filter(Anchor.class::isInstance).count();
+
+        exportButton.click();
+
+        assertEquals(linksBefore + 1, UI.getCurrent().getChildren().filter(Anchor.class::isInstance).count(),
+                "the workbook is handed to the downloader");
+        assertTrue(exportButton.isEnabled(), "the button is enabled again after the export");
     }
 
     @Test

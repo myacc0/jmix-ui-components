@@ -8,8 +8,15 @@
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+    align-items: center;
     width: 100%;
 }
 .title-with-button-panel .buttons-panel {
     width: 50%
+}
+
+vaadin-dialog-overlay .excel-export-btn {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
 }

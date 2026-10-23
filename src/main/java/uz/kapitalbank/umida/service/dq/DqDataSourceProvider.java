@@ -231,6 +231,29 @@ public class DqDataSourceProvider {
     }
 
     /**
+     * Same as {@link #queryReadOnly}, with the rows streamed from the database as the extractor reads
+     * them instead of all being fetched first, so that a large result does not have to fit in memory.
+     * PostgreSQL and Oracle fetch {@code fetchSize} rows at a time — PostgreSQL only inside a
+     * transaction, which is why the query runs in one; MySQL streams a row at a time, which its driver
+     * does for no other fetch size than {@link Integer#MIN_VALUE}.
+     *
+     * @throws QueryFailedException when the database rejects or aborts the statement
+     * @throws IllegalStateException when no connection to the data source can be opened
+     */
+    public <T> T queryStreaming(String dataSourceName, String sql, ResultSetExtractor<T> extractor, int fetchSize) {
+        int dialectFetchSize = resolveDialect(dataSourceName) == DqSqlDialect.MYSQL ? Integer.MIN_VALUE : fetchSize;
+        return inReadOnlyTransaction(dataSourceName, connection -> {
+            try (Statement statement = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY,
+                    ResultSet.CONCUR_READ_ONLY)) {
+                statement.setFetchSize(dialectFetchSize);
+                try (ResultSet rs = statement.executeQuery(sql)) {
+                    return extractor.extractData(rs);
+                }
+            }
+        });
+    }
+
+    /**
      * The columns a user-written read query returns, by label and type, without reading its rows. The database describes
      * a prepared statement without running it where the driver supports that (PostgreSQL); elsewhere
      * the query is run wrapped into a sub-query that selects nothing.

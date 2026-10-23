@@ -5,6 +5,8 @@
             <div classNames="title-with-button-panel">
                 <h4 id="violationsHeader" text="msg://dqIssueDetailView.violationsHeader"/>
                 <hbox id="paginationPanel" classNames="buttons-panel" justifyContent="END" alignItems="CENTER" padding="false">
+                    <button id="exportButton" text="msg://dqExport.button.text" icon="umida-icons:reports"
+                            themeNames="primary success" enabled="false" classNames="excel-export-btn"/>
                     <button id="firstPageButton" icon="vaadin:angle-double-left" themeNames="tertiary-inline"
                             enabled="false"/>
                     <button id="previousPageButton" icon="vaadin:angle-left" themeNames="tertiary-inline"

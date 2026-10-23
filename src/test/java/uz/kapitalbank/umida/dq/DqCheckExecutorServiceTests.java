@@ -2,6 +2,11 @@ package uz.kapitalbank.umida.dq;
 
 import io.jmix.core.DataManager;
 import io.jmix.core.FetchPlan;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,14 +20,20 @@ import uz.kapitalbank.umida.enums.dq.*;
 import uz.kapitalbank.umida.service.dq.DqCheckExecutorService;
 import uz.kapitalbank.umida.service.dq.DqCrossSourceReconciler;
 import uz.kapitalbank.umida.service.dq.DqDataSourceProvider;
+import uz.kapitalbank.umida.service.dq.DqExcelExport;
+import uz.kapitalbank.umida.service.dq.DqExcelExportService;
 import uz.kapitalbank.umida.service.dq.DqIssueService;
 import uz.kapitalbank.umida.service.dq.DqViolationsService;
 import uz.kapitalbank.umida.service.dq.DqViolationsService.ViolationsPage;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
 import uz.kapitalbank.umida.test_support.DqTestData;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.file.Files;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -65,6 +76,9 @@ public class DqCheckExecutorServiceTests {
 
     @Autowired
     DqCrossSourceReconciler crossSourceReconciler;
+
+    @Autowired
+    DqExcelExportService excelExportService;
 
     private final List<DqCheckRun> checkRuns = new ArrayList<>();
     private DqTestData testData;
@@ -190,6 +204,52 @@ public class DqCheckExecutorServiceTests {
         ViolationsPage pastTheEnd = violationsService.loadViolations(failed.getId(), Math.toIntExact(count), 50);
         assertTrue(pastTheEnd.rows().isEmpty(), "there is nothing past the last violating row");
         assertEquals(firstRow.columns(), pastTheEnd.columns(), "an empty page still reports its columns");
+    }
+
+    @Test
+    void everyViolatingRowIsExportedToExcelWithTheColumnsOfTheQuery() {
+        DqCheckRun run = awaitFinished(startRun());
+        DqCheckRunResult failed = resultOf(loadResults(run), failingRule);
+        long count = violationsService.countViolations(failed.getId());
+        ViolationsPage page = violationsService.loadViolations(failed.getId(), 0, Math.toIntExact(count));
+
+        DqExcelExport export = excelExportService.exportViolations(failed.getId());
+
+        assertEquals(count, export.rows());
+        assertFalse(export.truncated());
+        assertTrue(export.fileName().startsWith(failingRule.getCode() + "-violations-"), export.fileName());
+        assertTrue(export.fileName().endsWith(".xlsx"), export.fileName());
+        Sheet sheet = readSheet(export);
+        assertEquals(page.columns(), rowTexts(sheet.getRow(0)), "the header row holds the columns of the query");
+        assertEquals(count, sheet.getLastRowNum(), "a row per violating row below the header");
+        assertEquals(String.valueOf(page.rows().get(0).get(0)), rowTexts(sheet.getRow(1)).get(0),
+                "the rows are written in the order of the query");
+        assertFalse(Files.exists(export.file()), "the workbook is removed once it has been read");
+    }
+
+    @Test
+    void theViolatingRowsAreReadNoFurtherThanAsked() {
+        DqCheckRun run = awaitFinished(startRun());
+        DqCheckRunResult failed = resultOf(loadResults(run), failingRule);
+        List<List<String>> columns = new ArrayList<>();
+        List<List<Object>> rows = new ArrayList<>();
+
+        long read = violationsService.readViolations(failed.getId(), 1, new DqViolationsService.ViolationsHandler() {
+            @Override
+            public void columns(List<String> labels) {
+                columns.add(labels);
+            }
+
+            @Override
+            public void row(List<Object> values) {
+                rows.add(values);
+            }
+        });
+
+        assertEquals(1, read);
+        assertEquals(1, rows.size());
+        assertEquals(List.of(violationsService.loadViolations(failed.getId(), 0, 1).columns()), columns,
+                "the columns are reported once, before the rows");
     }
 
     @Test
@@ -405,6 +465,12 @@ public class DqCheckExecutorServiceTests {
         assertEquals(List.of(domain.getId().toString()), violatingIds(result));
         assertTrue(violationsService.loadViolations(result.getId(), 1, 10).rows().isEmpty(),
                 "the second page starts past the only row");
+
+        Sheet sheet = readSheet(excelExportService.exportViolations(result.getId()));
+        assertEquals(List.of("id", "short_name"), rowTexts(sheet.getRow(0)));
+        assertEquals(1, sheet.getLastRowNum(), "the export is read from the rule's own query, like a page");
+        assertEquals(CellType.NUMERIC, sheet.getRow(1).getCell(0).getCellType(), "a numeric id stays a number");
+        assertEquals(domain.getId().toString(), rowTexts(sheet.getRow(1)).get(0));
     }
 
     @Test
@@ -443,6 +509,19 @@ public class DqCheckExecutorServiceTests {
         assertEquals(1, issues.size(), "a failed cross-source rule opens an issue like any other");
         assertTrue(issues.get(0).getDescription().contains("AMOUNT / sum_amount"),
                 "the issue names the pairs that differ: " + issues.get(0).getDescription());
+
+        DqExcelExport export = excelExportService.exportReconciliation(result.getId());
+        assertEquals(3, export.rows());
+        assertTrue(export.fileName().startsWith(rule.getCode() + "-reconciliation-"), export.fileName());
+        Sheet sheet = readSheet(export);
+        assertEquals(6, sheet.getRow(0).getLastCellNum(), "the columns of the reconciliation on screen");
+        assertEquals(3, sheet.getLastRowNum(), "a row per pair below the header");
+        Row amounts = sheet.getRow(2);
+        assertEquals("AMOUNT", amounts.getCell(0).getStringCellValue());
+        assertEquals(CellType.NUMERIC, amounts.getCell(1).getCellType(), "a value stays a number");
+        assertEquals(2.5, amounts.getCell(1).getNumericCellValue());
+        assertEquals(-0.5, amounts.getCell(4).getNumericCellValue(), "the difference is written too");
+        assertEquals(CellType.BLANK, sheet.getRow(3).getCell(1).getCellType(), "a NULL stays empty");
     }
 
     @Test
@@ -588,6 +667,37 @@ public class DqCheckExecutorServiceTests {
                 .rows().stream()
                 .map(row -> String.valueOf(row.get(0)))
                 .toList();
+    }
+
+    /**
+     * The only sheet of an exported workbook, read through the stream a download reads it with. The
+     * workbook is read into memory, so it is left open for the sheet to be read.
+     */
+    private static Sheet readSheet(DqExcelExport export) {
+        XSSFWorkbook workbook;
+        try (InputStream in = export.openStream()) {
+            workbook = new XSSFWorkbook(in);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        assertEquals(1, workbook.getNumberOfSheets());
+        return workbook.getSheetAt(0);
+    }
+
+    /** The values of a row as text; a numeric cell is read as the number it holds. */
+    private static List<String> rowTexts(Row row) {
+        List<String> texts = new ArrayList<>();
+        for (int i = 0; i < row.getLastCellNum(); i++) {
+            Cell cell = row.getCell(i);
+            texts.add(cell == null ? "" : switch (cell.getCellType()) {
+                case NUMERIC -> new BigDecimal(String.valueOf(cell.getNumericCellValue()))
+                        .stripTrailingZeros().toPlainString();
+                case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
+                case BLANK -> "";
+                default -> cell.getStringCellValue();
+            });
+        }
+        return texts;
     }
 
     private DqRule customSqlRule(String name, String sql, String violationsSql) {

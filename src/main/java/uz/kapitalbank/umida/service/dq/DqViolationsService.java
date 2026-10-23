@@ -10,6 +10,7 @@ import uz.kapitalbank.umida.enums.dq.DqRuleType;
 import uz.kapitalbank.umida.enums.dq.DqSqlDialect;
 
 import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -31,6 +32,8 @@ public class DqViolationsService {
 
     private static final String SELECT = "SELECT";
     private static final String QUERY_ALIAS = "v";
+    /** How many rows a streamed read takes from the database at a time. */
+    private static final int STREAM_FETCH_SIZE = 1000;
 
     private final DataManager dataManager;
     private final DqDataSourceProvider dataSourceProvider;
@@ -62,22 +65,56 @@ public class DqViolationsService {
      */
     public ViolationsPage loadViolations(UUID checkResultId, int firstResult, int maxResults) {
         ViolationsQuery query = loadQuery(checkResultId);
+        return run(query, pageSql(query, firstResult, maxResults), PAGE_EXTRACTOR);
+    }
+
+    /**
+     * Reads the rows the violations query of the result currently returns, up to {@code maxResults},
+     * handing them to the handler one by one as the data source streams them: unlike a page, the rows
+     * are never all held in memory. The columns are reported first, even when there are no rows.
+     *
+     * @return the number of rows handed to the handler
+     * @throws IllegalStateException when the result has no violations query to run
+     */
+    public long readViolations(UUID checkResultId, int maxResults, ViolationsHandler handler) {
+        ViolationsQuery query = loadQuery(checkResultId);
+        ResultSetExtractor<Long> extractor = rs -> {
+            ResultSetMetaData metaData = rs.getMetaData();
+            int columnCount = metaData.getColumnCount();
+            handler.columns(columnLabels(metaData));
+
+            long rowCount = 0;
+            while (rs.next()) {
+                Object[] row = new Object[columnCount];
+                for (int i = 1; i <= columnCount; i++) {
+                    row[i - 1] = rs.getObject(i);
+                }
+                handler.row(Arrays.asList(row));
+                rowCount++;
+            }
+            return rowCount;
+        };
+        Long rowCount = dataSourceProvider.queryStreaming(query.dataSource(), pageSql(query, 0, maxResults),
+                extractor, STREAM_FETCH_SIZE);
+        return rowCount == null ? 0 : rowCount;
+    }
+
+    /**
+     * The violations query limited to a page. A generated query takes the page clause after its own
+     * {@code ORDER BY}; a user-written one is paged as a sub-query.
+     */
+    private static String pageSql(ViolationsQuery query, int firstResult, int maxResults) {
         String pageClause = query.dialect().pageClause(firstResult, maxResults);
-        String pageSql = query.userWritten()
+        return query.userWritten()
                 ? "SELECT * FROM (" + query.subQuery() + ") " + QUERY_ALIAS + " " + pageClause
                 : query.sql() + " " + pageClause;
-        return run(query, pageSql, PAGE_EXTRACTOR);
     }
 
     /** Reads the columns positionally: a query may select two columns under the same label. */
     private static final ResultSetExtractor<ViolationsPage> PAGE_EXTRACTOR = rs -> {
         ResultSetMetaData metaData = rs.getMetaData();
         int columnCount = metaData.getColumnCount();
-
-        List<String> columns = new ArrayList<>(columnCount);
-        for (int i = 1; i <= columnCount; i++) {
-            columns.add(metaData.getColumnLabel(i));
-        }
+        List<String> columns = columnLabels(metaData);
 
         List<List<Object>> rows = new ArrayList<>();
         while (rs.next()) {
@@ -89,6 +126,15 @@ public class DqViolationsService {
         }
         return new ViolationsPage(columns, rows);
     };
+
+    private static List<String> columnLabels(ResultSetMetaData metaData) throws SQLException {
+        int columnCount = metaData.getColumnCount();
+        List<String> columns = new ArrayList<>(columnCount);
+        for (int i = 1; i <= columnCount; i++) {
+            columns.add(metaData.getColumnLabel(i));
+        }
+        return columns;
+    }
 
     private ViolationsQuery loadQuery(UUID checkResultId) {
         DqCheckRunResult result = dataManager.load(DqCheckRunResult.class)
@@ -153,5 +199,15 @@ public class DqViolationsService {
      *                {@code null}
      */
     public record ViolationsPage(List<String> columns, List<List<Object>> rows) {
+    }
+
+    /** Takes the violating rows of {@link #readViolations} as they are read. */
+    public interface ViolationsHandler {
+
+        /** The column labels, in the order the query selected them; called once, before any row. */
+        void columns(List<String> columns);
+
+        /** The values of a row, positionally matching the columns; values may be {@code null}. */
+        void row(List<Object> values);
     }
 }

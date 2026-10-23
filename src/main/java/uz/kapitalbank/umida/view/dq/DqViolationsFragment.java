@@ -5,6 +5,8 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import io.jmix.flowui.Notifications;
+import io.jmix.flowui.download.DownloadFormat;
+import io.jmix.flowui.download.Downloader;
 import io.jmix.flowui.fragment.Fragment;
 import io.jmix.flowui.fragment.FragmentDescriptor;
 import io.jmix.flowui.fragment.FragmentUtils;
@@ -18,6 +20,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 import uz.kapitalbank.umida.entity.dq.DqCheckRunResult;
 import uz.kapitalbank.umida.enums.dq.DqCheckResultStatus;
+import uz.kapitalbank.umida.service.dq.DqExcelExport;
+import uz.kapitalbank.umida.service.dq.DqExcelExportService;
 import uz.kapitalbank.umida.service.dq.DqViolationsService;
 import uz.kapitalbank.umida.service.dq.DqViolationsService.ViolationsPage;
 import uz.kapitalbank.umida.utils.StringUtils;
@@ -28,7 +32,8 @@ import java.util.UUID;
 /**
  * The rows that violated the rule of a check result, read page by page with the result's
  * {@code violationsQuery}. The columns are whatever that query selects, so the grid is built when the
- * first page arrives. Shown by {@link #setCheckResult(DqCheckRunResult)}.
+ * first page arrives. Shown by {@link #setCheckResult(DqCheckRunResult)}; every row, not just the page,
+ * can be downloaded as an Excel workbook.
  */
 @FragmentDescriptor("dq-violations-fragment.xml")
 public class DqViolationsFragment extends Fragment<VerticalLayout> {
@@ -41,6 +46,12 @@ public class DqViolationsFragment extends Fragment<VerticalLayout> {
     private DqViolationsService violationsService;
 
     @Autowired
+    private DqExcelExportService excelExportService;
+
+    @Autowired
+    private Downloader downloader;
+
+    @Autowired
     private Notifications notifications;
 
     @ViewComponent
@@ -51,6 +62,9 @@ public class DqViolationsFragment extends Fragment<VerticalLayout> {
 
     @ViewComponent
     private Span pageStatusLabel;
+
+    @ViewComponent
+    private JmixButton exportButton;
 
     @ViewComponent
     private JmixButton firstPageButton;
@@ -100,6 +114,39 @@ public class DqViolationsFragment extends Fragment<VerticalLayout> {
             return;
         }
         loadPage(0);
+    }
+
+    @Subscribe
+    public void onReady(final ReadyEvent event) {
+        // a large export takes a while: a second click must not start another one meanwhile
+        exportButton.setDisableOnClick(true);
+    }
+
+    @Subscribe(id = "exportButton", subject = "clickListener")
+    public void onExportButtonClick(final ClickEvent<JmixButton> event) {
+        try {
+            if (checkResultId == null) {
+                return;
+            }
+            DqExcelExport export;
+            try {
+                export = excelExportService.exportViolations(checkResultId);
+            } catch (RuntimeException e) {
+                log.warn("Violating rows of check result {} cannot be exported", checkResultId, e);
+                notifications.create(messageBundle.getMessage("dqExport.failed"), StringUtils.asText(e.getMessage()))
+                        .withType(Notifications.Type.ERROR)
+                        .show();
+                return;
+            }
+            downloader.download(export::openStream, export.fileName(), DownloadFormat.XLSX);
+            if (export.truncated()) {
+                notifications.create(messageBundle.formatMessage("dqExport.truncated", export.rows()))
+                        .withType(Notifications.Type.WARNING)
+                        .show();
+            }
+        } finally {
+            updateExportButton();
+        }
     }
 
     @Subscribe(id = "firstPageButton", subject = "clickListener")
@@ -179,11 +226,17 @@ public class DqViolationsFragment extends Fragment<VerticalLayout> {
         previousPageButton.setEnabled(hasPrevious);
         nextPageButton.setEnabled(hasNext);
         lastPageButton.setEnabled(hasNext);
+        updateExportButton();
 
         pageStatusLabel.setText(pageSize == 0
                 ? messageBundle.getMessage("dqViolationsFragment.noRows")
                 : messageBundle.formatMessage("dqViolationsFragment.pageStatus",
                 firstResult + 1, firstResult + pageSize, totalCount));
+    }
+
+    /** There is something to export once a result with violating rows is shown. */
+    private void updateExportButton() {
+        exportButton.setEnabled(checkResultId != null && totalCount > 0);
     }
 
     private int lastPageFirstResult() {
@@ -196,6 +249,7 @@ public class DqViolationsFragment extends Fragment<VerticalLayout> {
 
     private void showLoadError(RuntimeException e) {
         log.warn("Violating rows of check result {} cannot be read", checkResultId, e);
+        exportButton.setEnabled(false);
         pageStatusLabel.setText(messageBundle.getMessage("dqViolationsFragment.loadFailed"));
         notifications.create(messageBundle.getMessage("dqViolationsFragment.loadFailed"),
                         StringUtils.asText(e.getMessage()))

@@ -4,7 +4,11 @@
         <vbox id="root" expand="reconciliationGridBox" classNames="violations-fragment-container">
             <div classNames="title-with-button-panel">
                 <h4 id="reconciliationHeader" text="msg://dqReconciliationFragment.header"/>
-                <span id="summaryLabel"/>
+                <hbox id="summaryPanel" classNames="buttons-panel" justifyContent="END" alignItems="CENTER" padding="false">
+                    <button id="exportButton" text="msg://dqExport.button.text" icon="umida-icons:reports"
+                            themeNames="primary success" enabled="false" classNames="excel-export-btn"/>
+                    <span id="summaryLabel"/>
+                </hbox>
             </div>
             <vbox id="reconciliationGridBox" width="100%" minHeight="12em" padding="false"/>
         </vbox>
