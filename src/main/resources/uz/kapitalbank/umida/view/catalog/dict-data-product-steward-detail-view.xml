@@ -6,7 +6,7 @@
         <instance id="dictDataProductStewardDc"
                   class="uz.kapitalbank.umida.entity.dict.DictDataProductSteward">
             <fetchPlan extends="_base">
-                <property name="product" fetchPlan="_instance_name"/>
+                <property name="dataProduct" fetchPlan="_instance_name"/>
                 <property name="employee" fetchPlan="_instance_name"/>
             </fetchPlan>
             <loader id="dictDataProductStewardDl"/>

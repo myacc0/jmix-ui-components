@@ -312,7 +312,7 @@ class DataStructureServiceTests {
 
     private void createProductSteward(DictDataProduct product, OrgStructureEmployee employee, LocalDate begin, LocalDate end) {
         DictDataProductSteward steward = dataManager.create(DictDataProductSteward.class);
-        steward.setProduct(product);
+        steward.setDataProduct(product);
         steward.setEmployee(employee);
         steward.setDateBegin(begin);
         steward.setDateEnd(end);

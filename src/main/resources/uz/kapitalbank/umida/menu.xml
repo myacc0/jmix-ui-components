@@ -6,7 +6,7 @@
           title="msg://uz.kapitalbank.umida/menu_config.mainView.title"/>
     <menu id="orgstructure" icon="umida-icons:structure" description="msg://uz.kapitalbank.umida/menu_config.orgstructure.description"
           title="msg://uz.kapitalbank.umida/menu_config.orgstructure.title">
-        <item view="umida_OrgStructure" title="msg://uz.kapitalbank.umida.view.orgstructure/OrgStructureView.title"/>
+        <item view="umida_OrgStructureView" title="msg://uz.kapitalbank.umida.view.orgstructure/OrgStructureView.title"/>
         <item view="umida_DataDomainStructure"
               title="msg://uz.kapitalbank.umida.view.orgstructure/dataDomainStructureView.title"/>
         <item view="umida_DataProductStructure"
@@ -18,16 +18,18 @@
               title="msg://uz.kapitalbank.umida.view.catalog/dictDataDomainListView.title"/>
         <item view="umida_DictDataProduct.list"
               title="msg://uz.kapitalbank.umida.view.catalog/dictDataProductListView.title"/>
-        <item view="umida_OrgStructureJobTitle.list"
-              title="msg://uz.kapitalbank.umida.view.catalog/orgStructureJobTitleListView.title"/>
-        <item view="umida_OrgStructureSubdivision.list"
-              title="msg://uz.kapitalbank.umida.view.catalog/orgStructureSubdivisionListView.title"/>
-        <item view="umida_OrgStructureEmployee.list"
-              title="msg://uz.kapitalbank.umida.view.catalog/orgStructureEmployeeListView.title"/>
-        <item view="umida_OrgStructurePosition.list"
-              title="msg://uz.kapitalbank.umida.view.catalog/orgStructurePositionListView.title"/>
-        <item view="umida_OrgStructureAssignments.list"
-              title="msg://uz.kapitalbank.umida.view.catalog/orgStructureAssignmentsListView.title"/>
+        <menu id="orgstructure_catalogs" title="msg://uz.kapitalbank.umida.view.catalog/menu_config.orgstructure_catalogs.title">
+            <item view="umida_OrgStructureJobTitle.list"
+                  title="msg://uz.kapitalbank.umida.view.catalog/orgStructureJobTitleListView.title"/>
+            <item view="umida_OrgStructureSubdivision.list"
+                  title="msg://uz.kapitalbank.umida.view.catalog/orgStructureSubdivisionListView.title"/>
+            <item view="umida_OrgStructureEmployee.list"
+                  title="msg://uz.kapitalbank.umida.view.catalog/orgStructureEmployeeListView.title"/>
+            <item view="umida_OrgStructurePosition.list"
+                  title="msg://uz.kapitalbank.umida.view.catalog/orgStructurePositionListView.title"/>
+            <item view="umida_OrgStructureAssignments.list"
+                  title="msg://uz.kapitalbank.umida.view.catalog/orgStructureAssignmentsListView.title"/>
+        </menu>
     </menu>
     <menu id="dq" icon="umida-icons:data-quality" description="msg://uz.kapitalbank.umida/menu_config.dq.description"
           title="msg://uz.kapitalbank.umida/menu_config.dq.title">

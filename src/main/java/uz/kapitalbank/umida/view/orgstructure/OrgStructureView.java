@@ -33,7 +33,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Route(value = "orgstructure", layout = MainView.class)
-@ViewController(id = "umida_OrgStructure")
+@ViewController(id = "umida_OrgStructureView")
 @ViewDescriptor(path = "orgstructure-view.xml")
 public class OrgStructureView extends StandardView {
 

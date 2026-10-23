@@ -277,32 +277,32 @@ public class DataStructureService {
     private Map<Integer, List<String>> loadActiveProductStewardNames(List<Integer> productIds) {
         List<DictDataProductSteward> stewards = dataManager.load(DictDataProductSteward.class)
                 .query("select s from umida_DictDataProductSteward s " +
-                        "where s.product.id in :ids and s.dateBegin <= :today " +
+                        "where s.dataProduct.id in :ids and s.dateBegin <= :today " +
                         "and (s.dateEnd is null or s.dateEnd >= :today)")
                 .parameter("ids", productIds)
                 .parameter("today", LocalDate.now())
                 .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE)
-                        .add("product", FetchPlan.INSTANCE_NAME)
+                        .add("dataProduct", FetchPlan.INSTANCE_NAME)
                         .add("employee", FetchPlan.INSTANCE_NAME))
                 .list();
 
         Map<Integer, List<String>> namesByProduct = new HashMap<>();
         for (DictDataProductSteward steward : stewards) {
-            addStewardName(namesByProduct, steward.getProduct() != null ? steward.getProduct().getId() : null,
+            addStewardName(namesByProduct, steward.getDataProduct() != null ? steward.getDataProduct().getId() : null,
                     steward.getEmployee());
         }
         namesByProduct.values().forEach(names -> names.sort(Comparator.naturalOrder()));
         return namesByProduct;
     }
 
-    private void addStewardName(Map<Integer, List<String>> namesByAsset, Integer assetId, OrgStructureEmployee orgStructureEmployee) {
-        if (assetId == null || orgStructureEmployee == null || orgStructureEmployee.getFullName() == null) {
+    private void addStewardName(Map<Integer, List<String>> namesByAsset, Integer assetId, OrgStructureEmployee employee) {
+        if (assetId == null || employee == null || employee.getFullName() == null) {
             return;
         }
         List<String> names = namesByAsset.computeIfAbsent(assetId, key -> new ArrayList<>());
-        // the same orgStructureEmployee may hold two overlapping steward periods — list the name once
-        if (!names.contains(orgStructureEmployee.getFullName())) {
-            names.add(orgStructureEmployee.getFullName());
+        // the same employee may hold two overlapping steward periods — list the name once
+        if (!names.contains(employee.getFullName())) {
+            names.add(employee.getFullName());
         }
     }
 

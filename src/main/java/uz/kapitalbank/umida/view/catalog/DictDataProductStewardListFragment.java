@@ -36,6 +36,6 @@ public class DictDataProductStewardListFragment extends Fragment<VerticalLayout>
 
     @Install(to = "stewardsDataGrid.createAction", subject = "initializer")
     private void stewardsDataGridCreateActionInitializer(final DictDataProductSteward steward) {
-        steward.setProduct(product);
+        steward.setDataProduct(product);
     }
 }

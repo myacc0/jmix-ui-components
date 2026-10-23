@@ -33,7 +33,7 @@ public class DictDataProductSteward {
     @OnDeleteInverse(DeletePolicy.CASCADE)
     @JoinColumn(name = "PRODUCT_ID", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    private DictDataProduct product;
+    private DictDataProduct dataProduct;
 
     @OnDeleteInverse(DeletePolicy.UNLINK)
     @JoinColumn(name = "EMPLOYEE_ID", nullable = false)
@@ -79,12 +79,12 @@ public class DictDataProductSteward {
     @Column(name = "DELETED_DATE")
     private OffsetDateTime deletedDate;
 
-    public DictDataProduct getProduct() {
-        return product;
+    public DictDataProduct getDataProduct() {
+        return dataProduct;
     }
 
-    public void setProduct(DictDataProduct product) {
-        this.product = product;
+    public void setDataProduct(DictDataProduct product) {
+        this.dataProduct = product;
     }
 
     public String getNotes() {

@@ -18,7 +18,7 @@ public class OrgStructureJobTitle {
     private String id;
 
     @InstanceName
-    @Column(name = "NAME", length = 400)
+    @Column(name = "NAME", length = 4000)
     private String name;
 
     @Column(name = "IS_ACTIVE", columnDefinition = "integer default 1")

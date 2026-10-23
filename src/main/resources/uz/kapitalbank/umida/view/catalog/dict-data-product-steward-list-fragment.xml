@@ -11,7 +11,7 @@
             <loader id="stewardsDl" readOnly="true">
                 <query>
                     <![CDATA[select e from umida_DictDataProductSteward e
-                    where e.product = :product
+                    where e.dataProduct = :product
                     order by e.dateBegin desc]]>
                 </query>
             </loader>
