@@ -20,7 +20,7 @@ import java.time.OffsetDateTime;
 @JmixEntity
 @Table(name = "UMIDA_DICT_DATA_PRODUCT_STEWARD", indexes = {
         @Index(name = "IDX_UMIDA_DICT_DATA_PRODUCT_STEWARD_EMPLOYEE", columnList = "EMPLOYEE_ID"),
-        @Index(name = "IDX_UMIDA_DICT_DATA_PRODUCT_STEWARD_PRODUCT", columnList = "PRODUCT_ID")
+        @Index(name = "IDX_UMIDA_DICT_DATA_PRODUCT_STEWARD_PRODUCT", columnList = "DATA_PRODUCT_ID")
 })
 @Entity(name = "umida_DictDataProductSteward")
 public class DictDataProductSteward {
@@ -31,7 +31,7 @@ public class DictDataProductSteward {
 
     @NotNull
     @OnDeleteInverse(DeletePolicy.CASCADE)
-    @JoinColumn(name = "PRODUCT_ID", nullable = false)
+    @JoinColumn(name = "DATA_PRODUCT_ID", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private DictDataProduct dataProduct;
 

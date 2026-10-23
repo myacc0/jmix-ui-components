@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd"
+        objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+        logicalFilePath="uz/kapitalbank/umida/liquibase/changelog/2026/10/23-134150-f241bd14.xml">
+    <changeSet id="1" author="umida">
+        <dropIndex indexName="IDX_UMIDA_DICT_DATA_PRODUCT_STEWARD_PRODUCT" tableName="UMIDA_DICT_DATA_PRODUCT_STEWARD"/>
+        <dropForeignKeyConstraint baseTableName="UMIDA_DICT_DATA_PRODUCT_STEWARD" constraintName="FK_UMIDA_DICT_DATA_PRODUCT_STEWARD_ON_PRODUCT"/>
+    </changeSet>
+    <changeSet id="2" author="umida">
+        <dropColumn columnName="product_id" tableName="umida_dict_data_product_steward"/>
+    </changeSet>
+</databaseChangeLog>
