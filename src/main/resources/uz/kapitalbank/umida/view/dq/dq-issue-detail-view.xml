@@ -34,8 +34,6 @@
     <layout>
         <!-- an issue is maintained by the check runs: it is only ever closed here, never edited -->
         <descriptionList id="detailsList" classNames="property-list" width="100%" maxWidth="60em">
-            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.code"/>
-            <description id="codeValue" dataContainer="dqIssueDc" property="code"/>
             <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleCode"/>
             <description id="ruleCodeValue" dataContainer="dqIssueDc" property="rule.code"/>
             <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleName"/>

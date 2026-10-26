@@ -31,6 +31,9 @@ public class DqIssueDetailView extends StandardDetailView<DqIssue> {
     @Autowired
     private DqBadges dqBadges;
 
+    @Autowired
+    private MessageBundle messageBundle;
+
     @ViewComponent
     private InstanceLoader<DqIssue> dqIssueDl;
 
@@ -66,6 +69,9 @@ public class DqIssueDetailView extends StandardDetailView<DqIssue> {
     @Subscribe(id = "dqIssueDc", target = Target.DATA_CONTAINER)
     public void onDqIssueDcItemChange(final InstanceContainer.ItemChangeEvent<DqIssue> event) {
         DqIssue issue = event.getItem();
+        if (issue != null) {
+            setPageTitle(messageBundle.formatMessage("dqIssueDetailView.title", issue.getCode()));
+        }
         dqBadges.show(statusValue, DqBadges.ISSUE_STATUS, issue != null ? issue.getStatus() : null);
         dqBadges.show(closingReasonValue, DqBadges.ISSUE_CLOSING_REASON,
                 issue != null ? issue.getClosingReason() : null);

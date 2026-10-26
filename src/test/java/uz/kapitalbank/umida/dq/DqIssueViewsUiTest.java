@@ -199,7 +199,8 @@ public class DqIssueViewsUiTest {
                 .navigate();
         DqIssueDetailView view = UiTestUtils.getCurrentView();
 
-        assertEquals(rule.getCode(), valueText(view, "ruleValue"));
+        assertTrue(view.getPageTitle().contains(issue.getCode()));
+        assertEquals(rule.getCode(), valueText(view, "ruleCodeValue"));
         assertEquals("main", valueText(view, "dataSourceValue"));
         assertEquals(String.valueOf(VIOLATING_ROWS), valueText(view, "affectedRowsValue"));
         assertEquals(assignee.getName(), valueText(view, "assigneeValue"));
