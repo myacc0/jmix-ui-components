@@ -33,12 +33,23 @@
                 </query>
             </loader>
         </collection>
+        <!-- the grouped list: the issues of dqIssuesDl, filters and order included, on a single page;
+             loaded by the controller when a grouping is chosen, see DqIssueListView#setGrouping -->
+        <collection id="dqIssueTreeItemsDc"
+                    class="uz.kapitalbank.umida.dto.dq.DqIssueTreeItem">
+            <loader id="dqIssueTreeItemsDl" readOnly="true"/>
+        </collection>
     </data>
     <facets>
-        <dataLoadCoordinator auto="true"/>
+        <dataLoadCoordinator>
+            <refresh loader="dqIssuesDl">
+                <onViewEvent type="BeforeShow"/>
+            </refresh>
+        </dataLoadCoordinator>
         <urlQueryParameters>
             <pagination component="pagination"/>
         </urlQueryParameters>
+        <!-- the controller adds the grouping, see DqIssueListView.GroupingBinder -->
     </facets>
     <layout>
         <hbox id="buttonsPanel" classNames="buttons-panel">
@@ -48,6 +59,8 @@
                 <button id="closeIssueButton" themeNames="primary" action="dqIssuesDataGrid.closeIssueAction" text="" title="msg://dqIssueListView.closeIssueAction"/>
             </startSlot>
             <endSlot>
+                <!-- "all" shows the paged list, any other value the tree without pages -->
+                <select id="groupingField" width="12em" emptySelectionAllowed="false"/>
                 <simplePagination id="pagination" dataLoader="dqIssuesDl"/>
             </endSlot>
         </hbox>
@@ -70,6 +83,12 @@
             </actions>
             <columns resizable="true">
                 <column property="code" filterable="true" autoWidth="true" flexGrow="0"/>
+                <column key="ruleName"
+                        property="rule.name"
+                        header="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleName"
+                        filterable="true"
+                        autoWidth="true"
+                        flexGrow="0"/>
                 <column key="ruleCode"
                         property="rule.code"
                         header="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleCode"
@@ -115,5 +134,77 @@
                 <column property="closingReason" filterable="true" autoWidth="true" flexGrow="0"/>
             </columns>
         </dataGrid>
+        <!-- the grouped list: the actions repeat the ones of the paged list for the issue rows -->
+        <treeDataGrid id="dqIssuesTreeDataGrid"
+                      width="100%"
+                      minHeight="20em"
+                      visible="false"
+                      dataContainer="dqIssueTreeItemsDc"
+                      hierarchyProperty="parent"
+                      columnReorderingAllowed="true">
+            <actions>
+                <action id="readAction"
+                        type="list_itemTracking"
+                        text="msg:///actions.Read"/>
+                <action id="violationsAction"
+                        type="list_itemTracking"
+                        text="msg://dqIssueListView.violationsAction"
+                        icon="vaadin:file-search"/>
+                <action id="closeIssueAction"
+                        type="list_itemTracking"
+                        text="msg://dqIssueListView.closeIssueAction"
+                        icon="vaadin:check"/>
+            </actions>
+            <columns resizable="true">
+                <column key="caption"
+                        property="caption"
+                        header="msg://dqIssueListView.treeCaption"
+                        autoWidth="true"
+                        flexGrow="0"/>
+                <column key="ruleName"
+                        property="issue.rule.name"
+                        header="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleName"
+                        autoWidth="true"
+                        flexGrow="0"/>
+                <column key="ruleCode"
+                        property="issue.rule.code"
+                        header="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleCode"
+                        autoWidth="true"
+                        flexGrow="0"/>
+                <column key="ruleGroup"
+                        property="issue.rule.group"
+                        header="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleGroup"
+                        autoWidth="true"
+                        flexGrow="0"/>
+                <column key="ruleDomain"
+                        property="issue.rule.domain"
+                        header="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleDomain"
+                        autoWidth="true"
+                        flexGrow="0"/>
+                <column key="dataSource"
+                        property="issue.rule.dataSource"
+                        header="msg://uz.kapitalbank.umida.entity.dq/DqRule.dataSource"
+                        autoWidth="true"
+                        flexGrow="0"/>
+                <column key="severity"
+                        property="issue.rule.severity"
+                        header="msg://uz.kapitalbank.umida.entity.dq/DqRule.severity"
+                        autoWidth="true"
+                        flexGrow="0"/>
+                <column key="affectedRows"
+                        property="issue.checkResult.failedRecords"
+                        header="msg://dqIssue.affectedRows"
+                        autoWidth="true"
+                        flexGrow="0"/>
+                <column key="status" property="issue.status" autoWidth="true" flexGrow="0"/>
+                <column key="assignee" property="issue.assignee" autoWidth="true" flexGrow="0"/>
+                <column key="dueDate" property="issue.dueDate" autoWidth="true" flexGrow="0"/>
+                <column key="createdAt" property="issue.createdAt" autoWidth="true" flexGrow="0"/>
+                <column key="updatedAt" property="issue.updatedAt" autoWidth="true" flexGrow="1"/>
+                <column key="closedAt" property="issue.closedAt" autoWidth="true" flexGrow="0"/>
+                <column key="closedBy" property="issue.closedBy" autoWidth="true" flexGrow="0"/>
+                <column key="closingReason" property="issue.closingReason" autoWidth="true" flexGrow="0"/>
+            </columns>
+        </treeDataGrid>
     </layout>
 </view>

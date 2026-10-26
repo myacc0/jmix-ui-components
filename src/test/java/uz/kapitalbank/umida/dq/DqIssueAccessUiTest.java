@@ -8,6 +8,7 @@ import io.jmix.core.security.SystemAuthenticator;
 import io.jmix.flowui.ViewNavigators;
 import io.jmix.flowui.component.UiComponentUtils;
 import io.jmix.flowui.component.grid.DataGrid;
+import io.jmix.flowui.component.grid.TreeDataGrid;
 import io.jmix.flowui.component.select.JmixSelect;
 import io.jmix.flowui.kit.component.button.JmixButton;
 import io.jmix.flowui.testassist.FlowuiTestAssistConfiguration;
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import uz.kapitalbank.umida.UmidaApplication;
+import uz.kapitalbank.umida.dto.dq.DqIssueTreeItem;
 import uz.kapitalbank.umida.entity.User;
 import uz.kapitalbank.umida.entity.dict.DictDataDomain;
 import uz.kapitalbank.umida.entity.dq.DqCheckRun;
@@ -117,6 +119,9 @@ public class DqIssueAccessUiTest {
         assertEquals(List.of(ownIssue.getId()), shown.stream().map(DqIssue::getId).toList());
         assertNotNull(shown.get(0).getRule().getCode(), "the rule columns are filled");
         assertNotNull(shown.get(0).getAssignee().getName(), "the assignee column is filled");
+        assertNotNull(grid.getColumnByKey("ruleGroup"), "the member sees the rule group column");
+        assertNotNull(grid.getColumnByKey("ruleDomain"), "the member sees the rule domain column");
+        assertNotNull(shown.get(0).getRule().getDomain().getShortName(), "the domain column is filled");
 
         grid.select(shown.get(0));
         JmixButton closeIssueButton = UiTestUtils.getComponent(view, "closeIssueButton");
@@ -135,6 +140,28 @@ public class DqIssueAccessUiTest {
         DqViolationsFragment fragment = UiTestUtils.getComponent(violationsView, "violationsFragment");
         Grid<?> violationsGrid = (Grid<?>) UiComponentUtils.getComponent(fragment, "violationsDataGrid");
         assertEquals(3, violationsGrid.getGenericDataView().getItems().count());
+    }
+
+    @Test
+    void theTreeShowsOnlyTheIssuesOfTheOwnSubdivisionGroupedByWhatTheMemberMaySee() {
+        viewNavigators.view(UiTestUtils.getCurrentView(), DqIssueListView.class).navigate();
+        DqIssueListView view = UiTestUtils.getCurrentView();
+        JmixSelect<DqIssueGrouping> groupingField = UiTestUtils.getComponent(view, "groupingField");
+
+        assertEquals(List.of(DqIssueGrouping.values()), groupingField.getListDataView().getItems().toList(),
+                "the member may see every attribute the issues are grouped by");
+
+        groupingField.setValue(DqIssueGrouping.ASSIGNEE);
+        TreeDataGrid<DqIssueTreeItem> tree = UiTestUtils.getComponent(view, "dqIssuesTreeDataGrid");
+        List<DqIssueTreeItem> items = List.copyOf(tree.getItems().getItems());
+        assertEquals(2, items.size(), "the own subdivision with the own issue: " + items);
+        assertEquals(ownIssue.getId(), items.get(1).getIssue().getId());
+        assertNotNull(tree.getColumnByKey("ruleCode"), "the member sees the rule columns of the tree");
+
+        tree.select(items.get(1));
+        JmixButton closeIssueButton = UiTestUtils.getComponent(view, "closeIssueButton");
+        assertTrue(closeIssueButton.isVisible() && closeIssueButton.isEnabled(),
+                "a member may close the issue of the own subdivision from the tree");
     }
 
     @Test

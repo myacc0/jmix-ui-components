@@ -7,10 +7,13 @@ import io.jmix.security.role.annotation.EntityPolicy;
 import io.jmix.security.role.annotation.ResourceRole;
 import io.jmix.securityflowui.role.annotation.MenuPolicy;
 import io.jmix.securityflowui.role.annotation.ViewPolicy;
+import uz.kapitalbank.umida.dto.dq.DqIssueTreeItem;
+import uz.kapitalbank.umida.entity.dict.DictDataDomain;
 import uz.kapitalbank.umida.entity.dq.DqCheckRun;
 import uz.kapitalbank.umida.entity.dq.DqCheckRunResult;
 import uz.kapitalbank.umida.entity.dq.DqIssue;
 import uz.kapitalbank.umida.entity.dq.DqRule;
+import uz.kapitalbank.umida.entity.dq.DqRuleGroup;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 
@@ -37,12 +40,29 @@ public interface DqIssueAssigneeRole {
             action = EntityAttributePolicyAction.MODIFY)
     void dqIssueClosing();
 
-    /** The rule columns of the issue screens; the type decides what the issue page shows of the check. */
+    /**
+     * The rule columns of the issue screens, which the issue list is also grouped by; the type decides
+     * what the issue page shows of the check.
+     */
     @EntityAttributePolicy(entityClass = DqRule.class,
-            attributes = {"name", "code", "dataSource", "severity", "ruleType"},
+            attributes = {"name", "code", "dataSource", "severity", "ruleType", "group", "domain"},
             action = EntityAttributePolicyAction.VIEW)
     @EntityPolicy(entityClass = DqRule.class, actions = EntityPolicyAction.READ)
     void dqRule();
+
+    /** {@code DqRule.group}. */
+    @EntityAttributePolicy(entityClass = DqRuleGroup.class,
+            attributes = "name",
+            action = EntityAttributePolicyAction.VIEW)
+    @EntityPolicy(entityClass = DqRuleGroup.class, actions = EntityPolicyAction.READ)
+    void dqRuleGroup();
+
+    /** {@code DqRule.domain}. */
+    @EntityAttributePolicy(entityClass = DictDataDomain.class,
+            attributes = "shortName",
+            action = EntityAttributePolicyAction.VIEW)
+    @EntityPolicy(entityClass = DictDataDomain.class, actions = EntityPolicyAction.READ)
+    void dictDataDomain();
 
     /**
      * The latest failed check of the issue and the query that reads its violating rows, or what a
@@ -57,6 +77,13 @@ public interface DqIssueAssigneeRole {
     /** The run a result belongs to, referenced by {@code DqCheckRunResult.checkRun}. */
     @EntityPolicy(entityClass = DqCheckRun.class, actions = EntityPolicyAction.READ)
     void dqCheckRun();
+
+    /** The rows of the grouped issue list: a group or an issue under it. */
+    @EntityAttributePolicy(entityClass = DqIssueTreeItem.class,
+            attributes = "*",
+            action = EntityAttributePolicyAction.VIEW)
+    @EntityPolicy(entityClass = DqIssueTreeItem.class, actions = EntityPolicyAction.READ)
+    void dqIssueTreeItem();
 
     /** {@code DqIssue.assignee}. */
     @EntityAttributePolicy(entityClass = OrgStructureSubdivision.class,
