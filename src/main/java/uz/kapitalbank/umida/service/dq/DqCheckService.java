@@ -100,24 +100,30 @@ public class DqCheckService {
      * Deletes the checks the deleted rule was the last rule of: a check without rules has nothing to
      * run. Runs in the transaction that deletes the rule.
      * <p>
-     * Soft deletion is off for the lookups, as the rule being deleted may already be marked deleted
-     * in this transaction and would otherwise not be found in the checks it belongs to.
+     * Soft deletion is off for the lookup of the checks, as the rule being deleted may already be marked
+     * deleted in this transaction and would otherwise not be found in the checks it belongs to. With soft
+     * deletion off Jmix prints {@code deletedDate is null} as {@code 0=0}, so the checks deleted before
+     * are left out here rather than in the query: removing one again would persist it anew.
      */
     public void removeChecksLeftWithoutRules(Id<DqRule> deletedRuleId) {
-        List<UUID> checkIds = dataManager.loadValue(
-                        "select c.id from umida_DqCheck c join c.rules r"
-                                + " where r.id = :ruleId and c.deletedDate is null", UUID.class)
+        List<UUID> checkIds = dataManager.loadValues(
+                        "select c.id, c.deletedDate from umida_DqCheck c join c.rules r where r.id = :ruleId")
+                .properties("checkId", "deletedDate")
                 .parameter("ruleId", deletedRuleId.getValue())
                 .hint(PersistenceHints.SOFT_DELETION, false)
-                .list();
+                .list()
+                .stream()
+                .filter(row -> row.getValue("deletedDate") == null)
+                .map(row -> row.<UUID>getValue("checkId"))
+                .toList();
 
         for (UUID checkId : checkIds) {
+            // soft deletion on: the deleted rules no longer count
             Long otherRules = dataManager.loadValue(
                             "select count(r) from umida_DqCheck c join c.rules r"
-                                    + " where c.id = :checkId and r.id <> :ruleId and r.deletedDate is null", Long.class)
+                                    + " where c.id = :checkId and r.id <> :ruleId", Long.class)
                     .parameter("checkId", checkId)
                     .parameter("ruleId", deletedRuleId.getValue())
-                    .hint(PersistenceHints.SOFT_DELETION, false)
                     .one();
             if (otherRules == 0) {
                 dataManager.remove(Id.of(checkId, DqCheck.class));

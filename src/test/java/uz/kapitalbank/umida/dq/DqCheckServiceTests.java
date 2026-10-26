@@ -19,6 +19,7 @@ import uz.kapitalbank.umida.service.dq.DqRuleFilterService;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
 import uz.kapitalbank.umida.test_support.DqTestData;
 
+import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -118,6 +119,31 @@ public class DqCheckServiceTests {
     }
 
     @Test
+    void aRuleOfADeletedCheckIsDeletedAndTheCheckIsLeftAsItWas() {
+        DqCheck check = createCheck(activeRule);
+        dataManager.remove(dataManager.load(DqCheck.class).id(check.getId()).one());
+        OffsetDateTime checkDeletedDate = loadIgnoringDeletion(check).getDeletedDate();
+
+        dataManager.remove(dataManager.load(DqRule.class).id(activeRule.getId()).one());
+
+        assertTrue(dataManager.load(DqRule.class).id(activeRule.getId()).optional().isEmpty(),
+                "the rule is deleted");
+        assertEquals(checkDeletedDate, loadIgnoringDeletion(check).getDeletedDate(),
+                "the check deleted before is not deleted again");
+    }
+
+    @Test
+    void deletingTheLastRuleLeftInACheckDeletesTheCheck() {
+        DqCheck check = createCheck(activeRule, inactiveRule);
+        dataManager.remove(dataManager.load(DqRule.class).id(inactiveRule.getId()).one());
+
+        dataManager.remove(dataManager.load(DqRule.class).id(activeRule.getId()).one());
+
+        assertTrue(dataManager.load(DqCheck.class).id(check.getId()).optional().isEmpty(),
+                "a rule deleted before does not keep the check");
+    }
+
+    @Test
     void theRuleDialogOffersActiveRulesNotInTheCheckYet() {
         DqRule otherRule = testData.createRule(domain, "check other", DqRuleType.NOT_NULL, "short_name", "{}");
 
@@ -151,6 +177,13 @@ public class DqCheckServiceTests {
         check.setRules(new HashSet<>(Arrays.asList(rules)));
         // tracked after the rules, so that cleanup removes the check first
         return testData.track(dataManager.save(check));
+    }
+
+    private DqCheck loadIgnoringDeletion(DqCheck check) {
+        return dataManager.load(DqCheck.class)
+                .id(check.getId())
+                .hint(PersistenceHints.SOFT_DELETION, false)
+                .one();
     }
 
     private static int codeNumber(DqCheck check) {
