@@ -7,8 +7,10 @@
             <fetchPlan extends="_base">
                 <property name="rule" fetchPlan="_instance_name">
                     <property name="code"/>
+                    <property name="group"/>
                     <property name="dataSource"/>
                     <property name="severity"/>
+                    <property name="domain"/>
                     <property name="ruleType"/>
                 </property>
                 <property name="checkResult">
@@ -34,32 +36,38 @@
         <descriptionList id="detailsList" classNames="property-list" width="100%" maxWidth="60em">
             <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.code"/>
             <description id="codeValue" dataContainer="dqIssueDc" property="code"/>
-            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.status"/>
-            <description id="statusValue"/>
-            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.closingReason"/>
-            <description id="closingReasonValue"/>
-            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.rule"/>
-            <description id="ruleValue" dataContainer="dqIssueDc" property="rule.code"/>
+            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleCode"/>
+            <description id="ruleCodeValue" dataContainer="dqIssueDc" property="rule.code"/>
+            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleName"/>
+            <description id="ruleNameValue" dataContainer="dqIssueDc" property="rule.name"/>
+            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleGroup"/>
+            <description id="ruleGroupValue" dataContainer="dqIssueDc" property="rule.group"/>
+            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleDomain"/>
+            <description id="ruleDomainValue" dataContainer="dqIssueDc" property="rule.domain"/>
             <term text="msg://uz.kapitalbank.umida.entity.dq/DqRule.dataSource"/>
             <description id="dataSourceValue" dataContainer="dqIssueDc" property="rule.dataSource"/>
             <term text="msg://uz.kapitalbank.umida.entity.dq/DqRule.severity"/>
             <description id="severityValue"/>
             <term text="msg://dqIssue.affectedRows"/>
             <description id="affectedRowsValue" dataContainer="dqIssueDc" property="checkResult.failedRecords"/>
+            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.status"/>
+            <description id="statusValue"/>
             <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.assignee"/>
             <description id="assigneeValue" dataContainer="dqIssueDc" property="assignee.name"/>
-            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.dueDate"/>
-            <description id="dueDateValue" dataContainer="dqIssueDc" property="dueDate"/>
-            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.closedAt"/>
-            <description id="closedAtValue" dataContainer="dqIssueDc" property="closedAt"/>
-            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.closedBy"/>
-            <description id="closedByValue" dataContainer="dqIssueDc" property="closedBy.fullName"/>
             <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.createdAt"/>
             <description id="createdAtValue" dataContainer="dqIssueDc" property="createdAt"/>
             <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.updatedAt"/>
             <description id="updatedAtValue" dataContainer="dqIssueDc" property="updatedAt"/>
+            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.dueDate"/>
+            <description id="dueDateValue" dataContainer="dqIssueDc" property="dueDate"/>
             <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.description"/>
             <description id="descriptionValue" dataContainer="dqIssueDc" property="description"/>
+            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.closedAt"/>
+            <description id="closedAtValue" dataContainer="dqIssueDc" property="closedAt"/>
+            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.closedBy"/>
+            <description id="closedByValue" dataContainer="dqIssueDc" property="closedBy.fullName"/>
+            <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.closingReason"/>
+            <description id="closingReasonValue"/>
             <term text="msg://uz.kapitalbank.umida.entity.dq/DqIssue.closingNotes"/>
             <description id="closingNotesValue" dataContainer="dqIssueDc" property="closingNotes"/>
         </descriptionList>

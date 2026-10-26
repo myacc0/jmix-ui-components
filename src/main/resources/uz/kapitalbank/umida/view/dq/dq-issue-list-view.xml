@@ -11,8 +11,10 @@
                     <property name="code"/>
                     <property name="dataSource"/>
                     <property name="severity"/>
+                    <property name="domain"/>
                     <!-- decides which dialog the violations action opens -->
                     <property name="ruleType"/>
+                    <property name="group" fetchPlan="_instance_name"/>
                 </property>
                 <!-- the status and the query decide whether the violating rows can be shown,
                      the reconciliation whether what a cross-source rule compared can -->
@@ -70,7 +72,19 @@
                 <column property="code" filterable="true" autoWidth="true" flexGrow="0"/>
                 <column key="ruleCode"
                         property="rule.code"
-                        header="msg://uz.kapitalbank.umida.entity.dq/DqIssue.rule"
+                        header="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleCode"
+                        filterable="true"
+                        autoWidth="true"
+                        flexGrow="0"/>
+                <column key="ruleGroup"
+                        property="rule.group"
+                        header="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleGroup"
+                        filterable="true"
+                        autoWidth="true"
+                        flexGrow="0"/>
+                <column key="ruleDomain"
+                        property="rule.domain"
+                        header="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleDomain"
                         filterable="true"
                         autoWidth="true"
                         flexGrow="0"/>
@@ -92,13 +106,13 @@
                         autoWidth="true"
                         flexGrow="0"/>
                 <column property="status" filterable="true" autoWidth="true" flexGrow="0"/>
-                <column property="closingReason" filterable="true" autoWidth="true" flexGrow="0"/>
                 <column property="assignee" autoWidth="true" flexGrow="0"/>
                 <column property="dueDate" filterable="true" autoWidth="true" flexGrow="0"/>
-                <column property="closedAt" filterable="true" autoWidth="true" flexGrow="0"/>
-                <column property="closedBy" autoWidth="true" flexGrow="0"/>
                 <column property="createdAt" filterable="true" autoWidth="true" flexGrow="0"/>
                 <column property="updatedAt" filterable="true" autoWidth="true" flexGrow="1"/>
+                <column property="closedAt" filterable="true" autoWidth="true" flexGrow="0"/>
+                <column property="closedBy" autoWidth="true" flexGrow="0"/>
+                <column property="closingReason" filterable="true" autoWidth="true" flexGrow="0"/>
             </columns>
         </dataGrid>
     </layout>
