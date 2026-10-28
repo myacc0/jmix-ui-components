@@ -89,24 +89,6 @@
                         filterable="true"
                         autoWidth="true"
                         flexGrow="0"/>
-                <column key="ruleCode"
-                        property="rule.code"
-                        header="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleCode"
-                        filterable="true"
-                        autoWidth="true"
-                        flexGrow="0"/>
-                <column key="ruleGroup"
-                        property="rule.group"
-                        header="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleGroup"
-                        filterable="true"
-                        autoWidth="true"
-                        flexGrow="0"/>
-                <column key="ruleDomain"
-                        property="rule.domain"
-                        header="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleDomain"
-                        filterable="true"
-                        autoWidth="true"
-                        flexGrow="0"/>
                 <column key="dataSource"
                         property="rule.dataSource"
                         header="msg://uz.kapitalbank.umida.entity.dq/DqRule.dataSource"
@@ -126,6 +108,24 @@
                         flexGrow="0"/>
                 <column property="status" filterable="true" autoWidth="true" flexGrow="0"/>
                 <column property="assignee" autoWidth="true" flexGrow="0"/>
+                <column key="ruleCode"
+                        property="rule.code"
+                        header="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleCode"
+                        filterable="true"
+                        autoWidth="true"
+                        flexGrow="0"/>
+                <column key="ruleGroup"
+                        property="rule.group"
+                        header="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleGroup"
+                        filterable="true"
+                        autoWidth="true"
+                        flexGrow="0"/>
+                <column key="ruleDomain"
+                        property="rule.domain"
+                        header="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleDomain"
+                        filterable="true"
+                        autoWidth="true"
+                        flexGrow="0"/>
                 <column property="dueDate" filterable="true" autoWidth="true" flexGrow="0"/>
                 <column property="createdAt" filterable="true" autoWidth="true" flexGrow="0"/>
                 <column property="updatedAt" filterable="true" autoWidth="true" flexGrow="1"/>
@@ -166,21 +166,6 @@
                         header="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleName"
                         autoWidth="true"
                         flexGrow="0"/>
-                <column key="ruleCode"
-                        property="issue.rule.code"
-                        header="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleCode"
-                        autoWidth="true"
-                        flexGrow="0"/>
-                <column key="ruleGroup"
-                        property="issue.rule.group"
-                        header="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleGroup"
-                        autoWidth="true"
-                        flexGrow="0"/>
-                <column key="ruleDomain"
-                        property="issue.rule.domain"
-                        header="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleDomain"
-                        autoWidth="true"
-                        flexGrow="0"/>
                 <column key="dataSource"
                         property="issue.rule.dataSource"
                         header="msg://uz.kapitalbank.umida.entity.dq/DqRule.dataSource"
@@ -198,6 +183,21 @@
                         flexGrow="0"/>
                 <column key="status" property="issue.status" autoWidth="true" flexGrow="0"/>
                 <column key="assignee" property="issue.assignee" autoWidth="true" flexGrow="0"/>
+                <column key="ruleCode"
+                        property="issue.rule.code"
+                        header="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleCode"
+                        autoWidth="true"
+                        flexGrow="0"/>
+                <column key="ruleGroup"
+                        property="issue.rule.group"
+                        header="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleGroup"
+                        autoWidth="true"
+                        flexGrow="0"/>
+                <column key="ruleDomain"
+                        property="issue.rule.domain"
+                        header="msg://uz.kapitalbank.umida.entity.dq/DqIssue.ruleDomain"
+                        autoWidth="true"
+                        flexGrow="0"/>
                 <column key="dueDate" property="issue.dueDate" autoWidth="true" flexGrow="0"/>
                 <column key="createdAt" property="issue.createdAt" autoWidth="true" flexGrow="0"/>
                 <column key="updatedAt" property="issue.updatedAt" autoWidth="true" flexGrow="1"/>
