@@ -1,0 +1,152 @@
+/*
+ * Report groups: the icon badge (ReportGroupBadge) and the palettes of the group editor
+ * (ReportGroupCustomDetailView).
+ */
+
+.report-group-custom {
+    padding: 20px 16px;
+}
+.report-group-custom .form-block + .form-block {
+    margin-top: 0
+}
+.report-group-custom .form-block {
+    margin-bottom: var(--lumo-space-l);
+}
+
+.report-group-custom vaadin-dialog-overlay::part(header) {
+    padding: 10px 10px 0 30px;
+}
+/* ---------------------------------------------------------------------------
+ * Badge — the group icon on the background of the group color
+ * ------------------------------------------------------------------------ */
+
+.report-group-badge {
+    --report-group-badge-size: 2em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    box-sizing: border-box;
+    width: var(--report-group-badge-size);
+    height: var(--report-group-badge-size);
+    border-radius: calc(var(--report-group-badge-size) / 4);
+    color: #fff;
+}
+
+.report-group-badge-icon {
+    width: 60%;
+    height: 60%;
+}
+
+vaadin-grid-cell-content .report-group-badge {
+    vertical-align: middle;
+}
+
+/* ---------------------------------------------------------------------------
+ * Icon palette
+ * ------------------------------------------------------------------------ */
+
+.report-group-icon-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--lumo-space-xs);
+    max-height: 13em;
+    overflow-y: auto;
+    padding-top: var(--lumo-space-xs);
+}
+
+.report-group-icon-tile {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 2.5em;
+    height: 2.5em;
+    border: 1px solid transparent;
+    border-radius: var(--lumo-border-radius-m);
+    color: var(--lumo-secondary-text-color);
+    cursor: pointer;
+}
+
+.report-group-icon-tile vaadin-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.report-group-icon-tile:hover {
+    background-color: var(--lumo-contrast-5pct);
+    color: var(--lumo-body-text-color);
+}
+
+.report-group-icon-tile.selected {
+    border-color: var(--lumo-primary-color);
+    background-color: var(--lumo-primary-color-10pct);
+    color: var(--lumo-primary-text-color);
+}
+
+/* ---------------------------------------------------------------------------
+ * Color palette
+ * ------------------------------------------------------------------------ */
+
+.report-group-color-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--lumo-space-s);
+    padding-top: var(--lumo-space-xs);
+}
+
+.report-group-color-tile {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--lumo-border-radius-m);
+    color: #fff;
+    cursor: pointer;
+}
+
+.report-group-color-tile:hover {
+    box-shadow: 0 0 0 2px var(--lumo-contrast-20pct);
+}
+
+.report-group-color-tile-checkmark {
+    visibility: hidden;
+    width: 1.25em;
+    height: 1.25em;
+}
+
+.report-group-color-tile.selected .report-group-color-tile-checkmark {
+    visibility: visible;
+}
+
+.report-group-icon-tile:focus-visible,
+.report-group-color-tile:focus-visible {
+    outline: 2px solid var(--lumo-primary-color-50pct);
+    outline-offset: 1px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Preview
+ * ------------------------------------------------------------------------ */
+
+.report-group-preview {
+    display: flex;
+    align-items: center;
+    gap: var(--lumo-space-m);
+    padding-top: var(--lumo-space-s);
+}
+
+.report-group-preview .report-group-badge {
+    --report-group-badge-size: 2.5em;
+}
+
+.report-group-preview-title {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.report-group-preview-title.report-group-preview-title-empty {
+    color: var(--lumo-tertiary-text-color);
+    font-weight: normal;
+}

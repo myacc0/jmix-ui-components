@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd"
+        objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+        logicalFilePath="uz/kapitalbank/umida/liquibase/changelog/2026/10/28-120000-f241bd14.xml">
+    <!--
+        umida_ReportGroupCustom replaces report_ReportGroup in the REPORT_GROUP table (single-table
+        inheritance). The discriminator column tells the rows apart, so the groups stored before the
+        replacement are marked as the replacing entity, or they would no longer be loaded.
+    -->
+    <changeSet id="1" author="umida">
+        <addColumn tableName="REPORT_GROUP">
+            <column name="DTYPE" type="VARCHAR(31)"/>
+        </addColumn>
+
+        <update tableName="REPORT_GROUP">
+            <column name="DTYPE" value="umida_ReportGroupCustom"/>
+            <where>DTYPE is null</where>
+        </update>
+    </changeSet>
+    <changeSet id="2" author="umida">
+        <addColumn tableName="REPORT_GROUP">
+            <column name="PARENT_ID" type="UUID"/>
+            <column name="ICON" type="VARCHAR(100)"/>
+            <column name="COLOR" type="VARCHAR(7)"/>
+        </addColumn>
+
+        <createIndex indexName="IDX_REPORT_GROUP_PARENT" tableName="REPORT_GROUP">
+            <column name="PARENT_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="PARENT_ID" baseTableName="REPORT_GROUP"
+                                 constraintName="FK_REPORT_GROUP_ON_PARENT"
+                                 referencedColumnNames="ID" referencedTableName="REPORT_GROUP"/>
+    </changeSet>
+</databaseChangeLog>

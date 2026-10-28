@@ -1,0 +1,6 @@
+.margin-b-s {
+    margin-bottom: var(--lumo-space-s);
+}
+.margin-b-m {
+    margin-bottom: var(--lumo-space-m);
+}

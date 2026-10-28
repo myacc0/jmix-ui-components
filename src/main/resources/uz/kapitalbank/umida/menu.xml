@@ -47,6 +47,9 @@
                   title="msg://uz.kapitalbank.umida/menu_config.work-discipline-exceptions.title"/>
         </menu>
     </menu>
+    <menu id="reports_custom" icon="umida-icons:reports" title="msg://uz.kapitalbank.umida/menu_config.reports_custom.title">
+        <item view="umida_ReportGroupCustom.list" title="msg://uz.kapitalbank.umida.view.report/umida_ReportGroupCustom.list.title"/>
+    </menu>
     <menu id="reports" icon="umida-icons:reports" title="msg://io.jmix.reportsflowui/menu.reports.title">
         <item view="report_Report.list" title="msg://io.jmix.reportsflowui/reportListView.menu"/>
         <item view="report_ReportGroup.list" title="msg://io.jmix.reportsflowui/reportGroupListView.menu"/>

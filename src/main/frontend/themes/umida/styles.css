@@ -2,6 +2,8 @@
 @import url('fonts/material-icons.css');
 @import url('component/d3-orgchart.css');
 @import url('component/dq-badge.css');
+@import url('component/report-group.css');
+@import url('common/view-container.css');
 @import url('common/form-block.css');
 @import url('common/tab.css');
 @import url('common/datagrid.css');

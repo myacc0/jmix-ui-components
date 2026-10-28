@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://reportGroupCustomDetailView.title"
+      focusComponent="form">
+    <data>
+        <instance id="reportGroupDc"
+                  class="uz.kapitalbank.umida.entity.report.ReportGroupCustom">
+            <fetchPlan extends="_base">
+                <property name="parent" fetchPlan="_instance_name"/>
+            </fetchPlan>
+            <loader id="reportGroupDl"/>
+        </instance>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+    </facets>
+    <actions>
+        <action id="saveCloseAction" type="detail_saveClose"/>
+        <action id="closeAction" type="detail_close"/>
+    </actions>
+    <layout classNames="report-group-custom">
+        <formLayout id="form" dataContainer="reportGroupDc">
+            <responsiveSteps>
+                <responsiveStep minWidth="0" columns="1"/>
+            </responsiveSteps>
+            <textField id="titleField" property="title" required="true" valueChangeMode="LAZY" classNames="margin-b-m"/>
+            <entityPicker id="parentField" property="parent" classNames="margin-b-m">
+                <actions>
+                    <action id="entityLookupAction" type="entity_lookup"/>
+                    <action id="entityClearAction" type="entity_clear"/>
+                </actions>
+            </entityPicker>
+        </formLayout>
+        <div id="iconBlock" classNames="form-block">
+            <span classNames="form-block-title" text="msg://iconBlock.title"/>
+            <div id="iconPalette" classNames="report-group-icon-palette"/>
+        </div>
+        <div id="colorBlock" classNames="form-block">
+            <span classNames="form-block-title" text="msg://colorBlock.title"/>
+            <div id="colorPalette" classNames="report-group-color-palette"/>
+        </div>
+        <div id="previewBlock" classNames="form-block">
+            <span classNames="form-block-title" text="msg://previewBlock.title"/>
+            <div id="preview" classNames="report-group-preview">
+                <span id="previewTitle" classNames="report-group-preview-title"/>
+            </div>
+        </div>
+        <hbox id="detailActions">
+            <button id="saveAndCloseButton" themeNames="primary" action="saveCloseAction" text="msg:///actions.Save"/>
+            <button id="closeButton" action="closeAction"/>
+        </hbox>
+    </layout>
+</view>
