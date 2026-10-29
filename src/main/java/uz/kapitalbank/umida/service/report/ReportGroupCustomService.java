@@ -34,12 +34,11 @@ public class ReportGroupCustomService {
      * {@code META-INF/resources/icons} without {@code .svg}.
      */
     public static final List<String> ICONS = List.of(
-            DEFAULT_ICON, "folder-open", "folder-match", "computer", "attach-email", "reports",
-            "bar-chart", "bar-chart-4-bars", "pie-chart", "cog", "contact-mail", "group-search",
-            "finance-mode", "data-quality", "person-text", "inventory", "business-center", "calendar",
-            "clock", "work-history", "groups", "user", "person-check", "frame-person",
-            "article-person", "structure", "school", "home", "photo", "security",
-            "key", "mail", "phone", "star", "book-ribbon", "code-xml");
+            DEFAULT_ICON, "folder-open", "reader-mode", "finance", "frame-person", "account-balance-wallet",
+            "credit-card", "checkbook", "account-balance", "payments", "currency-exchange", "approval-delegation",
+            "badge", "browse-activity", "hotel-class", "group", "domain", "cards-star", "computer", "cards-stack",
+            "text", "business-center", "check-box", "box", "contract", "article-person", "bar-chart", "finance-mode",
+            "groups", "pie-chart", "lock", "reports", "security", "data-quality", "folder-match", "school");
 
     private final DataManager dataManager;
 

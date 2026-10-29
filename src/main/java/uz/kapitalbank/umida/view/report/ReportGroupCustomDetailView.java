@@ -28,7 +28,7 @@ import java.util.Map;
 @ViewController(id = "umida_ReportGroupCustom.detail")
 @ViewDescriptor(path = "report-group-custom-detail-view.xml")
 @EditedEntityContainer("reportGroupDc")
-@DialogMode(width = "50em")
+@DialogMode(width = "560px")
 public class ReportGroupCustomDetailView extends StandardDetailView<ReportGroupCustom> {
 
     private static final String SELECTED_CLASS = "selected";

@@ -2,7 +2,6 @@
 @import url('fonts/material-icons.css');
 @import url('component/d3-orgchart.css');
 @import url('component/dq-badge.css');
-@import url('component/report-group.css');
 @import url('common/view-container.css');
 @import url('common/form-block.css');
 @import url('common/tab.css');
@@ -18,3 +17,4 @@
 @import url('view/table-synchronizer.css');
 @import url('view/dq-violations-fragment.css');
 @import url('view/dq-check-run-violations-view.css');
+@import url('view/report-group.css');

@@ -21,7 +21,7 @@
  * ------------------------------------------------------------------------ */
 
 .report-group-badge {
-    --report-group-badge-size: 2em;
+    --report-group-badge-size: 32px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -29,13 +29,13 @@
     box-sizing: border-box;
     width: var(--report-group-badge-size);
     height: var(--report-group-badge-size);
-    border-radius: calc(var(--report-group-badge-size) / 4);
+    border-radius: 4px;
     color: #fff;
 }
 
 .report-group-badge-icon {
-    width: 60%;
-    height: 60%;
+    width: 75%;
+    height: 75%;
 }
 
 vaadin-grid-cell-content .report-group-badge {
@@ -63,7 +63,7 @@ vaadin-grid-cell-content .report-group-badge {
     width: 2.5em;
     height: 2.5em;
     border: 1px solid transparent;
-    border-radius: var(--lumo-border-radius-m);
+    border-radius: 4px;
     color: var(--lumo-secondary-text-color);
     cursor: pointer;
 }
@@ -101,7 +101,7 @@ vaadin-grid-cell-content .report-group-badge {
     justify-content: center;
     width: 32px;
     height: 32px;
-    border-radius: var(--lumo-border-radius-m);
+    border-radius: 4px;
     color: #fff;
     cursor: pointer;
 }
@@ -138,7 +138,7 @@ vaadin-grid-cell-content .report-group-badge {
 }
 
 .report-group-preview .report-group-badge {
-    --report-group-badge-size: 2.5em;
+    --report-group-badge-size: 40px;
 }
 
 .report-group-preview-title {
