@@ -237,10 +237,10 @@ public class ReportGroupCustomTest {
         // no color stored: the default one is shown picked
         assertTrue(tile(colorPalette, ReportGroupCustomService.DEFAULT_COLOR).getClassNames().contains("selected"));
 
-        click(tile(iconPalette, "star"));
-        assertEquals("star", group.getIcon());
-        assertTrue(tile(iconPalette, "star").getClassNames().contains("selected"));
-        click(tile(iconPalette, "star"));
+        click(tile(iconPalette, "cards-star"));
+        assertEquals("cards-star", group.getIcon());
+        assertTrue(tile(iconPalette, "cards-star").getClassNames().contains("selected"));
+        click(tile(iconPalette, "cards-star"));
         assertNull(group.getIcon(), "an icon picked again is cleared");
 
         click(tile(colorPalette, "#8FC7F7"));
@@ -248,10 +248,10 @@ public class ReportGroupCustomTest {
         assertTrue(tile(colorPalette, "#8FC7F7").getClassNames().contains("selected"));
         assertFalse(tile(colorPalette, ReportGroupCustomService.DEFAULT_COLOR).getClassNames().contains("selected"));
 
-        click(tile(iconPalette, "star"));
+        click(tile(iconPalette, "cards-star"));
         assertEquals(OperationResult.Status.SUCCESS, view.save().getStatus());
         ReportGroupCustom saved = dataManager.load(ReportGroupCustom.class).id(child.getId()).one();
-        assertEquals("star", saved.getIcon());
+        assertEquals("cards-star", saved.getIcon());
         assertEquals("#8FC7F7", saved.getColor());
     }
 

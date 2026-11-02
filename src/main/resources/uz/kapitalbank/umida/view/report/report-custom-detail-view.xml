@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      xmlns:ext="http://jmix.io/schema/flowui/view-ext"
+      extends="io/jmix/reportsflowui/view/report/report-detail-view.xml"
+      messagesGroup="io.jmix.reportsflowui.view.report">
+    <data>
+        <instance id="reportDc"
+                  class="uz.kapitalbank.umida.entity.report.ReportCustom"/>
+
+        <collection id="domainsDc"
+                    class="uz.kapitalbank.umida.entity.dict.DictDataDomain">
+            <fetchPlan extends="_instance_name"/>
+            <loader id="domainsDl">
+                <query>
+                    <![CDATA[select e from umida_DictDataDomain e order by e.shortName]]>
+                </query>
+            </loader>
+        </collection>
+        <collection id="secondaryDomainOptionsDc"
+                    class="uz.kapitalbank.umida.entity.dict.DictDataDomain"/>
+        <collection id="dataProductsDc"
+                    class="uz.kapitalbank.umida.entity.dict.DictDataProduct">
+            <fetchPlan extends="_instance_name"/>
+            <loader id="dataProductsDl">
+                <query>
+                    <![CDATA[select e from umida_DictDataProduct e order by e.shortName]]>
+                </query>
+            </loader>
+        </collection>
+    </data>
+    <layout>
+        <tabSheet id="mainTabSheet">
+            <tab id="detailsTab">
+                <vbox id="detailsTabContent">
+                    <!--
+                        ext:index counts the responsiveSteps of the add-on, the first child of the form. The
+                        check boxes System and REST access are in a box of the add-on with no id, so they
+                        stay where they are and the fields go around them. An hbox takes no ext:index,
+                        so dataMarkersBox lands at the end of the form and the description moves past it.
+                        The one column is set by the controller: the steps of the add-on can only be
+                        added to here, not replaced.
+                    -->
+                    <formLayout id="reportForm" width="60%">
+                        <textField id="codeField" ext:index="1" required="false" readOnly="true"/>
+                        <entityComboBox id="groupField" visible="false"/>
+                        <entityPicker id="groupPicker" ext:index="4" property="group" classNames="margin-b-m">
+                            <actions>
+                                <action id="entityLookupAction" type="entity_lookup">
+                                    <properties>
+                                        <property name="viewId" value="umida_ReportGroupCustom.list"/>
+                                    </properties>
+                                </action>
+                                <action id="entityClearAction" type="entity_clear"/>
+                            </actions>
+                        </entityPicker>
+                        <entityPicker id="domainField" ext:index="6" property="domain">
+                            <actions>
+                                <action id="entityLookupAction" type="entity_lookup"/>
+                                <action id="entityClearAction" type="entity_clear"/>
+                            </actions>
+                        </entityPicker>
+                        <multiSelectComboBox id="secondaryDomainsField" ext:index="7"
+                                             property="secondaryDomains"
+                                             itemsContainer="secondaryDomainOptionsDc"
+                                             clearButtonVisible="true"/>
+                        <multiSelectComboBox id="dataProductsField" ext:index="8"
+                                             property="dataProducts"
+                                             itemsContainer="dataProductsDc"
+                                             clearButtonVisible="true"/>
+                        <hbox id="dataMarkersBox"
+                              padding="false" alignItems="BASELINE" classNames="flex-wrap margin-tb-s">
+                            <checkbox id="personalDataField" property="personalData"
+                                      label="msg://uz.kapitalbank.umida.entity.report/ReportCustom.personalData"/>
+                            <checkbox id="confidentialDataField" property="confidentialData"
+                                      label="msg://uz.kapitalbank.umida.entity.report/ReportCustom.confidentialData"/>
+                            <checkbox id="commercialDataField" property="commercialData"
+                                      label="msg://uz.kapitalbank.umida.entity.report/ReportCustom.commercialData"/>
+                            <checkbox id="bankDataField" property="bankData"
+                                      label="msg://uz.kapitalbank.umida.entity.report/ReportCustom.bankData"/>
+                        </hbox>
+                        <textArea id="localeTextField" visible="false"/>
+                        <textArea id="descriptionField" ext:index="11"/>
+                    </formLayout>
+                </vbox>
+            </tab>
+            <tab id="businessOwnerTab"
+                 label="msg://uz.kapitalbank.umida.view.report/mainTabSheet.businessOwnerTab.label">
+                <vbox id="businessOwnerTabContent" padding="false"/>
+            </tab>
+        </tabSheet>
+    </layout>
+</view>

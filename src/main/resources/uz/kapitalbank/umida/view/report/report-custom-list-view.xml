@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      xmlns:ext="http://jmix.io/schema/flowui/view-ext"
+      extends="io/jmix/reportsflowui/view/report/report-list-view.xml"
+      messagesGroup="io.jmix.reportsflowui.view.report">
+    <data>
+        <collection id="reportsDc"
+                    class="uz.kapitalbank.umida.entity.report.ReportCustom"/>
+    </data>
+    <layout>
+        <hbox id="buttonsPanel">
+            <dropdownButton id="dropdownCreateBtn" visible="false"/>
+            <button id="createBtn" ext:index="0" themeNames="primary" action="reportsDataGrid.create"/>
+        </hbox>
+        <dataGrid id="reportsDataGrid">
+            <actions>
+                <action id="create" text="msg:///actions.Create">
+                    <properties>
+                        <property name="viewId" value="umida_ReportCustom.detail"/>
+                    </properties>
+                </action>
+                <action id="edit">
+                    <properties>
+                        <property name="viewId" value="umida_ReportCustom.detail"/>
+                    </properties>
+                </action>
+            </actions>
+            <columns>
+                <column property="description" visible="false"/>
+                <column property="domain" ext:index="2"/>
+            </columns>
+        </dataGrid>
+    </layout>
+</view>

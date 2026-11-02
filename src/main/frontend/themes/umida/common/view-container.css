@@ -4,3 +4,17 @@
 .margin-b-m {
     margin-bottom: var(--lumo-space-m);
 }
+.margin-t-s {
+    margin-top: var(--lumo-space-s);
+}
+.margin-t-m {
+    margin-top: var(--lumo-space-m);
+}
+.margin-tb-s {
+    margin-top: var(--lumo-space-s);
+    margin-bottom: var(--lumo-space-s);
+}
+.margin-tb-m {
+    margin-top: var(--lumo-space-m);
+    margin-bottom: var(--lumo-space-m);
+}

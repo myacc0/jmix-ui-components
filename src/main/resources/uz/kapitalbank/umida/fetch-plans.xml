@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fetchPlans xmlns="http://jmix.io/schema/core/fetch-plans">
+
+    <!-- The list of the add-on loads reports with report.view, and its repository offers no other plan. -->
+    <fetchPlan entity="umida_ReportCustom" name="report.view" extends="report.view" overwrite="true">
+        <property name="domain" fetchPlan="_instance_name"/>
+    </fetchPlan>
+
+    <!-- The add-on reloads a saved or copied report with report.edit: what is not here gets lost on the way. -->
+    <fetchPlan entity="umida_ReportCustom" name="report.edit" extends="report.edit" overwrite="true">
+        <property name="domain" fetchPlan="_instance_name"/>
+        <property name="secondaryDomains" fetchPlan="_instance_name"/>
+        <property name="dataProducts" fetchPlan="_instance_name"/>
+    </fetchPlan>
+</fetchPlans>

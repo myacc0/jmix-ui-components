@@ -48,6 +48,7 @@
         </menu>
     </menu>
     <menu id="reports_custom" icon="umida-icons:reports" title="msg://uz.kapitalbank.umida/menu_config.reports_custom.title">
+        <item view="umida_ReportCustom.list" title="msg://uz.kapitalbank.umida.view.report/umida_ReportCustom.list.title"/>
         <item view="umida_ReportGroupCustom.list" title="msg://uz.kapitalbank.umida.view.report/umida_ReportGroupCustom.list.title"/>
     </menu>
     <menu id="reports" icon="umida-icons:reports" title="msg://io.jmix.reportsflowui/menu.reports.title">
