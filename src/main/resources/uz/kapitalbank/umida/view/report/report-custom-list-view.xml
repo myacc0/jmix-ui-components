@@ -1,34 +1,85 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <view xmlns="http://jmix.io/schema/flowui/view"
-      xmlns:ext="http://jmix.io/schema/flowui/view-ext"
-      extends="io/jmix/reportsflowui/view/report/report-list-view.xml"
-      messagesGroup="io.jmix.reportsflowui.view.report">
+      title="msg://umida_ReportCustom.list.title"
+      focusComponent="reportsDataGrid">
     <data>
         <collection id="reportsDc"
-                    class="uz.kapitalbank.umida.entity.report.ReportCustom"/>
+                    class="uz.kapitalbank.umida.entity.report.ReportCustom"
+                    fetchPlan="report.view">
+            <loader id="reportsDl" readOnly="true">
+                <query>
+                    <![CDATA[select e from umida_ReportCustom e order by e.name]]>
+                </query>
+            </loader>
+        </collection>
     </data>
+    <facets>
+        <settings auto="true"/>
+        <dataLoadCoordinator auto="true"/>
+        <urlQueryParameters>
+            <pagination component="pagination"/>
+        </urlQueryParameters>
+    </facets>
+    <actions>
+        <action id="selectAction" type="lookup_select"/>
+        <action id="discardAction" type="lookup_discard"/>
+    </actions>
     <layout>
-        <hbox id="buttonsPanel">
-            <dropdownButton id="dropdownCreateBtn" visible="false"/>
-            <button id="createBtn" ext:index="0" themeNames="primary" action="reportsDataGrid.create"/>
+        <hbox id="buttonsPanel" classNames="buttons-panel">
+            <startSlot>
+                <button id="createBtn" themeNames="primary" action="reportsDataGrid.create" text="" title="msg:///actions.Create"/>
+                <button id="editBtn" action="reportsDataGrid.edit" text="" title="msg:///actions.Edit"/>
+                <button id="removeBtn" action="reportsDataGrid.remove" text="" title="msg:///actions.Remove"/>
+                <button id="copyBtn" action="reportsDataGrid.copy"/>
+                <button id="importBtn" action="reportsDataGrid.importAction"/>
+                <button id="exportBtn" action="reportsDataGrid.export"/>
+                <button id="runReportBtn" action="reportsDataGrid.runReport"/>
+                <button id="executionsBtn" action="reportsDataGrid.executions"/>
+            </startSlot>
+            <endSlot>
+                <simplePagination id="pagination" dataLoader="reportsDl"/>
+            </endSlot>
         </hbox>
-        <dataGrid id="reportsDataGrid">
+        <dataGrid id="reportsDataGrid"
+                  width="100%"
+                  minHeight="20em"
+                  dataContainer="reportsDc"
+                  columnReorderingAllowed="true">
             <actions>
-                <action id="create" text="msg:///actions.Create">
+                <action id="create" type="list_create">
                     <properties>
                         <property name="viewId" value="umida_ReportCustom.detail"/>
                     </properties>
                 </action>
-                <action id="edit">
+                <action id="edit" type="list_edit">
                     <properties>
                         <property name="viewId" value="umida_ReportCustom.detail"/>
                     </properties>
                 </action>
+                <action id="remove" type="list_remove"/>
+                <action id="copy" type="list_itemTracking" icon="vaadin:copy"
+                        description="msg://io.jmix.reportsflowui.view.report/action.copy.text"/>
+                <action id="importAction" icon="vaadin:upload"
+                        description="msg://io.jmix.reportsflowui.view.report/action.import.description"/>
+                <action id="export" type="list_itemTracking" icon="vaadin:download"
+                        description="msg://io.jmix.reportsflowui.view.report/action.export.description"/>
+                <action id="runReport" type="list_itemTracking" icon="vaadin:play"
+                        description="msg://io.jmix.reportsflowui.view.report/action.runReport.text"/>
+                <action id="executions" type="list_itemTracking" icon="vaadin:time-backward"
+                        description="msg://io.jmix.reportsflowui.view.report/action.executions.text"/>
             </actions>
-            <columns>
-                <column property="description" visible="false"/>
-                <column property="domain" ext:index="2"/>
+            <columns resizable="true" filterable="true">
+                <column property="name"/>
+                <column property="group"/>
+                <column property="domain"/>
+                <column property="code"/>
+                <column property="updateTs"/>
+                <column property="system"/>
             </columns>
         </dataGrid>
+        <hbox id="lookupActions" visible="false">
+            <button id="selectBtn" action="selectAction"/>
+            <button id="discardBtn" action="discardAction"/>
+        </hbox>
     </layout>
 </view>

@@ -4,21 +4,30 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.tabs.Tab;
 import io.jmix.core.DataManager;
+import io.jmix.core.Messages;
 import io.jmix.core.Metadata;
 import io.jmix.core.MetadataTools;
 import io.jmix.core.SaveContext;
+import io.jmix.core.querycondition.PropertyCondition;
 import io.jmix.data.PersistenceHints;
+import io.jmix.flowui.OpenedDialogWindows;
 import io.jmix.flowui.ViewNavigators;
 import io.jmix.flowui.action.ViewOpeningAction;
 import io.jmix.flowui.action.entitypicker.EntityLookupAction;
+import io.jmix.flowui.action.multivaluepicker.MultiValueSelectAction;
+import io.jmix.flowui.component.UiComponentUtils;
 import io.jmix.flowui.component.checkbox.JmixCheckbox;
 import io.jmix.flowui.component.multiselectcombobox.JmixMultiSelectComboBox;
+import io.jmix.flowui.component.propertyfilter.PropertyFilter;
 import io.jmix.flowui.component.grid.DataGrid;
+import io.jmix.flowui.component.grid.DataGridColumn;
+import io.jmix.flowui.component.grid.headerfilter.DataGridHeaderFilter;
 import io.jmix.flowui.component.tabsheet.JmixTabSheet;
 import io.jmix.flowui.component.textfield.TypedTextField;
+import io.jmix.flowui.kit.component.HasActions;
 import io.jmix.flowui.kit.component.button.JmixButton;
-import io.jmix.flowui.kit.component.dropdownbutton.DropdownButton;
 import io.jmix.flowui.model.CollectionContainer;
+import io.jmix.flowui.model.CollectionLoader;
 import io.jmix.flowui.model.DataContext;
 import io.jmix.flowui.testassist.FlowuiTestAssistConfiguration;
 import io.jmix.flowui.testassist.UiTest;
@@ -34,10 +43,13 @@ import io.jmix.reports.entity.BandDefinition;
 import io.jmix.reports.entity.Report;
 import io.jmix.reports.entity.ReportOutputType;
 import io.jmix.reports.entity.ReportTemplate;
+import io.jmix.reportsflowui.view.history.ReportExecutionListView;
+import io.jmix.reportsflowui.view.importdialog.ReportImportDialogView;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -65,7 +77,8 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * The report of the Reports add-on replaced by {@link ReportCustom}: the add-on keeps working with the
  * replacing entity on all of its save paths, the code is generated, the classification survives them,
- * and the list and the editor open with the changes made to the views of the add-on.
+ * the list of its own does what the list of the add-on does, and the editor opens with the changes made
+ * to the one of the add-on.
  */
 @UiTest
 @SpringBootTest(classes = {UmidaApplication.class, FlowuiTestAssistConfiguration.class})
@@ -78,6 +91,8 @@ public class ReportCustomTest {
     Metadata metadata;
     @Autowired
     MetadataTools metadataTools;
+    @Autowired
+    Messages messages;
     @Autowired
     ReportsPersistence reportsPersistence;
     @Autowired
@@ -92,6 +107,8 @@ public class ReportCustomTest {
     ViewRegistry viewRegistry;
     @Autowired
     JdbcTemplate jdbcTemplate;
+    @Autowired
+    ObjectProvider<OpenedDialogWindows> openedDialogWindows;
 
     private final List<UUID> reportCleanup = new ArrayList<>();
     private final List<Integer> productCleanup = new ArrayList<>();
@@ -476,26 +493,120 @@ public class ReportCustomTest {
         viewNavigators.view(UiTestUtils.getCurrentView(), ReportCustomListView.class).navigate();
         ReportCustomListView view = UiTestUtils.getCurrentView();
 
-        DropdownButton dropdown = UiTestUtils.getComponent(view, "dropdownCreateBtn");
-        assertFalse(dropdown.isVisible(), "the dropdown with the wizard is gone");
+        assertTrue(UiComponentUtils.findComponent(view, "filterDetails").isEmpty(), "no filter panel of the add-on");
+        assertTrue(UiComponentUtils.findComponent(view, "dropdownCreateBtn").isEmpty(), "no dropdown with the wizard");
         JmixButton create = UiTestUtils.getComponent(view, "createBtn");
         assertTrue(create.isVisible());
         assertEquals("umida_ReportCustom.detail", ((ViewOpeningAction) create.getAction()).getViewId());
         assertNotNull(create.getIcon());
-        assertFalse(create.getText().isBlank());
 
         DataGrid<Report> grid = UiTestUtils.getComponent(view, "reportsDataGrid");
         assertEquals("umida_ReportCustom.detail", ((ViewOpeningAction) grid.getAction("edit")).getViewId());
-        assertNotNull(grid.getColumnByKey("domain"));
-        assertFalse(grid.getColumnByKey("description").isVisible());
-        List<String> visibleColumns = grid.getColumns().stream()
-                .filter(Component::isVisible).map(c -> c.getKey()).toList();
-        assertEquals(List.of("name", "group", "domain", "code", "source", "updateTs", "system"), visibleColumns);
+        // the order is not checked: the settings facet applies the one saved for the user in the database
+        Set<String> columns = grid.getColumns().stream().map(c -> c.getKey()).collect(Collectors.toSet());
+        assertEquals(Set.of("name", "group", "domain", "code", "updateTs", "system"), columns);
 
-        grid.sort(List.of(new com.vaadin.flow.component.grid.GridSortOrder<>(
-                grid.getColumnByKey("domain"), com.vaadin.flow.data.provider.SortDirection.ASCENDING)));
-        assertTrue(grid.getItems().getItems().stream().anyMatch(r -> r.getId().equals(saved.getId())),
-                "the list sorts by the domain");
+        for (String column : columns) {
+            grid.sort(List.of(new com.vaadin.flow.component.grid.GridSortOrder<>(
+                    grid.getColumnByKey(column), com.vaadin.flow.data.provider.SortDirection.ASCENDING)));
+            assertTrue(grid.getItems().getItems().stream().anyMatch(r -> r.getId().equals(saved.getId())),
+                    "the list sorts by " + column);
+        }
+    }
+
+    @Test
+    void theListAppliesTheConditionsOfItsHeaderFilters() {
+        ReportCustom classified = saveClassified();
+        save(newReport());
+        viewNavigators.view(UiTestUtils.getCurrentView(), ReportCustomListView.class).navigate();
+        ReportCustomListView view = UiTestUtils.getCurrentView();
+        DataGrid<Report> grid = UiTestUtils.getComponent(view, "reportsDataGrid");
+        grid.getColumns().forEach(column -> assertTrue(((DataGridColumn<Report>) column).isFilterable(), column.getKey()));
+
+        CollectionLoader<Report> loader = ViewControllerUtils.getViewData(view).getLoader("reportsDl");
+        loader.setCondition(PropertyCondition.equal("domain", domainA));
+        loader.load();
+
+        assertEquals(List.of(classified.getId()), grid.getItems().getItems().stream().map(Report::getId).toList());
+    }
+
+    @Test
+    void theFilterOfTheGroupColumnPicksFromOurListOfGroupsAfterAnyChangeOfTheOperation() {
+        viewNavigators.view(UiTestUtils.getCurrentView(), ReportCustomListView.class).navigate();
+        ReportCustomListView view = UiTestUtils.getCurrentView();
+        DataGrid<Report> grid = UiTestUtils.getComponent(view, "reportsDataGrid");
+        PropertyFilter<?> filter = headerFilter(grid, "group");
+
+        assertEquals("umida_ReportGroupCustom.list", lookupAction(filter).getViewId());
+
+        filter.setOperation(PropertyFilter.Operation.IN_LIST);
+        MultiValueSelectAction<?> select = (MultiValueSelectAction<?>)
+                ((HasActions) filter.getValueComponent()).getAction(MultiValueSelectAction.ID);
+        assertEquals("umida_ReportGroupCustom.list", select.getLookupViewId());
+
+        filter.setOperation(PropertyFilter.Operation.IS_SET);
+        filter.setOperation(PropertyFilter.Operation.EQUAL);
+        assertEquals("umida_ReportGroupCustom.list", lookupAction(filter).getViewId());
+
+        assertNull(lookupAction(headerFilter(grid, "domain")).getViewId(), "the other columns keep the default lookup");
+        assertEquals("report_ReportGroup.list", viewRegistry.getLookupViewInfo(
+                metadata.getClass(io.jmix.reports.entity.ReportGroup.class)).getId(), "the entity keeps its lookup");
+    }
+
+    private PropertyFilter<?> headerFilter(DataGrid<Report> grid, String column) {
+        return ((DataGridHeaderFilter) grid.getColumnByKey(column).getHeaderComponent()).getPropertyFilter();
+    }
+
+    private EntityLookupAction<?> lookupAction(PropertyFilter<?> filter) {
+        return (EntityLookupAction<?>) ((HasActions) filter.getValueComponent()).getAction(EntityLookupAction.ID);
+    }
+
+    @Test
+    void theActionsOfTheListFollowTheSelectionAndOpenTheDialogsOfTheAddOn() {
+        ReportCustom saved = saveClassified();
+        viewNavigators.view(UiTestUtils.getCurrentView(), ReportCustomListView.class).navigate();
+        ReportCustomListView view = UiTestUtils.getCurrentView();
+        DataGrid<Report> grid = UiTestUtils.getComponent(view, "reportsDataGrid");
+
+        List<String> itemActions = List.of("edit", "remove", "copy", "export", "runReport", "executions");
+        itemActions.forEach(id -> assertFalse(grid.getAction(id).isEnabled(), id));
+        assertTrue(grid.getAction("create").isEnabled());
+        assertTrue(grid.getAction("importAction").isEnabled());
+
+        grid.select(grid.getItems().getItems().stream()
+                .filter(r -> r.getId().equals(saved.getId())).findFirst().orElseThrow());
+        itemActions.forEach(id -> assertTrue(grid.getAction(id).isEnabled(), id));
+
+        grid.getAction("executions").actionPerform(grid);
+        io.jmix.flowui.view.View<?> history = openedDialogWindows.getObject().getCurrentDialog().orElseThrow();
+        assertInstanceOf(ReportExecutionListView.class, history);
+        history.closeWithDefaultAction();
+
+        grid.getAction("importAction").actionPerform(grid);
+        assertInstanceOf(ReportImportDialogView.class, openedDialogWindows.getObject().getCurrentDialog().orElseThrow());
+    }
+
+    @Test
+    void theButtonsOfTheListShowAnIconWithTheCaptionInTheTitle() {
+        viewNavigators.view(UiTestUtils.getCurrentView(), ReportCustomListView.class).navigate();
+        ReportCustomListView view = UiTestUtils.getCurrentView();
+
+        String group = "io.jmix.reportsflowui.view.report";
+        assertIconOnly(view, "createBtn", messages.getMessage("actions.Create"));
+        assertIconOnly(view, "editBtn", messages.getMessage("actions.Edit"));
+        assertIconOnly(view, "removeBtn", messages.getMessage("actions.Remove"));
+        assertIconOnly(view, "copyBtn", messages.getMessage(group, "action.copy.text"));
+        assertIconOnly(view, "importBtn", messages.getMessage(group, "action.import.description"));
+        assertIconOnly(view, "exportBtn", messages.getMessage(group, "action.export.description"));
+        assertIconOnly(view, "runReportBtn", messages.getMessage(group, "action.runReport.text"));
+        assertIconOnly(view, "executionsBtn", messages.getMessage(group, "action.executions.text"));
+    }
+
+    private void assertIconOnly(ReportCustomListView view, String buttonId, String title) {
+        JmixButton button = UiTestUtils.getComponent(view, buttonId);
+        assertNotNull(button.getIcon(), buttonId);
+        assertTrue(button.getText().isEmpty(), buttonId);
+        assertEquals(title, button.getTitle(), buttonId);
     }
 
     @Test
