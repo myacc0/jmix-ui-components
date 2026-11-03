@@ -27,6 +27,8 @@
 
 .jmix-main-view-application-title {
   display: flex;
+  flex-basis: 44px;
+  flex-shrink: 0;
   align-items: center;
   height: var(--lumo-size-xl);
   margin: 0;

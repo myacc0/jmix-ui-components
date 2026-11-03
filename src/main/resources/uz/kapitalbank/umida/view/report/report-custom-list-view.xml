@@ -32,11 +32,19 @@
         <urlQueryParameters>
             <pagination component="pagination"/>
         </urlQueryParameters>
-        <!-- the controller adds the grouping, see ReportCustomListView.GroupingBinder -->
+        <!-- the controller adds the grouping and the tiles, see ReportCustomListView.GroupingBinder and TilesBinder -->
     </facets>
     <actions>
         <action id="selectAction" type="lookup_select"/>
         <action id="discardAction" type="lookup_discard"/>
+        <!-- the actions of the tiles, all of them acting on the report of the selected tile: the buttons keep
+             their own look; create and import need no tile and stay with the paged list -->
+        <action id="tileEdit"/>
+        <action id="tileRemove"/>
+        <action id="tileCopy"/>
+        <action id="tileExport" visible="false"/>
+        <action id="tileRunReport"/>
+        <action id="tileExecutions"/>
     </actions>
     <layout>
         <hbox id="buttonsPanel" classNames="buttons-panel">
@@ -53,10 +61,23 @@
             </startSlot>
             <endSlot>
                 <!-- "all" shows the paged list, any other value the tree without pages -->
-                <select id="groupingField" width="12em" emptySelectionAllowed="false"/>
+                <select id="groupingField" width="12em" emptySelectionAllowed="false" classNames="padding-0"/>
                 <simplePagination id="pagination" dataLoader="reportsDl"/>
+                <!-- the list — paged or grouped — or the tiles: the groups as folders, the reports as files -->
+                <hbox id="viewModePanel" classNames="report-view-mode" padding="false" spacing="false">
+                    <button id="listModeBtn" icon="umida-icons:menu" title="msg://listModeBtn.title" classNames="active"/>
+                    <button id="tilesModeBtn" icon="umida-icons:blocks" title="msg://tilesModeBtn.title"/>
+                </hbox>
             </endSlot>
         </hbox>
+        <hbox id="folderPanel" classNames="report-folder-panel" padding="false" width="100%" visible="false">
+            <button id="folderBackBtn" icon="umida-icons:arrow-left" title="msg://folderBackBtn.title"/>
+            <button id="folderUpBtn" icon="umida-icons:arrow-up" title="msg://folderUpBtn.title"/>
+            <span id="folderPath" classNames="report-folder-path"/>
+        </hbox>
+        <!-- filled by the controller, see ReportCustomListView#showFolder -->
+        <div id="tilesBox" classNames="report-tiles" visible="false"/>
+        <span id="tilesEmpty" classNames="report-tiles-empty" text="msg://tilesEmpty.text" visible="false"/>
         <dataGrid id="reportsDataGrid"
                   width="100%"
                   minHeight="20em"
@@ -76,7 +97,7 @@
                 <action id="remove" type="list_remove"/>
                 <action id="copy" type="list_itemTracking" icon="vaadin:copy"
                         description="msg://io.jmix.reportsflowui.view.report/action.copy.text"/>
-                <!-- import and export are hidden for now: drop visible="false" here and on the tree's export to show them -->
+                <!-- import and export are hidden for now: drop visible="false" here, on the tree's export and on tileExport to show them -->
                 <action id="importAction" icon="vaadin:upload" visible="false"
                         description="msg://io.jmix.reportsflowui.view.report/action.import.description"/>
                 <action id="export" type="list_itemTracking" icon="vaadin:download" visible="false"

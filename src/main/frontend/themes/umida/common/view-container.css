@@ -18,3 +18,9 @@
     margin-top: var(--lumo-space-m);
     margin-bottom: var(--lumo-space-m);
 }
+.padding-0 {
+    padding: 0;
+}
+.buttons-panel {
+    align-items: center;
+}

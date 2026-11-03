@@ -1,10 +1,14 @@
 package uz.kapitalbank.umida.report;
 
+import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.router.QueryParameters;
 import io.jmix.core.DataManager;
@@ -61,6 +65,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import uz.kapitalbank.umida.UmidaApplication;
+import uz.kapitalbank.umida.component.reportgroup.ReportTile;
 import uz.kapitalbank.umida.dto.report.ReportTreeItem;
 import uz.kapitalbank.umida.entity.dict.DictDataDomain;
 import uz.kapitalbank.umida.entity.dict.DictDataProduct;
@@ -150,7 +155,8 @@ public class ReportCustomTest {
             removeForReal(Report.class, id);
         });
         reportCleanup.clear();
-        groupCleanup.forEach(id -> removeForReal(ReportGroupCustom.class, id));
+        // the subgroups first: they were saved after their parents
+        groupCleanup.reversed().forEach(id -> removeForReal(ReportGroupCustom.class, id));
         groupCleanup.clear();
         productCleanup.forEach(id -> removeForReal(DictDataProduct.class, id));
         productCleanup.clear();
@@ -188,8 +194,13 @@ public class ReportCustomTest {
     }
 
     private ReportGroupCustom saveGroup() {
+        return saveGroup(null);
+    }
+
+    private ReportGroupCustom saveGroup(@org.springframework.lang.Nullable ReportGroupCustom parent) {
         ReportGroupCustom group = dataManager.create(ReportGroupCustom.class);
         group.setTitle("Group " + UUID.randomUUID());
+        group.setParent(parent);
         ReportGroupCustom saved = dataManager.save(group);
         groupCleanup.add(saved.getId());
         return saved;
@@ -909,6 +920,211 @@ public class ReportCustomTest {
         codeFilter.apply();
         assertFalse(reportIds(grid).isEmpty());
         assertFalse(reportIds(grid).contains(others.getId()), "the mine filter outlives the header filter");
+    }
+
+    @Test
+    void theTilesShowTheGroupsAsFoldersFirstAndTheReportsAsFilesAfterThem() {
+        ReportGroupCustom parent = saveGroup();
+        ReportGroupCustom child = saveGroup(parent);
+        ReportCustom inParent = newReport();
+        inParent.setGroup(parent);
+        inParent = save(inParent);
+        ReportCustom inChild = newReport();
+        inChild.setGroup(child);
+        inChild = save(inChild);
+
+        ReportCustomListView view = openList();
+        showTiles(view);
+
+        assertFalse(listGrid(view).isVisible());
+        assertFalse(tree(view).isVisible());
+        assertFalse(UiTestUtils.<SimplePagination>getComponent(view, "pagination").isVisible());
+        assertFalse(UiTestUtils.<JmixSelect<?>>getComponent(view, "groupingField").isVisible());
+        assertTrue(UiTestUtils.<JmixButton>getComponent(view, "tilesModeBtn").hasClassName("active"));
+        assertFalse(UiTestUtils.<JmixButton>getComponent(view, "listModeBtn").hasClassName("active"));
+        assertFalse(UiTestUtils.<JmixButton>getComponent(view, "folderBackBtn").isEnabled(), "the top level");
+        assertFalse(UiTestUtils.<JmixButton>getComponent(view, "folderUpBtn").isEnabled(), "the top level");
+        assertTrue(tileCaptions(view).contains(parent.getTitle()));
+        assertFalse(tileCaptions(view).contains(child.getTitle()), "a subgroup lies in its parent");
+
+        doubleClick(tile(view, parent.getTitle()));
+        assertEquals(List.of(child.getTitle(), inParent.getName()), tileCaptions(view), "the folders first");
+        assertEquals(messages.getMessage(ReportCustomListView.class, "folderPath.top") + " / " + parent.getTitle(),
+                UiTestUtils.<Span>getComponent(view, "folderPath").getText());
+        assertTrue(UiTestUtils.<JmixButton>getComponent(view, "folderBackBtn").isEnabled());
+
+        doubleClick(tile(view, child.getTitle()));
+        assertEquals(List.of(inChild.getName()), tileCaptions(view));
+
+        UiTestUtils.<JmixButton>getComponent(view, "folderBackBtn").click();
+        assertEquals(List.of(child.getTitle(), inParent.getName()), tileCaptions(view), "back is one level up");
+        assertTrue(tile(view, child.getTitle()).isSelected(), "the folder left is selected");
+
+        doubleClick(tile(view, child.getTitle()));
+        UiTestUtils.<JmixButton>getComponent(view, "folderUpBtn").click();
+        assertTrue(tileCaptions(view).contains(parent.getTitle()), "up is the top level");
+        assertTrue(tile(view, parent.getTitle()).isSelected(), "the folder the one left lies in is selected");
+    }
+
+    @Test
+    void theTilesLookOfTheirGroupOrOfAReport() {
+        ReportGroupCustom group = saveGroup();
+        group.setIcon("finance");
+        group.setColor("#F6C86B");
+        group = dataManager.save(group);
+        ReportCustom report = newReport();
+        report.setGroup(group);
+        report = save(report);
+        ReportGroupCustom plain = saveGroup();
+
+        ReportCustomListView view = openList();
+        showTiles(view);
+        assertEquals("#F6C86B", tile(view, group.getTitle()).getStyle().get("--report-tile-color"));
+        assertEquals("#CDD0D5", tile(view, plain.getTitle()).getStyle().get("--report-tile-color"), "the default color");
+
+        doubleClick(tile(view, group.getTitle()));
+        assertEquals("#CDD0D5", tile(view, report.getName()).getStyle().get("--report-tile-color"),
+                "a report has the default color of a group");
+        assertEquals("umida-icons:reports", tile(view, report.getName()).getChildren()
+                .flatMap(Component::getChildren)
+                .filter(com.vaadin.flow.component.icon.Icon.class::isInstance)
+                .findFirst().orElseThrow()
+                .getElement().getAttribute("icon"));
+    }
+
+    @Test
+    void theButtonsActOnTheReportOfTheSelectedTile() {
+        ReportGroupCustom group = saveGroup();
+        ReportGroupCustom child = saveGroup(group);
+        ReportCustom report = newReport();
+        report.setGroup(group);
+        report = save(report);
+
+        ReportCustomListView view = openList();
+        showTiles(view);
+        doubleClick(tile(view, group.getTitle()));
+        List<String> buttons = List.of("editBtn", "removeBtn", "copyBtn", "runReportBtn", "executionsBtn");
+
+        buttons.forEach(button -> assertFalse(UiTestUtils.<JmixButton>getComponent(view, button).isEnabled(), button));
+        assertTrue(UiTestUtils.<JmixButton>getComponent(view, "createBtn").isEnabled());
+        assertImportAndExportHidden(view);
+        assertIconOnlyButtons(view);
+
+        click(tile(view, child.getTitle()));
+        assertTrue(tile(view, child.getTitle()).isSelected());
+        buttons.forEach(button -> assertFalse(UiTestUtils.<JmixButton>getComponent(view, button).isEnabled(),
+                "a group is no report: " + button));
+
+        click(tile(view, report.getName()));
+        assertTrue(tile(view, report.getName()).isSelected());
+        assertFalse(tile(view, child.getTitle()).isSelected(), "one tile is selected");
+        buttons.forEach(button -> assertTrue(UiTestUtils.<JmixButton>getComponent(view, button).isEnabled(), button));
+
+        UiTestUtils.<JmixButton>getComponent(view, "executionsBtn").click();
+        io.jmix.flowui.view.View<?> history = openedDialogWindows.getObject().getCurrentDialog().orElseThrow();
+        assertInstanceOf(ReportExecutionListView.class, history);
+        history.closeWithDefaultAction();
+
+        Set<UUID> before = reportIds();
+        UiTestUtils.<JmixButton>getComponent(view, "copyBtn").click();
+        UUID copyId = reportIds().stream().filter(id -> !before.contains(id)).findFirst().orElseThrow();
+        reportCleanup.add(copyId);
+        assertEquals(3, tileCaptions(view).size(), "the copy lies in the folder of its report");
+        assertTrue(tile(view, report.getName()).isSelected(), "the selection outlives the reload");
+
+        UiTestUtils.<JmixButton>getComponent(view, "listModeBtn").click();
+        assertTrue(listGrid(view).isVisible());
+        assertFalse(UiTestUtils.<Div>getComponent(view, "tilesBox").isVisible());
+        assertSame(listGrid(view).getAction("edit"), UiTestUtils.<JmixButton>getComponent(view, "editBtn").getAction());
+        assertIconOnlyButtons(view);
+    }
+
+    @Test
+    void aDoubleClickOnTheTileOfAReportOpensTheEditor() {
+        ReportCustom report = save(newReport());
+        ReportCustomListView view = openList();
+        showTiles(view);
+
+        doubleClick(tile(view, report.getName()));
+
+        ReportCustomDetailView editor = assertInstanceOf(ReportCustomDetailView.class, UiTestUtils.getCurrentView());
+        assertEquals(report.getId(), editor.getEditedEntity().getId());
+    }
+
+    @Test
+    void theTilesAndTheFolderInTheUrlOpenTheFolder() {
+        ReportGroupCustom group = saveGroup();
+        ReportCustom report = newReport();
+        report.setGroup(group);
+        report = save(report);
+
+        viewNavigators.view(UiTestUtils.getCurrentView(), ReportCustomListView.class)
+                .withQueryParameters(new QueryParameters(Map.of(
+                        "mode", List.of("tiles"), "folder", List.of(group.getId().toString()))))
+                .navigate();
+        ReportCustomListView view = UiTestUtils.getCurrentView();
+
+        assertFalse(listGrid(view).isVisible());
+        assertEquals(List.of(report.getName()), tileCaptions(view));
+    }
+
+    @Test
+    void theMineCheckboxKeepsTheTilesOfTheCurrentUser() {
+        ReportGroupCustom mineGroup = saveGroup();
+        ReportGroupCustom mineChild = saveGroup(mineGroup);
+        ReportCustom mine = newReport();
+        mine.setGroup(mineChild);
+        save(mine);
+        ReportGroupCustom othersGroup = saveGroup();
+        ReportCustom others = newReport();
+        others.setGroup(othersGroup);
+        others = save(others);
+        jdbcTemplate.update("update REPORT_REPORT set CREATED_BY = ? where ID = ?", "someone-else", others.getId());
+        ReportCustom othersOnTop = saveOfSomeoneElse();
+        ReportGroupCustom empty = saveGroup();
+
+        ReportCustomListView view = openList();
+        showTiles(view);
+        assertTrue(tileCaptions(view).containsAll(List.of(
+                mineGroup.getTitle(), othersGroup.getTitle(), empty.getTitle(), othersOnTop.getName())));
+
+        UiTestUtils.<JmixCheckbox>getComponent(view, "mineField").setValue(true);
+        assertTrue(tileCaptions(view).contains(mineGroup.getTitle()), "a report of the user lies below it");
+        assertFalse(tileCaptions(view).contains(othersGroup.getTitle()));
+        assertFalse(tileCaptions(view).contains(empty.getTitle()));
+        assertFalse(tileCaptions(view).contains(othersOnTop.getName()));
+    }
+
+    private void showTiles(ReportCustomListView view) {
+        UiTestUtils.<JmixButton>getComponent(view, "tilesModeBtn").click();
+    }
+
+    private List<ReportTile> tiles(ReportCustomListView view) {
+        return UiTestUtils.<Div>getComponent(view, "tilesBox").getChildren()
+                .map(ReportTile.class::cast)
+                .toList();
+    }
+
+    private List<String> tileCaptions(ReportCustomListView view) {
+        return tiles(view).stream().map(tile -> tile.getTitle().orElseThrow()).toList();
+    }
+
+    /** Throws if no tile shows the caption. */
+    private ReportTile tile(ReportCustomListView view, String caption) {
+        return tiles(view).stream()
+                .filter(tile -> caption.equals(tile.getTitle().orElse(null)))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no tile " + caption));
+    }
+
+    private static void click(ReportTile tile) {
+        ComponentUtil.fireEvent(tile, new ClickEvent<>(tile, true, 0, 0, 0, 0, 1, 0, false, false, false, false));
+    }
+
+    /** What the browser sends: a click, then a click with the count of two. */
+    private static void doubleClick(ReportTile tile) {
+        click(tile);
+        ComponentUtil.fireEvent(tile, new ClickEvent<>(tile, true, 0, 0, 0, 0, 2, 0, false, false, false, false));
     }
 
     @Test

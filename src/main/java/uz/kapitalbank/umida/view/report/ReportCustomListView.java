@@ -1,8 +1,12 @@
 package uz.kapitalbank.umida.view.report;
 
 import com.vaadin.flow.component.AbstractField;
+import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.grid.ItemDoubleClickEvent;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.data.renderer.TextRenderer;
 import com.vaadin.flow.router.QueryParameters;
@@ -34,6 +38,7 @@ import io.jmix.flowui.download.ByteArrayDownloadDataProvider;
 import io.jmix.flowui.download.DownloadFormat;
 import io.jmix.flowui.facet.UrlQueryParametersFacet;
 import io.jmix.flowui.facet.urlqueryparameters.AbstractUrlQueryParametersBinder;
+import io.jmix.flowui.kit.action.Action;
 import io.jmix.flowui.kit.action.ActionPerformedEvent;
 import io.jmix.flowui.kit.component.HasActions;
 import io.jmix.flowui.kit.component.button.JmixButton;
@@ -53,17 +58,27 @@ import io.jmix.reportsflowui.view.history.ReportExecutionListView;
 import io.jmix.reportsflowui.view.importdialog.ReportImportDialogView;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
+import uz.kapitalbank.umida.component.reportgroup.ReportTile;
 import uz.kapitalbank.umida.dto.report.ReportTreeItem;
+import uz.kapitalbank.umida.entity.report.ReportCustom;
+import uz.kapitalbank.umida.entity.report.ReportGroupCustom;
 import uz.kapitalbank.umida.enums.report.ReportGrouping;
 import uz.kapitalbank.umida.service.report.ReportCustomService;
+import uz.kapitalbank.umida.service.report.ReportFolderService;
+import uz.kapitalbank.umida.service.report.ReportGroupCustomService;
 import uz.kapitalbank.umida.service.report.ReportGroupingService;
 import uz.kapitalbank.umida.view.main.MainView;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * The list of reports, next to the add-on's {@code report_Report.list}. It takes nothing from that view: the
@@ -76,6 +91,12 @@ import java.util.stream.Collectors;
  * its order and the "mine" filter included. The buttons act on the report selected in the grid shown; a group
  * row selects no report. The grouping is kept in the URL, so that coming back from a report opened from the
  * tree returns to it.
+ * <p>
+ * The buttons of the top right corner show the reports either as the list — paged or grouped — or as tiles,
+ * folders and files the way a file system shows them: the report groups nested by their parent, then the
+ * reports of the group. A click selects a tile, a double click opens the folder or the report; the buttons
+ * act on the report of the selected tile. The tiles hold the reports the "mine" filter selects, the
+ * filters of the columns stay with the list. The tiles and the folder shown are kept in the URL as well.
  */
 @Route(value = "custom-reports", layout = MainView.class)
 @ViewController(id = "umida_ReportCustom.list")
@@ -93,6 +114,14 @@ public class ReportCustomListView extends StandardListView<Report> {
 
     /** The actions of the tree, all of them acting on the report of the selected row. */
     private static final List<String> TREE_ACTIONS = List.of("edit", "remove", "copy", "export", "runReport", "executions");
+
+    /** The view actions of the tiles, all of them acting on the report of the selected tile: {@code tile} and the id of the grid action. */
+    private static final List<String> TILE_ACTIONS = TREE_ACTIONS.stream().map(ReportCustomListView::tileActionId).toList();
+
+    /** The icon of a report tile, of the "umida-icons" iconset. */
+    private static final String REPORT_TILE_ICON = "reports";
+
+    private static final String ACTIVE_CLASS_NAME = "active";
 
     @ViewComponent
     private DataGrid<Report> reportsDataGrid;
@@ -122,11 +151,35 @@ public class ReportCustomListView extends StandardListView<Report> {
     private JmixButton runReportBtn;
     @ViewComponent
     private JmixButton executionsBtn;
+    @ViewComponent
+    private JmixCheckbox mineField;
+    @ViewComponent
+    private JmixButton listModeBtn;
+    @ViewComponent
+    private JmixButton tilesModeBtn;
+    @ViewComponent
+    private HorizontalLayout folderPanel;
+    @ViewComponent
+    private JmixButton folderBackBtn;
+    @ViewComponent
+    private JmixButton folderUpBtn;
+    @ViewComponent
+    private Span folderPath;
+    @ViewComponent
+    private Div tilesBox;
+    @ViewComponent
+    private Span tilesEmpty;
+    @ViewComponent
+    private MessageBundle messageBundle;
 
     @Autowired
     private ReportCustomService reportCustomService;
     @Autowired
     private ReportGroupingService reportGroupingService;
+    @Autowired
+    private ReportFolderService reportFolderService;
+    @Autowired
+    private ReportGroupCustomService reportGroupCustomService;
     @Autowired
     private ReportImportExport reportImportExport;
     @Autowired
@@ -165,6 +218,24 @@ public class ReportCustomListView extends StandardListView<Report> {
     /** The groups expanded before the tree is reloaded. */
     private Set<UUID> expandedGroupIds = Set.of();
 
+    private final TilesBinder tilesBinder = new TilesBinder();
+
+    private boolean tilesShown;
+
+    /** The folder shown as tiles; none while the tiles are not shown yet. */
+    @Nullable
+    private ReportFolderService.Folder folder;
+
+    /** The tiles of the folder shown by the id of their group or report. */
+    private final Map<UUID, ReportTile> tiles = new LinkedHashMap<>();
+
+    /** The reports of the folder shown by id. */
+    private final Map<UUID, ReportCustom> tileReports = new LinkedHashMap<>();
+
+    /** The id of the group or the report of the selected tile. */
+    @Nullable
+    private UUID selectedTileId;
+
     @Subscribe
     public void onInit(final InitEvent event) {
         installGroupFilterLookup();
@@ -176,6 +247,15 @@ public class ReportCustomListView extends StandardListView<Report> {
                 .registerBinder(new GroupingBinder());
         TREE_ACTIONS.forEach(id -> ((SecuredBaseAction) reportsTreeDataGrid.getAction(id))
                 .addEnabledRule(() -> selectedTreeReport() != null));
+
+        ViewControllerUtils.getViewFacet(this, UrlQueryParametersFacet.class).registerBinder(tilesBinder);
+        TILE_ACTIONS.forEach(id -> ((SecuredBaseAction) getViewActions().getAction(id))
+                .addEnabledRule(() -> selectedTileReport() != null));
+        ((SecuredBaseAction) getViewActions().getAction(tileActionId("copy")))
+                .addEnabledRule(reportCustomService::isCreatePermitted);
+        ((SecuredBaseAction) getViewActions().getAction(tileActionId("remove")))
+                .addEnabledRule(reportCustomService::isDeletePermitted);
+        refreshTileActions();
     }
 
     /** Adds the "mine" filter next to the conditions of the column header filters, which share the root condition. */
@@ -207,20 +287,14 @@ public class ReportCustomListView extends StandardListView<Report> {
         }
     }
 
-    /** Shows the paged list or the tree, binds the buttons to the actions of the grid shown and reloads it. */
+    /** Shows the paged list or the tree, unless the tiles are shown, and reloads what is shown. */
     private void setGrouping(ReportGrouping grouping) {
         if (this.grouping == grouping) {
             return;
         }
         this.grouping = grouping;
 
-        boolean grouped = isGrouped();
-        reportsDataGrid.setVisible(!grouped);
-        pagination.setVisible(!grouped);
-        reportsTreeDataGrid.setVisible(grouped);
-        bindButtons(grouped ? reportsTreeDataGrid : reportsDataGrid);
-
-        if (grouped) {
+        if (isGrouped()) {
             GROUPING_COLUMNS.forEach((columnGrouping, key) -> {
                 // a column the user may not see is not in the grid
                 DataGridColumn<ReportTreeItem> column = reportsTreeDataGrid.getColumnByKey(key);
@@ -229,6 +303,7 @@ public class ReportCustomListView extends StandardListView<Report> {
                 }
             });
         }
+        updateLayout();
         reload();
     }
 
@@ -236,24 +311,181 @@ public class ReportCustomListView extends StandardListView<Report> {
         return grouping != ReportGrouping.ALL;
     }
 
+    /** Shows the list or the tiles and reloads what is shown; the list keeps its grouping. */
+    private void setTilesShown(boolean tilesShown) {
+        if (this.tilesShown == tilesShown) {
+            return;
+        }
+        this.tilesShown = tilesShown;
+        updateLayout();
+        reload();
+    }
+
+    /** Shows the paged list, the tree or the tiles and binds the buttons to the actions of what is shown. */
+    private void updateLayout() {
+        boolean grouped = isGrouped();
+        reportsDataGrid.setVisible(!tilesShown && !grouped);
+        pagination.setVisible(!tilesShown && !grouped);
+        reportsTreeDataGrid.setVisible(!tilesShown && grouped);
+        groupingField.setVisible(!tilesShown);
+        folderPanel.setVisible(tilesShown);
+        tilesBox.setVisible(tilesShown);
+        tilesEmpty.setVisible(tilesShown && folder != null && folder.isEmpty());
+        listModeBtn.setClassName(ACTIVE_CLASS_NAME, !tilesShown);
+        tilesModeBtn.setClassName(ACTIVE_CLASS_NAME, tilesShown);
+
+        if (tilesShown) {
+            bindButtons(id -> getViewActions().getAction(tileActionId(id)));
+        } else {
+            bindButtons((grouped ? reportsTreeDataGrid : reportsDataGrid)::getAction);
+        }
+    }
+
     private void reload() {
-        (isGrouped() ? reportTreeItemsDl : reportsDl).load();
+        if (tilesShown) {
+            showFolder(folder != null ? folderId() : tilesBinder.initialFolderId);
+        } else {
+            (isGrouped() ? reportTreeItemsDl : reportsDl).load();
+        }
     }
 
     /** The buttons of create and import stay with the paged list: those actions need no row. */
-    private void bindButtons(HasActions grid) {
-        bindButton(editBtn, grid, "edit");
-        bindButton(removeBtn, grid, "remove");
-        bindButton(copyBtn, grid, "copy");
-        bindButton(exportBtn, grid, "export");
-        bindButton(runReportBtn, grid, "runReport");
-        bindButton(executionsBtn, grid, "executions");
+    private void bindButtons(Function<String, Action> actions) {
+        bindButton(editBtn, actions.apply("edit"));
+        bindButton(removeBtn, actions.apply("remove"));
+        bindButton(copyBtn, actions.apply("copy"));
+        bindButton(exportBtn, actions.apply("export"));
+        bindButton(runReportBtn, actions.apply("runReport"));
+        bindButton(executionsBtn, actions.apply("executions"));
     }
 
     /** The buttons keep their own look: icon only, with the title as the tooltip. */
-    private static void bindButton(JmixButton button, HasActions grid, String actionId) {
-        button.setAction(grid.getAction(actionId), false);
+    private static void bindButton(JmixButton button, Action action) {
+        button.setAction(action, false);
         button.setText("");
+    }
+
+    private static String tileActionId(String gridActionId) {
+        return "tile" + Character.toUpperCase(gridActionId.charAt(0)) + gridActionId.substring(1);
+    }
+
+    @Subscribe(id = "listModeBtn", subject = "clickListener")
+    public void onListModeBtnClick(final ClickEvent<JmixButton> event) {
+        setTilesShown(false);
+        tilesBinder.fireChanged();
+    }
+
+    @Subscribe(id = "tilesModeBtn", subject = "clickListener")
+    public void onTilesModeBtnClick(final ClickEvent<JmixButton> event) {
+        setTilesShown(true);
+        tilesBinder.fireChanged();
+    }
+
+    /** One level up, with the folder left selected. */
+    @Subscribe(id = "folderBackBtn", subject = "clickListener")
+    public void onFolderBackBtnClick(final ClickEvent<JmixButton> event) {
+        if (folder != null && !folder.isTop()) {
+            ReportGroupCustom parent = folder.getParent();
+            openFolder(parent != null ? parent.getId() : null, folderId());
+        }
+    }
+
+    /** The top level, with the folder the shown one lies in selected. */
+    @Subscribe(id = "folderUpBtn", subject = "clickListener")
+    public void onFolderUpBtnClick(final ClickEvent<JmixButton> event) {
+        if (folder != null && !folder.isTop()) {
+            openFolder(null, folder.path().get(0).getId());
+        }
+    }
+
+    @Nullable
+    private UUID folderId() {
+        return folder == null || folder.isTop() ? null : folder.group().getId();
+    }
+
+    /** Shows the folder, the tile of {@code selectedId} selected, and keeps the folder in the URL. */
+    private void openFolder(@Nullable UUID groupId, @Nullable UUID selectedId) {
+        selectedTileId = selectedId;
+        showFolder(groupId);
+        tilesBinder.fireChanged();
+    }
+
+    /**
+     * Shows the folder as tiles, the groups first, then the reports; the top level if the group is no longer
+     * there. A tile selected before stays selected if it is still there.
+     */
+    private void showFolder(@Nullable UUID groupId) {
+        folder = reportFolderService.loadFolder(groupId, Boolean.TRUE.equals(mineField.getValue()));
+
+        tilesBox.removeAll();
+        tiles.clear();
+        tileReports.clear();
+        for (ReportGroupCustom group : folder.groups()) {
+            addTile(group.getId(), new ReportTile(
+                    metadataTools.getInstanceName(group),
+                    reportGroupCustomService.getIconOrDefault(group.getIcon()),
+                    reportGroupCustomService.getColorOrDefault(group.getColor()),
+                    ""));
+        }
+        for (ReportCustom report : folder.reports()) {
+            tileReports.put(report.getId(), report);
+            addTile(report.getId(), new ReportTile(
+                    metadataTools.getInstanceName(report),
+                    REPORT_TILE_ICON,
+                    ReportGroupCustomService.DEFAULT_COLOR,
+                    "report-file"));
+        }
+        selectTile(selectedTileId != null && tiles.containsKey(selectedTileId) ? selectedTileId : null);
+
+        folderBackBtn.setEnabled(!folder.isTop());
+        folderUpBtn.setEnabled(!folder.isTop());
+        folderPath.setText(folderPathText(folder));
+        tilesEmpty.setVisible(tilesShown && folder.isEmpty());
+    }
+
+    /** A click selects the tile, a double click opens the folder or the report. */
+    private void addTile(UUID id, ReportTile tile) {
+        tile.addClickListener(event -> {
+            if (event.getClickCount() > 1) {
+                openTile(id);
+            } else {
+                selectTile(id);
+            }
+        });
+        tiles.put(id, tile);
+        tilesBox.add(tile);
+    }
+
+    private void openTile(UUID id) {
+        ReportCustom report = tileReports.get(id);
+        if (report != null) {
+            edit(report);
+        } else {
+            openFolder(id, null);
+        }
+    }
+
+    private void selectTile(@Nullable UUID id) {
+        selectedTileId = id;
+        tiles.forEach((tileId, tile) -> tile.setSelected(tileId.equals(id)));
+        refreshTileActions();
+    }
+
+    private void refreshTileActions() {
+        TILE_ACTIONS.forEach(id -> getViewActions().getAction(id).refreshState());
+    }
+
+    /** The report of the selected tile; none for the tile of a group. */
+    @Nullable
+    private ReportCustom selectedTileReport() {
+        return selectedTileId != null ? tileReports.get(selectedTileId) : null;
+    }
+
+    private String folderPathText(ReportFolderService.Folder folder) {
+        return Stream.concat(
+                        Stream.of(messageBundle.getMessage("folderPath.top")),
+                        folder.path().stream().map(metadataTools::getInstanceName))
+                .collect(Collectors.joining(" / "));
     }
 
     @Install(to = "reportTreeItemsDl", target = Target.DATA_LOADER)
@@ -452,18 +684,51 @@ public class ReportCustomListView extends StandardListView<Report> {
                 .navigate();
     }
 
-    /** What the remove action of the paged list does, which works on entities of a grid: with its confirmation. */
     @Subscribe("reportsTreeDataGrid.remove")
     public void onReportsTreeDataGridRemove(final ActionPerformedEvent event) {
-        Report report = selectedTreeReport();
+        remove(selectedTreeReport());
+    }
+
+    /** What the remove action of the paged list does, which works on entities of a grid: with its confirmation. */
+    private void remove(@Nullable Report report) {
         if (report == null) {
             return;
         }
         removeOperation.builder(Report.class, this)
                 .withContainer(reportsDc)
                 .withItems(List.of(report))
-                .afterActionPerformed(e -> reportTreeItemsDl.load())
+                .afterActionPerformed(e -> reload())
                 .remove();
+    }
+
+    @Subscribe("tileEdit")
+    public void onTileEdit(final ActionPerformedEvent event) {
+        edit(selectedTileReport());
+    }
+
+    @Subscribe("tileRemove")
+    public void onTileRemove(final ActionPerformedEvent event) {
+        remove(selectedTileReport());
+    }
+
+    @Subscribe("tileCopy")
+    public void onTileCopy(final ActionPerformedEvent event) {
+        copy(selectedTileReport());
+    }
+
+    @Subscribe("tileExport")
+    public void onTileExport(final ActionPerformedEvent event) {
+        export(selectedTileReport());
+    }
+
+    @Subscribe("tileRunReport")
+    public void onTileRunReport(final ActionPerformedEvent event) {
+        runReport(selectedTileReport());
+    }
+
+    @Subscribe("tileExecutions")
+    public void onTileExecutions(final ActionPerformedEvent event) {
+        showExecutions(selectedTileReport());
     }
 
     @Install(to = "reportsDataGrid.copy", subject = "enabledRule")
@@ -511,6 +776,57 @@ public class ReportCustomListView extends StandardListView<Report> {
         @Override
         public Component getComponent() {
             return groupingField;
+        }
+    }
+
+    /**
+     * Keeps the tiles in the {@value #MODE} URL query parameter and the folder shown in the {@value #FOLDER}
+     * one; the list leaves out both.
+     */
+    private class TilesBinder extends AbstractUrlQueryParametersBinder {
+
+        private static final String MODE = "mode";
+        private static final String TILES = "tiles";
+        private static final String FOLDER = "folder";
+
+        /** The folder of the URL, shown once the tiles are. */
+        @Nullable
+        private UUID initialFolderId;
+
+        void fireChanged() {
+            UUID folderId = tilesShown ? folderId() : null;
+            fireQueryParametersChanged(new UrlQueryParametersFacet.UrlQueryParametersChangeEvent(this,
+                    new QueryParameters(Map.of(
+                            MODE, tilesShown ? List.of(TILES) : List.of(),
+                            FOLDER, folderId != null ? List.of(folderId.toString()) : List.of()))));
+        }
+
+        @Override
+        public void updateState(QueryParameters queryParameters) {
+            boolean tiles = queryParameters.getSingleParameter(MODE).filter(TILES::equals).isPresent();
+            UUID folderId = queryParameters.getSingleParameter(FOLDER).flatMap(TilesBinder::parseUuid).orElse(null);
+            if (!tiles) {
+                setTilesShown(false);
+            } else if (!tilesShown) {
+                initialFolderId = folderId;
+                setTilesShown(true);
+            } else if (!Objects.equals(folderId, folderId())) {
+                selectedTileId = null;
+                showFolder(folderId);
+            }
+        }
+
+        private static Optional<UUID> parseUuid(String value) {
+            try {
+                return Optional.of(UUID.fromString(value));
+            } catch (IllegalArgumentException e) {
+                return Optional.empty();
+            }
+        }
+
+        @Override
+        public Component getComponent() {
+            return tilesBox;
         }
     }
 }
