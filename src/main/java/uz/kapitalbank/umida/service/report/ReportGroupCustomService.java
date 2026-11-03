@@ -22,6 +22,7 @@ public class ReportGroupCustomService {
     public static final String ICONSET = "umida-icons";
     public static final String DEFAULT_ICON = "folder";
     public static final String DEFAULT_COLOR = "#CDD0D5";
+    public static final String FOLDER_COLOR = "#FFFFFF";
 
     /** The palette a group color is picked from, the default one first. */
     public static final List<String> COLORS = List.of(

@@ -432,7 +432,7 @@ public class ReportCustomListView extends StandardListView<Report> {
             addTile(report.getId(), new ReportTile(
                     metadataTools.getInstanceName(report),
                     REPORT_TILE_ICON,
-                    ReportGroupCustomService.DEFAULT_COLOR,
+                    ReportGroupCustomService.FOLDER_COLOR,
                     "report-file"));
         }
         selectTile(selectedTileId != null && tiles.containsKey(selectedTileId) ? selectedTileId : null);

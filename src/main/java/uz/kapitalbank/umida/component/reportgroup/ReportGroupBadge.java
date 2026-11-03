@@ -6,7 +6,7 @@ import uz.kapitalbank.umida.service.report.ReportGroupCustomService;
 
 /**
  * The icon of a report group on the background of its color. The look is in
- * {@code themes/umida/component/report-group.css}; the size follows the {@code --report-group-badge-size}
+ * {@code themes/umida/component/reports.css}; the size follows the {@code --report-group-badge-size}
  * variable, so a grid cell and a preview can show the same badge at different sizes.
  */
 public class ReportGroupBadge extends Div {

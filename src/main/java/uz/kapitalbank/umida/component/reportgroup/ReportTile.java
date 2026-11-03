@@ -5,7 +5,7 @@ import com.vaadin.flow.component.html.Span;
 
 /**
  * A tile of the list of reports shown as tiles: the badge — the icon on the background of the color — and
- * the caption side by side, the left border in the color. The look is in {@code themes/umida/view/report-group.css}.
+ * the caption side by side, the left border in the color. The look is in {@code themes/umida/view/reports.css}.
  */
 public class ReportTile extends Div {
 
