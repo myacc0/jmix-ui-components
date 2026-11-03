@@ -76,9 +76,10 @@
                 <action id="remove" type="list_remove"/>
                 <action id="copy" type="list_itemTracking" icon="vaadin:copy"
                         description="msg://io.jmix.reportsflowui.view.report/action.copy.text"/>
-                <action id="importAction" icon="vaadin:upload"
+                <!-- import and export are hidden for now: drop visible="false" here and on the tree's export to show them -->
+                <action id="importAction" icon="vaadin:upload" visible="false"
                         description="msg://io.jmix.reportsflowui.view.report/action.import.description"/>
-                <action id="export" type="list_itemTracking" icon="vaadin:download"
+                <action id="export" type="list_itemTracking" icon="vaadin:download" visible="false"
                         description="msg://io.jmix.reportsflowui.view.report/action.export.description"/>
                 <action id="runReport" type="list_itemTracking" icon="vaadin:play"
                         description="msg://io.jmix.reportsflowui.view.report/action.runReport.text"/>
@@ -107,7 +108,7 @@
                 <action id="edit" type="list_itemTracking"/>
                 <action id="remove" type="list_itemTracking"/>
                 <action id="copy" type="list_itemTracking"/>
-                <action id="export" type="list_itemTracking"/>
+                <action id="export" type="list_itemTracking" visible="false"/>
                 <action id="runReport" type="list_itemTracking"/>
                 <action id="executions" type="list_itemTracking"/>
             </actions>

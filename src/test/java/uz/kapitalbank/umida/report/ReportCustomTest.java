@@ -614,6 +614,22 @@ public class ReportCustomTest {
         assertIconOnlyButtons(UiTestUtils.getCurrentView());
     }
 
+    @Test
+    void theButtonsOfImportAndExportAreHiddenInTheListAndInTheTree() {
+        ReportCustomListView view = openList();
+        assertImportAndExportHidden(view);
+
+        group(view, ReportGrouping.GROUP);
+        assertImportAndExportHidden(view);
+    }
+
+    private void assertImportAndExportHidden(ReportCustomListView view) {
+        assertFalse(UiTestUtils.<JmixButton>getComponent(view, "importBtn").isVisible(), "importBtn");
+        assertFalse(UiTestUtils.<JmixButton>getComponent(view, "exportBtn").isVisible(), "exportBtn");
+        List.of("createBtn", "editBtn", "removeBtn", "copyBtn", "runReportBtn", "executionsBtn")
+                .forEach(id -> assertTrue(UiTestUtils.<JmixButton>getComponent(view, id).isVisible(), id));
+    }
+
     private void assertIconOnlyButtons(ReportCustomListView view) {
         String group = "io.jmix.reportsflowui.view.report";
         assertIconOnly(view, "createBtn", messages.getMessage("actions.Create"));
