@@ -444,15 +444,18 @@ public class DqCheckExecutorService {
     /**
      * The share of non-violating rows, in percent. A table with no rows has nothing to violate the
      * rule and scores 100%.
+     * <p>
+     * Truncated, never rounded up: a single violating row among millions must not show as 100.00 and
+     * pass a 100% threshold. Truncating to the scale of the threshold keeps the comparison with it exact.
      */
     private BigDecimal passRate(Metrics metrics) {
         if (metrics.total().signum() == 0) {
-            return HUNDRED.setScale(RATE_SCALE, RoundingMode.HALF_UP);
+            return HUNDRED.setScale(RATE_SCALE, RoundingMode.DOWN);
         }
         BigInteger passedRows = metrics.total().subtract(metrics.failed()).max(BigInteger.ZERO);
         return new BigDecimal(passedRows)
                 .multiply(HUNDRED)
-                .divide(new BigDecimal(metrics.total()), RATE_SCALE, RoundingMode.HALF_UP);
+                .divide(new BigDecimal(metrics.total()), RATE_SCALE, RoundingMode.DOWN);
     }
 
     private BigDecimal dqScore(int passed, int evaluated) {

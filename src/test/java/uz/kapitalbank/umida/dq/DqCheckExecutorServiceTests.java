@@ -436,6 +436,24 @@ public class DqCheckExecutorServiceTests {
     }
 
     @Test
+    void aFewViolationsAmongMillionsOfRowsFailAHundredPercentThreshold() {
+        DqRule rule = testData.createRule(domain, "millions", DqRuleType.CUSTOM_SQL, null,
+                "{\"sql\": \"select 3885385, 172\", \"violationsSql\": \"select id from umida_dict_data_domain\","
+                        + " \"threshold\": 100}",
+                custom -> custom.setTableName(null));
+        extraRules.add(rule);
+
+        DqCheckRunResult result = resultOf(loadResults(awaitFinished(startRun())), rule);
+
+        assertEquals(BigInteger.valueOf(3885385), result.getTotalRecords());
+        assertEquals(BigInteger.valueOf(172), result.getFailedRecords());
+        // 99.99557…% is truncated, not rounded up to 100.00
+        assertEquals(0, new BigDecimal("99.99").compareTo(result.getPassRate()), result.getPassRate().toString());
+        assertEquals(DqCheckResultStatus.FAILED, result.getStatus(),
+                "172 violating rows must fail a 100% threshold, passRate=" + result.getPassRate());
+    }
+
+    @Test
     void aCustomSqlRuleCannotChangeTheData() {
         // passes the text-level checks, but the sequence would advance: a write the database refuses
         DqRule writing = customSqlRule("custom writing", "select nextval('umida_dq_rule_code_seq'), 0",
