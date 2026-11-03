@@ -12,13 +12,27 @@
                 </query>
             </loader>
         </collection>
+        <!-- the grouped list: the reports of reportsDl, filters and order included, on a single page;
+             loaded by the controller when a grouping is chosen, see ReportCustomListView#setGrouping -->
+        <collection id="reportTreeItemsDc"
+                    class="uz.kapitalbank.umida.dto.report.ReportTreeItem">
+            <loader id="reportTreeItemsDl" readOnly="true"/>
+        </collection>
     </data>
     <facets>
-        <settings auto="true"/>
-        <dataLoadCoordinator auto="true"/>
+        <settings auto="true">
+            <!-- the columns of the tree depend on the grouping, saved settings would bring back the wrong ones -->
+            <component componentId="reportsTreeDataGrid" enabled="false"/>
+        </settings>
+        <dataLoadCoordinator>
+            <refresh loader="reportsDl">
+                <onViewEvent type="BeforeShow"/>
+            </refresh>
+        </dataLoadCoordinator>
         <urlQueryParameters>
             <pagination component="pagination"/>
         </urlQueryParameters>
+        <!-- the controller adds the grouping, see ReportCustomListView.GroupingBinder -->
     </facets>
     <actions>
         <action id="selectAction" type="lookup_select"/>
@@ -35,8 +49,11 @@
                 <button id="exportBtn" action="reportsDataGrid.export"/>
                 <button id="runReportBtn" action="reportsDataGrid.runReport"/>
                 <button id="executionsBtn" action="reportsDataGrid.executions"/>
+                <checkbox id="mineField" label="msg://mineField.label" css="display: flex; align-items: center"/>
             </startSlot>
             <endSlot>
+                <!-- "all" shows the paged list, any other value the tree without pages -->
+                <select id="groupingField" width="12em" emptySelectionAllowed="false"/>
                 <simplePagination id="pagination" dataLoader="reportsDl"/>
             </endSlot>
         </hbox>
@@ -77,6 +94,35 @@
                 <column property="system"/>
             </columns>
         </dataGrid>
+        <!-- the grouped list: the actions repeat the ones of the paged list that act on a report,
+             the buttons keep their own look; create and import need no row and stay with the paged list -->
+        <treeDataGrid id="reportsTreeDataGrid"
+                      width="100%"
+                      minHeight="20em"
+                      visible="false"
+                      dataContainer="reportTreeItemsDc"
+                      hierarchyProperty="parent"
+                      columnReorderingAllowed="true">
+            <actions>
+                <action id="edit" type="list_itemTracking"/>
+                <action id="remove" type="list_itemTracking"/>
+                <action id="copy" type="list_itemTracking"/>
+                <action id="export" type="list_itemTracking"/>
+                <action id="runReport" type="list_itemTracking"/>
+                <action id="executions" type="list_itemTracking"/>
+            </actions>
+            <columns resizable="true">
+                <column key="caption"
+                        property="caption"
+                        header="msg://umida_ReportCustom.list.treeCaption"
+                        flexGrow="2"/>
+                <column key="group" property="report.group"/>
+                <column key="domain" property="report.domain"/>
+                <column key="code" property="report.code"/>
+                <column key="updateTs" property="report.updateTs"/>
+                <column key="system" property="report.system"/>
+            </columns>
+        </treeDataGrid>
         <hbox id="lookupActions" visible="false">
             <button id="selectBtn" action="selectAction"/>
             <button id="discardBtn" action="discardAction"/>

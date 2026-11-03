@@ -1,8 +1,12 @@
 package uz.kapitalbank.umida.report;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.router.QueryParameters;
 import io.jmix.core.DataManager;
 import io.jmix.core.Messages;
 import io.jmix.core.Metadata;
@@ -21,7 +25,10 @@ import io.jmix.flowui.component.multiselectcombobox.JmixMultiSelectComboBox;
 import io.jmix.flowui.component.propertyfilter.PropertyFilter;
 import io.jmix.flowui.component.grid.DataGrid;
 import io.jmix.flowui.component.grid.DataGridColumn;
+import io.jmix.flowui.component.grid.TreeDataGrid;
 import io.jmix.flowui.component.grid.headerfilter.DataGridHeaderFilter;
+import io.jmix.flowui.component.pagination.SimplePagination;
+import io.jmix.flowui.component.select.JmixSelect;
 import io.jmix.flowui.component.tabsheet.JmixTabSheet;
 import io.jmix.flowui.component.textfield.TypedTextField;
 import io.jmix.flowui.kit.component.HasActions;
@@ -54,10 +61,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import uz.kapitalbank.umida.UmidaApplication;
+import uz.kapitalbank.umida.dto.report.ReportTreeItem;
 import uz.kapitalbank.umida.entity.dict.DictDataDomain;
 import uz.kapitalbank.umida.entity.dict.DictDataProduct;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.entity.report.ReportCustom;
+import uz.kapitalbank.umida.entity.report.ReportGroupCustom;
+import uz.kapitalbank.umida.enums.report.ReportGrouping;
 import uz.kapitalbank.umida.service.report.ReportCustomService;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
 import uz.kapitalbank.umida.view.report.ReportCustomDetailView;
@@ -68,6 +78,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -77,8 +88,8 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * The report of the Reports add-on replaced by {@link ReportCustom}: the add-on keeps working with the
  * replacing entity on all of its save paths, the code is generated, the classification survives them,
- * the list of its own does what the list of the add-on does, and the editor opens with the changes made
- * to the one of the add-on.
+ * the list of its own does what the list of the add-on does, groups the reports and shows only the ones of
+ * the current user on demand, and the editor opens with the changes made to the one of the add-on.
  */
 @UiTest
 @SpringBootTest(classes = {UmidaApplication.class, FlowuiTestAssistConfiguration.class})
@@ -112,6 +123,7 @@ public class ReportCustomTest {
 
     private final List<UUID> reportCleanup = new ArrayList<>();
     private final List<Integer> productCleanup = new ArrayList<>();
+    private final List<UUID> groupCleanup = new ArrayList<>();
 
     private OrgStructureSubdivision subdivision;
     private DictDataDomain domainA;
@@ -138,6 +150,8 @@ public class ReportCustomTest {
             removeForReal(Report.class, id);
         });
         reportCleanup.clear();
+        groupCleanup.forEach(id -> removeForReal(ReportGroupCustom.class, id));
+        groupCleanup.clear();
         productCleanup.forEach(id -> removeForReal(DictDataProduct.class, id));
         productCleanup.clear();
         removeForReal(DictDataProduct.class, product.getId());
@@ -171,6 +185,14 @@ public class ReportCustomTest {
         dataProduct.setBusinessOwner(subdivision);
         dataProduct.setAssignDate(LocalDate.now());
         return dataManager.save(dataProduct);
+    }
+
+    private ReportGroupCustom saveGroup() {
+        ReportGroupCustom group = dataManager.create(ReportGroupCustom.class);
+        group.setTitle("Group " + UUID.randomUUID());
+        ReportGroupCustom saved = dataManager.save(group);
+        groupCleanup.add(saved.getId());
+        return saved;
     }
 
     /** The two entities have sequences of their own, so a product and a domain share an id sooner or later. */
@@ -589,8 +611,10 @@ public class ReportCustomTest {
     @Test
     void theButtonsOfTheListShowAnIconWithTheCaptionInTheTitle() {
         viewNavigators.view(UiTestUtils.getCurrentView(), ReportCustomListView.class).navigate();
-        ReportCustomListView view = UiTestUtils.getCurrentView();
+        assertIconOnlyButtons(UiTestUtils.getCurrentView());
+    }
 
+    private void assertIconOnlyButtons(ReportCustomListView view) {
         String group = "io.jmix.reportsflowui.view.report";
         assertIconOnly(view, "createBtn", messages.getMessage("actions.Create"));
         assertIconOnly(view, "editBtn", messages.getMessage("actions.Edit"));
@@ -607,6 +631,322 @@ public class ReportCustomTest {
         assertNotNull(button.getIcon(), buttonId);
         assertTrue(button.getText().isEmpty(), buttonId);
         assertEquals(title, button.getTitle(), buttonId);
+    }
+
+    @Test
+    void theListIsPagedByDefaultAndOffersEveryGrouping() {
+        ReportCustomListView view = openList();
+        JmixSelect<ReportGrouping> groupingField = UiTestUtils.getComponent(view, "groupingField");
+
+        assertEquals(ReportGrouping.ALL, groupingField.getValue());
+        assertEquals(List.of(ReportGrouping.values()), groupingField.getListDataView().getItems().toList(),
+                "admin may see every attribute the reports are grouped by");
+        assertTrue(listGrid(view).isVisible());
+        assertTrue(UiTestUtils.<SimplePagination>getComponent(view, "pagination").isVisible());
+        assertFalse(tree(view).isVisible());
+    }
+
+    @Test
+    void groupingByGroupShowsTheReportsUnderTheirGroupWithTheCountAndNoPages() {
+        ReportGroupCustom group = saveGroup();
+        ReportCustom first = newReport();
+        first.setGroup(group);
+        first = save(first);
+        ReportCustom second = newReport();
+        second.setGroup(group);
+        second = save(second);
+        ReportCustom ungrouped = save(newReport());
+
+        ReportCustomListView view = openList();
+        group(view, ReportGrouping.GROUP);
+
+        TreeDataGrid<ReportTreeItem> tree = tree(view);
+        assertTrue(tree.isVisible());
+        assertFalse(listGrid(view).isVisible());
+        assertFalse(UiTestUtils.<SimplePagination>getComponent(view, "pagination").isVisible(), "the tree has no pages");
+
+        ReportTreeItem firstRow = treeItem(tree, first.getId());
+        assertSame(firstRow.getParent(), treeItem(tree, second.getId()).getParent());
+        assertEquals(group.getTitle() + " (2)", firstRow.getParent().getCaption());
+        assertEquals(2, firstRow.getParent().getCount());
+        assertEquals(first.getName(), firstRow.getCaption());
+
+        ReportTreeItem noGroup = treeItem(tree, ungrouped.getId()).getParent();
+        assertTrue(noGroup.getCaption().startsWith(
+                messages.getMessage(ReportGrouping.class, "ReportGrouping.GROUP.none")), noGroup.getCaption());
+        List<ReportTreeItem> groups = tree.getItems().getItems().stream().filter(ReportTreeItem::isGroup).toList();
+        assertSame(noGroup, groups.get(groups.size() - 1), "the reports without a group come last");
+
+        assertFalse(tree.getColumnByKey("group").isVisible(), "the group row shows the group");
+        assertTrue(tree.getColumnByKey("domain").isVisible());
+    }
+
+    @Test
+    void groupingByDomainShowsTheReportsUnderTheirDomain() {
+        ReportCustom classified = saveClassified();
+
+        ReportCustomListView view = openList();
+        group(view, ReportGrouping.DOMAIN);
+
+        TreeDataGrid<ReportTreeItem> tree = tree(view);
+        assertEquals(domainA.getShortName() + " (1)", treeItem(tree, classified.getId()).getParent().getCaption());
+        assertFalse(tree.getColumnByKey("domain").isVisible(), "the group row shows the domain");
+        assertTrue(tree.getColumnByKey("group").isVisible());
+    }
+
+    @Test
+    void theGroupingInTheUrlOpensTheTree() {
+        ReportCustom classified = saveClassified();
+
+        viewNavigators.view(UiTestUtils.getCurrentView(), ReportCustomListView.class)
+                .withQueryParameters(QueryParameters.of("grouping", "domain"))
+                .navigate();
+        ReportCustomListView view = UiTestUtils.getCurrentView();
+
+        assertEquals(ReportGrouping.DOMAIN, UiTestUtils.<JmixSelect<ReportGrouping>>getComponent(view, "groupingField").getValue());
+        assertTrue(tree(view).isVisible());
+        treeItem(tree(view), classified.getId());
+    }
+
+    @Test
+    void theButtonsActOnTheReportRowsOfTheTreeAndKeepTheirLook() {
+        ReportCustom classified = saveClassified();
+        ReportCustomListView view = openList();
+        group(view, ReportGrouping.DOMAIN);
+        TreeDataGrid<ReportTreeItem> tree = tree(view);
+        Map<String, String> buttons = Map.of("editBtn", "edit", "removeBtn", "remove", "copyBtn", "copy",
+                "exportBtn", "export", "runReportBtn", "runReport", "executionsBtn", "executions");
+
+        buttons.forEach((button, action) ->
+                assertSame(tree.getAction(action), UiTestUtils.<JmixButton>getComponent(view, button).getAction(), button));
+        assertSame(listGrid(view).getAction("create"), UiTestUtils.<JmixButton>getComponent(view, "createBtn").getAction());
+        assertSame(listGrid(view).getAction("importAction"), UiTestUtils.<JmixButton>getComponent(view, "importBtn").getAction());
+        assertIconOnlyButtons(view);
+
+        ReportTreeItem row = treeItem(tree, classified.getId());
+        buttons.keySet().forEach(button ->
+                assertFalse(UiTestUtils.<JmixButton>getComponent(view, button).isEnabled(), button));
+
+        tree.select(row.getParent());
+        buttons.keySet().forEach(button ->
+                assertFalse(UiTestUtils.<JmixButton>getComponent(view, button).isEnabled(), "a group row is no report: " + button));
+
+        tree.select(row);
+        buttons.keySet().forEach(button ->
+                assertTrue(UiTestUtils.<JmixButton>getComponent(view, button).isEnabled(), button));
+
+        group(view, ReportGrouping.ALL);
+        assertTrue(listGrid(view).isVisible());
+        buttons.forEach((button, action) ->
+                assertSame(listGrid(view).getAction(action), UiTestUtils.<JmixButton>getComponent(view, button).getAction(), button));
+        assertIconOnlyButtons(view);
+    }
+
+    @Test
+    void theEditActionOfTheTreeOpensTheEditor() {
+        ReportCustom classified = saveClassified();
+        ReportCustomListView view = openList();
+        group(view, ReportGrouping.DOMAIN);
+        TreeDataGrid<ReportTreeItem> tree = tree(view);
+        tree.select(treeItem(tree, classified.getId()));
+
+        tree.getAction("edit").actionPerform(tree);
+
+        ReportCustomDetailView editor = assertInstanceOf(ReportCustomDetailView.class, UiTestUtils.getCurrentView());
+        assertEquals(classified.getId(), editor.getEditedEntity().getId());
+    }
+
+    @Test
+    void theCopyActionOfTheTreeReloadsItAndKeepsTheGroupExpanded() {
+        ReportCustom classified = saveClassified();
+        ReportCustomListView view = openList();
+        group(view, ReportGrouping.DOMAIN);
+        TreeDataGrid<ReportTreeItem> tree = tree(view);
+        ReportTreeItem row = treeItem(tree, classified.getId());
+        tree.expand(row.getParent());
+        tree.select(row);
+        Set<UUID> before = reportIds();
+
+        tree.getAction("copy").actionPerform(tree);
+
+        UUID copyId = reportIds().stream().filter(id -> !before.contains(id)).findFirst().orElseThrow();
+        reportCleanup.add(copyId);
+        ReportTreeItem copyRow = treeItem(tree, copyId);
+        assertEquals(domainA.getShortName() + " (2)", copyRow.getParent().getCaption());
+        assertTrue(tree.isExpanded(copyRow.getParent()));
+    }
+
+    @Test
+    void theRemoveActionOfTheTreeAsksAndRemovesTheReport() {
+        ReportCustom classified = saveClassified();
+        jdbcTemplate.update("delete from UMIDA_REPORT_SECONDARY_DOMAIN_LINK where REPORT_ID = ?", classified.getId());
+        jdbcTemplate.update("delete from UMIDA_REPORT_DATA_PRODUCT_LINK where REPORT_ID = ?", classified.getId());
+        ReportCustomListView view = openList();
+        group(view, ReportGrouping.DOMAIN);
+        TreeDataGrid<ReportTreeItem> tree = tree(view);
+        tree.select(treeItem(tree, classified.getId()));
+
+        tree.getAction("remove").actionPerform(tree);
+        assertTrue(treeReportIds(tree).contains(classified.getId()), "nothing happens before the confirmation");
+        confirmationButton(messages.getMessage("actions.Yes")).click();
+
+        assertTrue(dataManager.load(Report.class).id(classified.getId()).optional().isEmpty());
+        assertFalse(treeReportIds(tree).contains(classified.getId()));
+        assertFalse(UiTestUtils.<JmixButton>getComponent(view, "removeBtn").isEnabled(), "the row is gone, so is the selection");
+    }
+
+    /** The dialog opens when the response is written, which a test without a browser has to trigger. */
+    private Button confirmationButton(String text) {
+        UI.getCurrent().getInternals().getStateTree().runExecutionsBeforeClientResponse();
+        return UI.getCurrent().getChildren()
+                .filter(Dialog.class::isInstance)
+                .map(Dialog.class::cast)
+                .flatMap(dialog -> dialog.getFooter().getElement().getChildren())
+                .flatMap(element -> element.getComponent().stream())
+                .filter(Button.class::isInstance)
+                .map(Button.class::cast)
+                .filter(button -> text.equals(button.getText()))
+                .findFirst()
+                .orElseThrow();
+    }
+
+    @Test
+    void theExecutionsActionOfTheTreeOpensTheHistory() {
+        ReportCustom classified = saveClassified();
+        ReportCustomListView view = openList();
+        group(view, ReportGrouping.DOMAIN);
+        TreeDataGrid<ReportTreeItem> tree = tree(view);
+        tree.select(treeItem(tree, classified.getId()));
+
+        tree.getAction("executions").actionPerform(tree);
+
+        assertInstanceOf(ReportExecutionListView.class, openedDialogWindows.getObject().getCurrentDialog().orElseThrow());
+    }
+
+    @Test
+    void theTreeHoldsWhatTheFiltersOfThePagedListSelect() {
+        ReportCustom classified = saveClassified();
+        save(newReport());
+        ReportCustomListView view = openList();
+        CollectionLoader<Report> loader = ViewControllerUtils.getViewData(view).getLoader("reportsDl");
+        // stands for a column header filter, which narrows the loader the same way
+        loader.setCondition(PropertyCondition.equal("domain", domainA));
+
+        group(view, ReportGrouping.GROUP);
+
+        List<ReportTreeItem> items = List.copyOf(tree(view).getItems().getItems());
+        assertEquals(2, items.size(), "one group with one report: " + items);
+        assertEquals(classified.getId(), items.get(1).getReport().getId());
+    }
+
+    @Test
+    void theMineCheckboxKeepsTheReportsOfTheCurrentUserInTheListAndInTheTree() {
+        ReportCustom mine = save(newReport());
+        ReportCustom others = saveOfSomeoneElse();
+        ReportCustomListView view = openList();
+        DataGrid<Report> grid = listGrid(view);
+        JmixCheckbox mineField = UiTestUtils.getComponent(view, "mineField");
+
+        assertFalse(mineField.getValue());
+        assertTrue(reportIds(grid).containsAll(List.of(mine.getId(), others.getId())));
+
+        mineField.setValue(true);
+        assertTrue(reportIds(grid).contains(mine.getId()));
+        assertFalse(reportIds(grid).contains(others.getId()));
+
+        group(view, ReportGrouping.DOMAIN);
+        treeItem(tree(view), mine.getId());
+        assertFalse(treeReportIds(tree(view)).contains(others.getId()), "the tree holds what the paged list selects");
+
+        mineField.setValue(false);
+        treeItem(tree(view), others.getId());
+
+        mineField.setValue(true);
+        assertFalse(treeReportIds(tree(view)).contains(others.getId()), "the checkbox reloads the tree it is shown over");
+
+        group(view, ReportGrouping.ALL);
+        assertFalse(reportIds(grid).contains(others.getId()));
+
+        mineField.setValue(false);
+        assertTrue(reportIds(grid).containsAll(List.of(mine.getId(), others.getId())));
+    }
+
+    @Test
+    void theMineCheckboxWorksTogetherWithTheHeaderFilters() {
+        ReportCustom others = saveOfSomeoneElse();
+        save(newReport());
+        ReportCustomListView view = openList();
+        DataGrid<Report> grid = listGrid(view);
+        JmixCheckbox mineField = UiTestUtils.getComponent(view, "mineField");
+        DataGridHeaderFilter codeFilter = (DataGridHeaderFilter) grid.getColumnByKey("code").getHeaderComponent();
+        @SuppressWarnings("unchecked")
+        PropertyFilter<String> codeProperty = (PropertyFilter<String>) codeFilter.getPropertyFilter();
+
+        codeProperty.setValue(others.getCode());
+        codeFilter.apply();
+        assertEquals(Set.of(others.getId()), reportIds(grid));
+
+        mineField.setValue(true);
+        assertTrue(reportIds(grid).isEmpty(), "both filters apply");
+
+        codeProperty.setValue(null);
+        codeFilter.apply();
+        assertFalse(reportIds(grid).isEmpty());
+        assertFalse(reportIds(grid).contains(others.getId()), "the mine filter outlives the header filter");
+    }
+
+    @Test
+    void theMineCheckboxGoesBackToTheFirstPage() {
+        save(newReport());
+        ReportCustomListView view = openList();
+        CollectionLoader<Report> loader = ViewControllerUtils.getViewData(view).getLoader("reportsDl");
+        loader.setFirstResult(1000);
+
+        UiTestUtils.<JmixCheckbox>getComponent(view, "mineField").setValue(true);
+
+        assertEquals(0, loader.getFirstResult());
+        assertFalse(reportIds(listGrid(view)).isEmpty());
+    }
+
+    private ReportCustom saveOfSomeoneElse() {
+        ReportCustom report = save(newReport());
+        jdbcTemplate.update("update REPORT_REPORT set CREATED_BY = ? where ID = ?", "someone-else", report.getId());
+        return report;
+    }
+
+    private ReportCustomListView openList() {
+        viewNavigators.view(UiTestUtils.getCurrentView(), ReportCustomListView.class).navigate();
+        return UiTestUtils.getCurrentView();
+    }
+
+    private void group(ReportCustomListView view, ReportGrouping grouping) {
+        UiTestUtils.<JmixSelect<ReportGrouping>>getComponent(view, "groupingField").setValue(grouping);
+    }
+
+    private DataGrid<Report> listGrid(ReportCustomListView view) {
+        return UiTestUtils.getComponent(view, "reportsDataGrid");
+    }
+
+    private TreeDataGrid<ReportTreeItem> tree(ReportCustomListView view) {
+        return UiTestUtils.getComponent(view, "reportsTreeDataGrid");
+    }
+
+    /** Throws if the report is not shown in the tree. */
+    private ReportTreeItem treeItem(TreeDataGrid<ReportTreeItem> tree, UUID reportId) {
+        return tree.getItems().getItem(reportId);
+    }
+
+    private Set<UUID> treeReportIds(TreeDataGrid<ReportTreeItem> tree) {
+        return tree.getItems().getItems().stream().map(ReportTreeItem::getId).collect(Collectors.toSet());
+    }
+
+    private Set<UUID> reportIds(DataGrid<Report> grid) {
+        return grid.getItems().getItems().stream().map(Report::getId).collect(Collectors.toSet());
+    }
+
+    private Set<UUID> reportIds() {
+        return dataManager.loadValues("select r.id from report_Report r")
+                .properties("id").list().stream().map(v -> v.<UUID>getValue("id")).collect(Collectors.toSet());
     }
 
     @Test

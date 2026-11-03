@@ -72,9 +72,18 @@ public class ReportCustomService {
 
     /** The check of the add-on's list for its create, copy and import actions. */
     public boolean isCreatePermitted() {
+        return crudContext().isCreatePermitted();
+    }
+
+    /** The check a standard remove action makes; the tree of the list has no such action. */
+    public boolean isDeletePermitted() {
+        return crudContext().isDeletePermitted();
+    }
+
+    private CrudEntityContext crudContext() {
         CrudEntityContext context = new CrudEntityContext(metadata.getClass(Report.class));
         accessManager.applyRegisteredConstraints(context);
-        return context.isCreatePermitted();
+        return context;
     }
 
     /**
