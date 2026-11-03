@@ -1,9 +1,12 @@
 package uz.kapitalbank.umida.view.report;
 
+import com.google.common.base.Strings;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.router.Route;
+import io.jmix.flowui.component.grid.DataGrid;
 import io.jmix.flowui.component.textfield.TypedTextField;
+import io.jmix.flowui.kit.action.Action;
 import io.jmix.flowui.model.CollectionContainer;
 import io.jmix.flowui.model.InstanceContainer;
 import io.jmix.flowui.view.EditedEntityContainer;
@@ -13,6 +16,7 @@ import io.jmix.flowui.view.ViewComponent;
 import io.jmix.flowui.view.ViewController;
 import io.jmix.flowui.view.ViewDescriptor;
 import io.jmix.reports.entity.Report;
+import io.jmix.reports.entity.ReportValueFormat;
 import io.jmix.reportsflowui.view.report.ReportDetailView;
 import org.springframework.beans.factory.annotation.Autowired;
 import uz.kapitalbank.umida.entity.dict.DictDataDomain;
@@ -49,6 +53,8 @@ public class ReportCustomDetailView extends ReportDetailView {
     @ViewComponent
     private TypedTextField<String> codeField;
     @ViewComponent
+    private DataGrid<ReportValueFormat> valuesFormatsDataGrid;
+    @ViewComponent
     private CollectionContainer<DictDataDomain> domainsDc;
     @ViewComponent
     private CollectionContainer<DictDataDomain> secondaryDomainOptionsDc;
@@ -58,6 +64,7 @@ public class ReportCustomDetailView extends ReportDetailView {
     public void onViewReady(final ReadyEvent event) {
         mainTabSheet.remove(securityTab);
         reportForm.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1));
+        moveActionTextsToTitles();
         refreshCodeField();
         refreshSecondaryDomainOptions();
     }
@@ -84,6 +91,22 @@ public class ReportCustomDetailView extends ReportDetailView {
     protected void checkReportCode(BeforeSaveEvent event) {
         if (getEditedEntity().getCode() == null) {
             getEditedEntity().setCode(reportCustomService.generateCode());
+        }
+    }
+
+    /**
+     * Icon-only buttons in the tabs Parameters, Value formats and Templates, as the add-on already has in Bands.
+     * The buttons have no id, so this goes through their actions: a button takes its text from the action's
+     * text and its title from the action's description.
+     */
+    private void moveActionTextsToTitles() {
+        for (DataGrid<?> grid : List.of(inputParametersDataGrid, valuesFormatsDataGrid, templatesDataGrid)) {
+            for (Action action : grid.getActions()) {
+                if (!Strings.isNullOrEmpty(action.getText())) {
+                    action.setDescription(action.getText());
+                    action.setText("");
+                }
+            }
         }
     }
 
