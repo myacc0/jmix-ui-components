@@ -64,6 +64,7 @@ import uz.kapitalbank.umida.dto.report.ReportTreeItem;
 import uz.kapitalbank.umida.entity.report.ReportCustom;
 import uz.kapitalbank.umida.entity.report.ReportGroupCustom;
 import uz.kapitalbank.umida.enums.report.ReportGrouping;
+import uz.kapitalbank.umida.enums.report.ReportTileSort;
 import uz.kapitalbank.umida.service.report.ReportCustomService;
 import uz.kapitalbank.umida.service.report.ReportFolderService;
 import uz.kapitalbank.umida.service.report.ReportGroupCustomService;
@@ -97,7 +98,9 @@ import java.util.stream.Stream;
  * folders and files the way a file system shows them: the report groups nested by their parent, then the
  * reports of the group. A click selects a tile, a double click opens the folder or the report; the buttons
  * act on the report of the selected tile. The tiles hold the reports the "mine" filter selects, the
- * filters of the columns stay with the list. The tiles and the folder shown are kept in the URL as well.
+ * filters of the columns stay with the list. The tiles are ordered by name or by the time of creation, the
+ * groups staying before the reports; the list takes the order back to the default. The tiles, the folder
+ * shown and their order are kept in the URL as well.
  */
 @Route(value = "custom-reports", layout = MainView.class)
 @ViewController(id = "umida_ReportCustom.list")
@@ -124,6 +127,8 @@ public class ReportCustomListView extends StandardListView<Report> {
 
     private static final String ACTIVE_CLASS_NAME = "active";
 
+    private static final ReportTileSort DEFAULT_TILE_SORT = ReportTileSort.NAME_ASC;
+
     @ViewComponent
     private DataGrid<Report> reportsDataGrid;
     @ViewComponent
@@ -138,6 +143,8 @@ public class ReportCustomListView extends StandardListView<Report> {
     private CollectionContainer<ReportTreeItem> reportTreeItemsDc;
     @ViewComponent
     private JmixSelect<ReportGrouping> groupingField;
+    @ViewComponent
+    private JmixSelect<ReportTileSort> tileSortField;
     @ViewComponent
     private SimplePagination pagination;
     @ViewComponent
@@ -237,6 +244,9 @@ public class ReportCustomListView extends StandardListView<Report> {
     @Nullable
     private UUID selectedTileId;
 
+    /** Set while the URL sets the order of the tiles: the binder shows the folder itself. */
+    private boolean tileSortFromUrl;
+
     @Subscribe
     public void onInit(final InitEvent event) {
         installGroupFilterLookup();
@@ -249,6 +259,8 @@ public class ReportCustomListView extends StandardListView<Report> {
         TREE_ACTIONS.forEach(id -> ((SecuredBaseAction) reportsTreeDataGrid.getAction(id))
                 .addEnabledRule(() -> selectedTreeReport() != null));
 
+        tileSortField.setItems(ReportTileSort.values());
+        tileSortField.setValue(DEFAULT_TILE_SORT);
         ViewControllerUtils.getViewFacet(this, UrlQueryParametersFacet.class).registerBinder(tilesBinder);
         TILE_ACTIONS.forEach(id -> ((SecuredBaseAction) getViewActions().getAction(id))
                 .addEnabledRule(() -> selectedTileReport() != null));
@@ -312,12 +324,15 @@ public class ReportCustomListView extends StandardListView<Report> {
         return grouping != ReportGrouping.ALL;
     }
 
-    /** Shows the list or the tiles and reloads what is shown; the list keeps its grouping. */
+    /** Shows the list or the tiles and reloads what is shown; the list keeps its grouping, the order of the tiles goes back to the default. */
     private void setTilesShown(boolean tilesShown) {
         if (this.tilesShown == tilesShown) {
             return;
         }
         this.tilesShown = tilesShown;
+        if (!tilesShown) {
+            tileSortField.setValue(DEFAULT_TILE_SORT);
+        }
         updateLayout();
         reload();
     }
@@ -329,6 +344,7 @@ public class ReportCustomListView extends StandardListView<Report> {
         setPaginationShown(!tilesShown && !grouped);
         reportsTreeDataGrid.setVisible(!tilesShown && grouped);
         groupingField.setVisible(!tilesShown);
+        tileSortField.setVisible(tilesShown);
         folderPanel.setVisible(tilesShown);
         tilesBox.setVisible(tilesShown);
         tilesEmpty.setVisible(tilesShown && folder != null && folder.isEmpty());
@@ -384,6 +400,20 @@ public class ReportCustomListView extends StandardListView<Report> {
         return "tile" + Character.toUpperCase(gridActionId.charAt(0)) + gridActionId.substring(1);
     }
 
+    /** The folder shown is shown again in the new order, the selected tile staying selected. */
+    @Subscribe("tileSortField")
+    public void onTileSortFieldComponentValueChange(
+            final AbstractField.ComponentValueChangeEvent<JmixSelect<ReportTileSort>, ReportTileSort> event) {
+        if (tilesShown && !tileSortFromUrl && event.getValue() != null) {
+            showFolder(folderId());
+            tilesBinder.fireChanged();
+        }
+    }
+
+    private ReportTileSort tileSort() {
+        return Objects.requireNonNullElse(tileSortField.getValue(), DEFAULT_TILE_SORT);
+    }
+
     @Subscribe(id = "listModeBtn", subject = "clickListener")
     public void onListModeBtnClick(final ClickEvent<JmixButton> event) {
         setTilesShown(false);
@@ -426,11 +456,11 @@ public class ReportCustomListView extends StandardListView<Report> {
     }
 
     /**
-     * Shows the folder as tiles, the groups first, then the reports; the top level if the group is no longer
-     * there. A tile selected before stays selected if it is still there.
+     * Shows the folder as tiles, the groups first, then the reports, each in the chosen order; the top level if
+     * the group is no longer there. A tile selected before stays selected if it is still there.
      */
     private void showFolder(@Nullable UUID groupId) {
-        folder = reportFolderService.loadFolder(groupId, Boolean.TRUE.equals(mineField.getValue()));
+        folder = reportFolderService.loadFolder(groupId, Boolean.TRUE.equals(mineField.getValue()), tileSort());
 
         tilesBox.removeAll();
         tiles.clear();
@@ -795,14 +825,15 @@ public class ReportCustomListView extends StandardListView<Report> {
     }
 
     /**
-     * Keeps the tiles in the {@value #MODE} URL query parameter and the folder shown in the {@value #FOLDER}
-     * one; the list leaves out both.
+     * Keeps the tiles in the {@value #MODE} URL query parameter, the folder shown in the {@value #FOLDER} one
+     * and their order, unless it is the default, in the {@value #SORT} one; the list leaves out all of them.
      */
     private class TilesBinder extends AbstractUrlQueryParametersBinder {
 
         private static final String MODE = "mode";
         private static final String TILES = "tiles";
         private static final String FOLDER = "folder";
+        private static final String SORT = "sort";
 
         /** The folder of the URL, shown once the tiles are. */
         @Nullable
@@ -810,24 +841,43 @@ public class ReportCustomListView extends StandardListView<Report> {
 
         void fireChanged() {
             UUID folderId = tilesShown ? folderId() : null;
+            ReportTileSort sort = tileSort();
             fireQueryParametersChanged(new UrlQueryParametersFacet.UrlQueryParametersChangeEvent(this,
                     new QueryParameters(Map.of(
                             MODE, tilesShown ? List.of(TILES) : List.of(),
-                            FOLDER, folderId != null ? List.of(folderId.toString()) : List.of()))));
+                            FOLDER, folderId != null ? List.of(folderId.toString()) : List.of(),
+                            SORT, tilesShown && sort != DEFAULT_TILE_SORT ? List.of(sort.getId()) : List.of()))));
         }
 
         @Override
         public void updateState(QueryParameters queryParameters) {
             boolean tiles = queryParameters.getSingleParameter(MODE).filter(TILES::equals).isPresent();
             UUID folderId = queryParameters.getSingleParameter(FOLDER).flatMap(TilesBinder::parseUuid).orElse(null);
+            ReportTileSort sort = queryParameters.getSingleParameter(SORT).map(ReportTileSort::fromId)
+                    .orElse(DEFAULT_TILE_SORT);
             if (!tiles) {
                 setTilesShown(false);
-            } else if (!tilesShown) {
+                return;
+            }
+            boolean sortChanged = sort != tileSort();
+            setTileSortFromUrl(sort);
+            if (!tilesShown) {
                 initialFolderId = folderId;
                 setTilesShown(true);
             } else if (!Objects.equals(folderId, folderId())) {
                 selectedTileId = null;
                 showFolder(folderId);
+            } else if (sortChanged) {
+                showFolder(folderId);
+            }
+        }
+
+        private void setTileSortFromUrl(ReportTileSort sort) {
+            tileSortFromUrl = true;
+            try {
+                tileSortField.setValue(sort);
+            } finally {
+                tileSortFromUrl = false;
             }
         }
 

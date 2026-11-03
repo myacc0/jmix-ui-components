@@ -73,6 +73,7 @@ import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.entity.report.ReportCustom;
 import uz.kapitalbank.umida.entity.report.ReportGroupCustom;
 import uz.kapitalbank.umida.enums.report.ReportGrouping;
+import uz.kapitalbank.umida.enums.report.ReportTileSort;
 import uz.kapitalbank.umida.service.report.ReportCustomService;
 import uz.kapitalbank.umida.service.report.ReportGroupCustomService;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
@@ -1097,6 +1098,83 @@ public class ReportCustomTest {
         assertFalse(tileCaptions(view).contains(othersGroup.getTitle()));
         assertFalse(tileCaptions(view).contains(empty.getTitle()));
         assertFalse(tileCaptions(view).contains(othersOnTop.getName()));
+    }
+
+    @Test
+    void theTilesAreSortedByNameOrByCreationWithTheGroupsFirstAndTheListResetsTheOrder() {
+        String suffix = UUID.randomUUID().toString();
+        ReportGroupCustom parent = saveGroup();
+        ReportGroupCustom groupA = saveGroupIn(parent, "group A " + suffix, "2026-01-02 00:00:00");
+        ReportGroupCustom groupB = saveGroupIn(parent, "Group b " + suffix, "2026-01-03 00:00:00");
+        ReportCustom reportA = saveReportIn(parent, "report A " + suffix, "2026-01-02 00:00:00");
+        ReportCustom reportB = saveReportIn(parent, "Report b " + suffix, "2026-01-03 00:00:00");
+        ReportCustom reportC = saveReportIn(parent, "report C " + suffix, "2026-01-01 00:00:00");
+        String gA = groupA.getTitle(), gB = groupB.getTitle();
+        String rA = reportA.getName(), rB = reportB.getName(), rC = reportC.getName();
+
+        ReportCustomListView view = openList();
+        JmixSelect<ReportTileSort> sortField = UiTestUtils.getComponent(view, "tileSortField");
+        assertFalse(sortField.isVisible(), "the order is of the tiles only");
+
+        showTiles(view);
+        assertTrue(sortField.isVisible());
+        assertEquals(ReportTileSort.NAME_ASC, sortField.getValue(), "by name by default");
+        doubleClick(tile(view, parent.getTitle()));
+        assertEquals(List.of(gA, gB, rA, rB, rC), tileCaptions(view), "case aside");
+
+        click(tile(view, rA));
+        sortField.setValue(ReportTileSort.NAME_DESC);
+        assertEquals(List.of(gB, gA, rC, rB, rA), tileCaptions(view));
+        assertTrue(tile(view, rA).isSelected(), "the selection outlives the new order");
+
+        sortField.setValue(ReportTileSort.NEWEST_FIRST);
+        assertEquals(List.of(gB, gA, rB, rA, rC), tileCaptions(view), "the groups stay first");
+
+        sortField.setValue(ReportTileSort.OLDEST_FIRST);
+        assertEquals(List.of(gA, gB, rC, rA, rB), tileCaptions(view));
+
+        UiTestUtils.<JmixButton>getComponent(view, "listModeBtn").click();
+        assertFalse(sortField.isVisible());
+        assertEquals(ReportTileSort.NAME_ASC, sortField.getValue(), "the list resets the order");
+
+        showTiles(view);
+        assertEquals(List.of(gA, gB, rA, rB, rC), tileCaptions(view), "the tiles come back to their folder by name");
+    }
+
+    @Test
+    void theOrderOfTheTilesInTheUrlSortsThem() {
+        ReportGroupCustom parent = saveGroup();
+        String suffix = UUID.randomUUID().toString();
+        ReportCustom older = saveReportIn(parent, "report A " + suffix, "2026-01-01 00:00:00");
+        ReportCustom newer = saveReportIn(parent, "report B " + suffix, "2026-01-02 00:00:00");
+
+        viewNavigators.view(UiTestUtils.getCurrentView(), ReportCustomListView.class)
+                .withQueryParameters(new QueryParameters(Map.of(
+                        "mode", List.of("tiles"),
+                        "folder", List.of(parent.getId().toString()),
+                        "sort", List.of("newest"))))
+                .navigate();
+        ReportCustomListView view = UiTestUtils.getCurrentView();
+
+        assertEquals(ReportTileSort.NEWEST_FIRST, UiTestUtils.<JmixSelect<ReportTileSort>>getComponent(view, "tileSortField").getValue());
+        assertEquals(List.of(newer.getName(), older.getName()), tileCaptions(view));
+    }
+
+    private ReportGroupCustom saveGroupIn(ReportGroupCustom parent, String title, String createTs) {
+        ReportGroupCustom group = saveGroup(parent);
+        group.setTitle(title);
+        group = dataManager.save(group);
+        jdbcTemplate.update("update REPORT_GROUP set CREATE_TS = cast(? as timestamp) where ID = ?", createTs, group.getId());
+        return group;
+    }
+
+    private ReportCustom saveReportIn(ReportGroupCustom group, String name, String createTs) {
+        ReportCustom report = newReport();
+        report.setName(name);
+        report.setGroup(group);
+        report = save(report);
+        jdbcTemplate.update("update REPORT_REPORT set CREATE_TS = cast(? as timestamp) where ID = ?", createTs, report.getId());
+        return report;
     }
 
     /**

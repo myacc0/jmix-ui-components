@@ -8,10 +8,12 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import uz.kapitalbank.umida.entity.report.ReportCustom;
 import uz.kapitalbank.umida.entity.report.ReportGroupCustom;
+import uz.kapitalbank.umida.enums.report.ReportTileSort;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -44,7 +46,7 @@ public class ReportFolderService {
     }
 
     /**
-     * What a folder holds, the subgroups first and then the reports, each by their localized name.
+     * What a folder holds, the subgroups first and then the reports, each in the order asked for.
      *
      * @param group the group of the folder; {@code null} for the top level
      * @param path  the groups from the top level down to the group of the folder, both included; empty at the top level
@@ -74,8 +76,9 @@ public class ReportFolderService {
      *
      * @param mine whether only the reports created by the current user are shown; the groups without
      *             such reports anywhere below them are then left out as well
+     * @param sort the order of the subgroups and, apart from them, of the reports
      */
-    public Folder loadFolder(@Nullable UUID groupId, boolean mine) {
+    public Folder loadFolder(@Nullable UUID groupId, boolean mine, ReportTileSort sort) {
         Map<UUID, ReportGroupCustom> groupsById = dataManager.load(ReportGroupCustom.class)
                 .all()
                 .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE)
@@ -90,19 +93,36 @@ public class ReportFolderService {
         List<ReportGroupCustom> groups = groupsById.values().stream()
                 .filter(child -> shownGroupIds.contains(child.getId()))
                 .filter(child -> Objects.equals(parentId(child, groupsById), group != null ? group.getId() : null))
-                .sorted(Comparator.comparing(metadataTools::getInstanceName, String.CASE_INSENSITIVE_ORDER))
+                .sorted(comparator(sort, ReportGroupCustom::getCreateTs))
                 .toList();
 
-        return new Folder(group, path(group, groupsById), groups, loadReports(group, mine));
+        return new Folder(group, path(group, groupsById), groups, loadReports(group, mine, sort));
     }
 
-    private List<ReportCustom> loadReports(@Nullable ReportGroupCustom group, boolean mine) {
+    /**
+     * The order of groups or of reports: by the localized name, case aside, or by the time of creation with
+     * the name between the ones created at the same time.
+     */
+    private <E> Comparator<E> comparator(ReportTileSort sort, Function<E, Date> createTs) {
+        Comparator<E> byName = Comparator.comparing(metadataTools::getInstanceName, String.CASE_INSENSITIVE_ORDER);
+        return switch (sort) {
+            case NAME_ASC -> byName;
+            case NAME_DESC -> byName.reversed();
+            case NEWEST_FIRST -> Comparator.comparing(createTs, Comparator.nullsLast(Comparator.<Date>reverseOrder()))
+                    .thenComparing(byName);
+            case OLDEST_FIRST -> Comparator.comparing(createTs, Comparator.nullsLast(Comparator.<Date>naturalOrder()))
+                    .thenComparing(byName);
+        };
+    }
+
+    private List<ReportCustom> loadReports(@Nullable ReportGroupCustom group, boolean mine, ReportTileSort sort) {
         String query = "select e from umida_ReportCustom e where "
                 + (group != null ? "e.group.id = :groupId" : "e.group is null")
                 + (mine ? " and e.createdBy = :createdBy" : "");
         var loader = dataManager.load(ReportCustom.class)
                 .query(query)
-                .fetchPlan("report.view");
+                // the time of creation is for the order, report.view of the add-on leaves it out
+                .fetchPlan(fp -> fp.addFetchPlan("report.view").add("createTs"));
         if (group != null) {
             loader.parameter("groupId", group.getId());
         }
@@ -110,7 +130,7 @@ public class ReportFolderService {
             loader.parameter("createdBy", currentUsername());
         }
         return loader.list().stream()
-                .sorted(Comparator.comparing(metadataTools::getInstanceName, String.CASE_INSENSITIVE_ORDER))
+                .sorted(comparator(sort, ReportCustom::getCreateTs))
                 .toList();
     }
 

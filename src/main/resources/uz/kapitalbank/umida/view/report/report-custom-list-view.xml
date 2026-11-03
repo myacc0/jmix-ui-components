@@ -32,7 +32,8 @@
         <urlQueryParameters>
             <pagination component="pagination"/>
         </urlQueryParameters>
-        <!-- the controller adds the grouping and the tiles, see ReportCustomListView.GroupingBinder and TilesBinder -->
+        <!-- the controller adds the grouping and the tiles with their folder and order, see
+             ReportCustomListView.GroupingBinder and TilesBinder -->
     </facets>
     <actions>
         <action id="selectAction" type="lookup_select"/>
@@ -65,6 +66,9 @@
                 <hbox id="endPanel" padding="false" alignItems="CENTER">
                     <!-- "all" shows the paged list, any other value the tree without pages -->
                     <select id="groupingField" width="12em" emptySelectionAllowed="false" classNames="padding-0"/>
+                    <!-- the order of the tiles, the groups staying before the reports; back to the default in the list -->
+                    <select id="tileSortField" width="13em" emptySelectionAllowed="false" classNames="padding-0"
+                            visible="false"/>
                     <simplePagination id="pagination" dataLoader="reportsDl"/>
                     <!-- the list — paged or grouped — or the tiles: the groups as folders, the reports as files -->
                     <hbox id="viewModePanel" classNames="report-view-mode" padding="false" spacing="false">
