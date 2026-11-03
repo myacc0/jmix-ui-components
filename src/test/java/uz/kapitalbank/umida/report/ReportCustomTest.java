@@ -74,6 +74,7 @@ import uz.kapitalbank.umida.entity.report.ReportCustom;
 import uz.kapitalbank.umida.entity.report.ReportGroupCustom;
 import uz.kapitalbank.umida.enums.report.ReportGrouping;
 import uz.kapitalbank.umida.service.report.ReportCustomService;
+import uz.kapitalbank.umida.service.report.ReportGroupCustomService;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
 import uz.kapitalbank.umida.view.report.ReportCustomDetailView;
 import uz.kapitalbank.umida.view.report.ReportCustomListView;
@@ -669,7 +670,7 @@ public class ReportCustomTest {
         assertEquals(List.of(ReportGrouping.values()), groupingField.getListDataView().getItems().toList(),
                 "admin may see every attribute the reports are grouped by");
         assertTrue(listGrid(view).isVisible());
-        assertTrue(UiTestUtils.<SimplePagination>getComponent(view, "pagination").isVisible());
+        assertTrue(paginationShown(view));
         assertFalse(tree(view).isVisible());
     }
 
@@ -690,7 +691,7 @@ public class ReportCustomTest {
         TreeDataGrid<ReportTreeItem> tree = tree(view);
         assertTrue(tree.isVisible());
         assertFalse(listGrid(view).isVisible());
-        assertFalse(UiTestUtils.<SimplePagination>getComponent(view, "pagination").isVisible(), "the tree has no pages");
+        assertFalse(paginationShown(view), "the tree has no pages");
 
         ReportTreeItem firstRow = treeItem(tree, first.getId());
         assertSame(firstRow.getParent(), treeItem(tree, second.getId()).getParent());
@@ -938,7 +939,7 @@ public class ReportCustomTest {
 
         assertFalse(listGrid(view).isVisible());
         assertFalse(tree(view).isVisible());
-        assertFalse(UiTestUtils.<SimplePagination>getComponent(view, "pagination").isVisible());
+        assertFalse(paginationShown(view));
         assertFalse(UiTestUtils.<JmixSelect<?>>getComponent(view, "groupingField").isVisible());
         assertTrue(UiTestUtils.<JmixButton>getComponent(view, "tilesModeBtn").hasClassName("active"));
         assertFalse(UiTestUtils.<JmixButton>getComponent(view, "listModeBtn").hasClassName("active"));
@@ -982,9 +983,12 @@ public class ReportCustomTest {
         assertEquals("#F6C86B", tile(view, group.getTitle()).getStyle().get("--report-tile-color"));
         assertEquals("#CDD0D5", tile(view, plain.getTitle()).getStyle().get("--report-tile-color"), "the default color");
 
+        assertFalse(tile(view, group.getTitle()).hasClassName("report-file"), "a group is no file");
+
         doubleClick(tile(view, group.getTitle()));
-        assertEquals("#CDD0D5", tile(view, report.getName()).getStyle().get("--report-tile-color"),
-                "a report has the default color of a group");
+        assertEquals(ReportGroupCustomService.FOLDER_COLOR, tile(view, report.getName()).getStyle().get("--report-tile-color"),
+                "a report has the color of a file");
+        assertTrue(tile(view, report.getName()).hasClassName("report-file"));
         assertEquals("umida-icons:reports", tile(view, report.getName()).getChildren()
                 .flatMap(Component::getChildren)
                 .filter(com.vaadin.flow.component.icon.Icon.class::isInstance)
@@ -1093,6 +1097,16 @@ public class ReportCustomTest {
         assertFalse(tileCaptions(view).contains(othersGroup.getTitle()));
         assertFalse(tileCaptions(view).contains(empty.getTitle()));
         assertFalse(tileCaptions(view).contains(othersOnTop.getName()));
+    }
+
+    /**
+     * The pagination is hidden by its style and stays visible to Vaadin, see ReportCustomListView#setPaginationShown:
+     * the JavaScript it runs while hidden is sent at once, so none is left to be answered once it is shown.
+     */
+    private boolean paginationShown(ReportCustomListView view) {
+        SimplePagination pagination = UiTestUtils.getComponent(view, "pagination");
+        assertTrue(pagination.isVisible(), "hidden by its style only");
+        return !"none".equals(pagination.getStyle().get("display"));
     }
 
     private void showTiles(ReportCustomListView view) {

@@ -60,13 +60,17 @@
                 <checkbox id="mineField" label="msg://mineField.label" css="display: flex; align-items: center"/>
             </startSlot>
             <endSlot>
-                <!-- "all" shows the paged list, any other value the tree without pages -->
-                <select id="groupingField" width="12em" emptySelectionAllowed="false" classNames="padding-0"/>
-                <simplePagination id="pagination" dataLoader="reportsDl"/>
-                <!-- the list — paged or grouped — or the tiles: the groups as folders, the reports as files -->
-                <hbox id="viewModePanel" classNames="report-view-mode" padding="false" spacing="false">
-                    <button id="listModeBtn" icon="umida-icons:menu" title="msg://listModeBtn.title" classNames="active"/>
-                    <button id="tilesModeBtn" icon="umida-icons:blocks" title="msg://tilesModeBtn.title"/>
+                <!-- one panel always shown: the layout pushes the end slot to the right by a margin of its first
+                     child, and a child created hidden gets no slot attribute in the browser and falls into the start slot -->
+                <hbox id="endPanel" padding="false" alignItems="CENTER">
+                    <!-- "all" shows the paged list, any other value the tree without pages -->
+                    <select id="groupingField" width="12em" emptySelectionAllowed="false" classNames="padding-0"/>
+                    <simplePagination id="pagination" dataLoader="reportsDl"/>
+                    <!-- the list — paged or grouped — or the tiles: the groups as folders, the reports as files -->
+                    <hbox id="viewModePanel" classNames="report-view-mode" padding="false" spacing="false">
+                        <button id="listModeBtn" icon="umida-icons:menu" title="msg://listModeBtn.title" classNames="active"/>
+                        <button id="tilesModeBtn" icon="umida-icons:blocks" title="msg://tilesModeBtn.title"/>
+                    </hbox>
                 </hbox>
             </endSlot>
         </hbox>

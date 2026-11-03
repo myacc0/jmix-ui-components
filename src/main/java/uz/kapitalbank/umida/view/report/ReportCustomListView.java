@@ -7,6 +7,7 @@ import com.vaadin.flow.component.grid.ItemDoubleClickEvent;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.data.renderer.TextRenderer;
 import com.vaadin.flow.router.QueryParameters;
@@ -325,7 +326,7 @@ public class ReportCustomListView extends StandardListView<Report> {
     private void updateLayout() {
         boolean grouped = isGrouped();
         reportsDataGrid.setVisible(!tilesShown && !grouped);
-        pagination.setVisible(!tilesShown && !grouped);
+        setPaginationShown(!tilesShown && !grouped);
         reportsTreeDataGrid.setVisible(!tilesShown && grouped);
         groupingField.setVisible(!tilesShown);
         folderPanel.setVisible(tilesShown);
@@ -338,6 +339,20 @@ public class ReportCustomListView extends StandardListView<Report> {
             bindButtons(id -> getViewActions().getAction(tileActionId(id)));
         } else {
             bindButtons((grouped ? reportsTreeDataGrid : reportsDataGrid)::getAction);
+        }
+    }
+
+    /**
+     * The pagination is hidden by its style, not made invisible: Vaadin holds back the JavaScript of an invisible
+     * component until it is shown again — here the one each load of the list runs on the navigation buttons, even
+     * while the tree or the tiles are shown — and the browser then answers it for the buttons still disabled,
+     * which the server ignores with a "disabled return channel" warning each.
+     */
+    private void setPaginationShown(boolean shown) {
+        if (shown) {
+            pagination.getStyle().remove("display");
+        } else {
+            pagination.getStyle().setDisplay(Style.Display.NONE);
         }
     }
 
