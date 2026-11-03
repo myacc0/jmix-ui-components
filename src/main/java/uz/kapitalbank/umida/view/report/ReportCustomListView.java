@@ -2,6 +2,7 @@ package uz.kapitalbank.umida.view.report;
 
 import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.grid.ItemDoubleClickEvent;
 import com.vaadin.flow.component.html.Div;
@@ -22,6 +23,7 @@ import io.jmix.core.querycondition.PropertyCondition;
 import io.jmix.core.security.CurrentAuthentication;
 import io.jmix.flowui.DialogWindows;
 import io.jmix.flowui.Notifications;
+import io.jmix.flowui.UiComponents;
 import io.jmix.flowui.UiProperties;
 import io.jmix.flowui.ViewNavigators;
 import io.jmix.flowui.action.SecuredBaseAction;
@@ -80,7 +82,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * The list of reports, next to the add-on's {@code report_Report.list}. It takes nothing from that view: the
@@ -99,8 +100,9 @@ import java.util.stream.Stream;
  * reports of the group. A click selects a tile, a double click opens the folder or the report; the buttons
  * act on the report of the selected tile. The tiles hold the reports the "mine" filter selects, the
  * filters of the columns stay with the list. The tiles are ordered by name or by the time of creation, the
- * groups staying before the reports; the list takes the order back to the default. The tiles, the folder
- * shown and their order are kept in the URL as well.
+ * groups staying before the reports; the list takes the order back to the default. Above the tiles the
+ * path of the folder shown is a row of breadcrumbs, each level above it opening its folder. The tiles, the
+ * folder shown and their order are kept in the URL as well.
  */
 @Route(value = "custom-reports", layout = MainView.class)
 @ViewController(id = "umida_ReportCustom.list")
@@ -168,10 +170,6 @@ public class ReportCustomListView extends StandardListView<Report> {
     @ViewComponent
     private HorizontalLayout folderPanel;
     @ViewComponent
-    private JmixButton folderBackBtn;
-    @ViewComponent
-    private JmixButton folderUpBtn;
-    @ViewComponent
     private Span folderPath;
     @ViewComponent
     private Div tilesBox;
@@ -214,6 +212,8 @@ public class ReportCustomListView extends StandardListView<Report> {
     private UiProperties uiProperties;
     @Autowired
     private CoreProperties coreProperties;
+    @Autowired
+    private UiComponents uiComponents;
 
     /**
      * The "mine" filter: the reports created by the current user. It carries no value while the
@@ -426,23 +426,6 @@ public class ReportCustomListView extends StandardListView<Report> {
         tilesBinder.fireChanged();
     }
 
-    /** One level up, with the folder left selected. */
-    @Subscribe(id = "folderBackBtn", subject = "clickListener")
-    public void onFolderBackBtnClick(final ClickEvent<JmixButton> event) {
-        if (folder != null && !folder.isTop()) {
-            ReportGroupCustom parent = folder.getParent();
-            openFolder(parent != null ? parent.getId() : null, folderId());
-        }
-    }
-
-    /** The top level, with the folder the shown one lies in selected. */
-    @Subscribe(id = "folderUpBtn", subject = "clickListener")
-    public void onFolderUpBtnClick(final ClickEvent<JmixButton> event) {
-        if (folder != null && !folder.isTop()) {
-            openFolder(null, folder.path().get(0).getId());
-        }
-    }
-
     @Nullable
     private UUID folderId() {
         return folder == null || folder.isTop() ? null : folder.group().getId();
@@ -482,9 +465,7 @@ public class ReportCustomListView extends StandardListView<Report> {
         }
         selectTile(selectedTileId != null && tiles.containsKey(selectedTileId) ? selectedTileId : null);
 
-        folderBackBtn.setEnabled(!folder.isTop());
-        folderUpBtn.setEnabled(!folder.isTop());
-        folderPath.setText(folderPathText(folder));
+        showFolderPath(folder);
         tilesEmpty.setVisible(tilesShown && folder.isEmpty());
     }
 
@@ -526,11 +507,38 @@ public class ReportCustomListView extends StandardListView<Report> {
         return selectedTileId != null ? tileReports.get(selectedTileId) : null;
     }
 
-    private String folderPathText(ReportFolderService.Folder folder) {
-        return Stream.concat(
-                        Stream.of(messageBundle.getMessage("folderPath.top")),
-                        folder.path().stream().map(metadataTools::getInstanceName))
-                .collect(Collectors.joining(" / "));
+    /**
+     * The breadcrumbs of the folder: the top level, then the groups down to the one shown. A level above the
+     * folder shown opens its folder, with the folder of the next level — the one the shown one lies in —
+     * selected; the folder shown is plain text.
+     */
+    private void showFolderPath(ReportFolderService.Folder folder) {
+        folderPath.removeAll();
+        List<ReportGroupCustom> path = folder.path();
+        for (int level = 0; level <= path.size(); level++) {
+            String caption = level == 0
+                    ? messageBundle.getMessage("folderPath.top")
+                    : metadataTools.getInstanceName(path.get(level - 1));
+            if (level > 0) {
+                Span separator = new Span("/");
+                separator.addClassName("report-folder-separator");
+                folderPath.add(separator);
+            }
+            if (level == path.size()) {
+                Span current = new Span(caption);
+                current.addClassName("report-folder-current");
+                folderPath.add(current);
+            } else {
+                UUID groupId = level == 0 ? null : path.get(level - 1).getId();
+                UUID selectedId = path.get(level).getId();
+                JmixButton crumb = uiComponents.create(JmixButton.class);
+                crumb.setText(caption);
+                crumb.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+                crumb.addClassName("report-folder-crumb");
+                crumb.addClickListener(event -> openFolder(groupId, selectedId));
+                folderPath.add(crumb);
+            }
+        }
     }
 
     @Install(to = "reportTreeItemsDl", target = Target.DATA_LOADER)

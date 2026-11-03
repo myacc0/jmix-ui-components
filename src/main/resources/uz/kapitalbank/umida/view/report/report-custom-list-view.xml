@@ -79,8 +79,8 @@
             </endSlot>
         </hbox>
         <hbox id="folderPanel" classNames="report-folder-panel" padding="false" width="100%" visible="false">
-            <button id="folderBackBtn" icon="umida-icons:arrow-left" title="msg://folderBackBtn.title"/>
-            <button id="folderUpBtn" icon="umida-icons:arrow-up" title="msg://folderUpBtn.title"/>
+            <!-- the breadcrumbs of the folder shown: each level but the last one opens its folder,
+                 filled by the controller, see ReportCustomListView#showFolderPath -->
             <span id="folderPath" classNames="report-folder-path"/>
         </hbox>
         <!-- filled by the controller, see ReportCustomListView#showFolder -->

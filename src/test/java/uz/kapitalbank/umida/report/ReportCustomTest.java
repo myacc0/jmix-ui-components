@@ -3,6 +3,7 @@ package uz.kapitalbank.umida.report;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
+import com.vaadin.flow.component.HasText;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -944,28 +945,31 @@ public class ReportCustomTest {
         assertFalse(UiTestUtils.<JmixSelect<?>>getComponent(view, "groupingField").isVisible());
         assertTrue(UiTestUtils.<JmixButton>getComponent(view, "tilesModeBtn").hasClassName("active"));
         assertFalse(UiTestUtils.<JmixButton>getComponent(view, "listModeBtn").hasClassName("active"));
-        assertFalse(UiTestUtils.<JmixButton>getComponent(view, "folderBackBtn").isEnabled(), "the top level");
-        assertFalse(UiTestUtils.<JmixButton>getComponent(view, "folderUpBtn").isEnabled(), "the top level");
+        String top = messages.getMessage(ReportCustomListView.class, "folderPath.top");
+        assertEquals(List.of(top), folderPathCaptions(view), "the top level");
+        assertTrue(folderCrumbs(view).isEmpty(), "the folder shown opens no folder");
         assertTrue(tileCaptions(view).contains(parent.getTitle()));
         assertFalse(tileCaptions(view).contains(child.getTitle()), "a subgroup lies in its parent");
 
         doubleClick(tile(view, parent.getTitle()));
         assertEquals(List.of(child.getTitle(), inParent.getName()), tileCaptions(view), "the folders first");
-        assertEquals(messages.getMessage(ReportCustomListView.class, "folderPath.top") + " / " + parent.getTitle(),
-                UiTestUtils.<Span>getComponent(view, "folderPath").getText());
-        assertTrue(UiTestUtils.<JmixButton>getComponent(view, "folderBackBtn").isEnabled());
+        assertEquals(List.of(top, "/", parent.getTitle()), folderPathCaptions(view));
+        assertEquals(List.of(top), folderCrumbs(view).stream().map(JmixButton::getText).toList());
 
         doubleClick(tile(view, child.getTitle()));
         assertEquals(List.of(inChild.getName()), tileCaptions(view));
+        assertEquals(List.of(top, "/", parent.getTitle(), "/", child.getTitle()), folderPathCaptions(view));
 
-        UiTestUtils.<JmixButton>getComponent(view, "folderBackBtn").click();
-        assertEquals(List.of(child.getTitle(), inParent.getName()), tileCaptions(view), "back is one level up");
+        folderCrumb(view, parent.getTitle()).click();
+        assertEquals(List.of(child.getTitle(), inParent.getName()), tileCaptions(view), "the crumb opens its level");
         assertTrue(tile(view, child.getTitle()).isSelected(), "the folder left is selected");
+        assertEquals(List.of(top, "/", parent.getTitle()), folderPathCaptions(view));
 
         doubleClick(tile(view, child.getTitle()));
-        UiTestUtils.<JmixButton>getComponent(view, "folderUpBtn").click();
-        assertTrue(tileCaptions(view).contains(parent.getTitle()), "up is the top level");
+        folderCrumb(view, top).click();
+        assertTrue(tileCaptions(view).contains(parent.getTitle()), "the first crumb is the top level");
         assertTrue(tile(view, parent.getTitle()).isSelected(), "the folder the one left lies in is selected");
+        assertEquals(List.of(top), folderPathCaptions(view));
     }
 
     @Test
@@ -1195,6 +1199,29 @@ public class ReportCustomTest {
         return UiTestUtils.<Div>getComponent(view, "tilesBox").getChildren()
                 .map(ReportTile.class::cast)
                 .toList();
+    }
+
+    /** The levels of the breadcrumbs and the separators between them. */
+    private List<String> folderPathCaptions(ReportCustomListView view) {
+        return UiTestUtils.<Span>getComponent(view, "folderPath").getChildren()
+                .map(component -> ((HasText) component).getText())
+                .toList();
+    }
+
+    /** The breadcrumbs that open a folder: the levels above the one shown. */
+    private List<JmixButton> folderCrumbs(ReportCustomListView view) {
+        return UiTestUtils.<Span>getComponent(view, "folderPath").getChildren()
+                .filter(JmixButton.class::isInstance)
+                .map(JmixButton.class::cast)
+                .toList();
+    }
+
+    /** Throws if no breadcrumb opening a folder shows the caption. */
+    private JmixButton folderCrumb(ReportCustomListView view, String caption) {
+        return folderCrumbs(view).stream()
+                .filter(crumb -> caption.equals(crumb.getText()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no breadcrumb " + caption));
     }
 
     private List<String> tileCaptions(ReportCustomListView view) {

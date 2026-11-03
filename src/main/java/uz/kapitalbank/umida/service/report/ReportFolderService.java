@@ -63,12 +63,6 @@ public class ReportFolderService {
         public boolean isEmpty() {
             return groups.isEmpty() && reports.isEmpty();
         }
-
-        /** The group one level up; {@code null} at the top level and right below it. */
-        @Nullable
-        public ReportGroupCustom getParent() {
-            return path.size() < 2 ? null : path.get(path.size() - 2);
-        }
     }
 
     /**

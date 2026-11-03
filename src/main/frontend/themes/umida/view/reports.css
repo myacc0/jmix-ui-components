@@ -175,14 +175,52 @@ vaadin-grid-cell-content .report-group-badge {
 .report-folder-panel {
     align-items: center;
     gap: var(--lumo-space-s);
+    /* the height of a row of buttons, the same at every level */
+    min-height: var(--lumo-size-m);
 }
 
+/* the breadcrumbs: the levels above the folder shown are links, the folder shown is plain text */
 .report-folder-path {
+    display: flex;
+    align-items: center;
+    gap: var(--lumo-space-xs);
+    min-width: 0;
     overflow: hidden;
     color: var(--lumo-secondary-text-color);
     font-size: var(--lumo-font-size-s);
     white-space: nowrap;
+}
+
+/* the primary text color of the theme is black, so the links are told apart by weight and hover instead */
+.report-folder-path vaadin-button.report-folder-crumb {
+    flex: 0 1 auto;
+    min-width: 0;
+    margin: 0;
+    font-size: inherit;
+    font-weight: 400;
+    color: var(--lumo-secondary-text-color);
+    cursor: pointer;
+}
+
+.report-folder-path vaadin-button.report-folder-crumb:hover {
+    color: var(--lumo-body-text-color);
+}
+
+/* the text of a button lies in its shadow DOM, where the decoration of the host does not reach */
+.report-folder-path vaadin-button.report-folder-crumb:hover::part(label) {
+    text-decoration: underline;
+}
+
+.report-folder-path .report-folder-separator {
+    flex: none;
+    color: var(--lumo-tertiary-text-color);
+}
+
+.report-folder-path .report-folder-current {
+    overflow: hidden;
     text-overflow: ellipsis;
+    color: var(--lumo-body-text-color);
+    font-weight: 500;
 }
 
 .report-tiles {
