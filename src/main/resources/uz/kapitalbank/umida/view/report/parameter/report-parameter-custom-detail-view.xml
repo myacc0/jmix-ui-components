@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      xmlns:ext="http://jmix.io/schema/flowui/view-ext"
+      extends="io/jmix/reportsflowui/view/parameter/report-parameter-detail-view.xml"
+      messagesGroup="io.jmix.reportsflowui.view.parameter">
+    <data>
+        <instance id="parameterDc"
+                  class="uz.kapitalbank.umida.entity.report.ReportInputParameterCustom"/>
+    </data>
+    <layout>
+        <tabSheet id="tabsheet">
+            <tab id="optionsTab">
+                <formLayout id="formLayout">
+                    <!-- the standard types and the ones of our own; the field of the add-on stays for its controller -->
+                    <comboBox id="typeField" ext:index="2"
+                              label="msg://parameters.type"
+                              required="true"
+                              requiredMessage="msg://parameters.typeMsg"
+                              allowCustomValue="false"
+                              width="100%"/>
+                    <comboBox id="parameterTypeField" visible="false"/>
+                    <select id="sqlDataStoreField" ext:index="4"
+                            property="sqlDataStore"
+                            label="msg://uz.kapitalbank.umida.view.report.parameter/sqlDataStoreField.label"
+                            required="true"
+                            requiredMessage="msg://uz.kapitalbank.umida.view.report.parameter/sqlDataStoreField.requiredMessage"
+                            width="100%"/>
+                    <codeEditor id="sqlQueryField" ext:index="5"
+                                property="sqlQuery"
+                                mode="SQL"
+                                label="msg://uz.kapitalbank.umida.view.report.parameter/sqlQueryField.label"
+                                helperText="msg://uz.kapitalbank.umida.view.report.parameter/sqlQueryField.helperText"
+                                required="true"
+                                requiredMessage="msg://uz.kapitalbank.umida.view.report.parameter/sqlQueryField.requiredMessage"
+                                width="100%"
+                                height="12em"/>
+                    <button id="sqlCheckBtn" ext:index="6"
+                            text="msg://uz.kapitalbank.umida.view.report.parameter/sqlCheckBtn.text"
+                            icon="PLAY"/>
+                </formLayout>
+            </tab>
+        </tabSheet>
+    </layout>
+</view>

@@ -3,8 +3,10 @@ package uz.kapitalbank.umida.view.report;
 import com.google.common.base.Strings;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.data.renderer.TextRenderer;
 import com.vaadin.flow.router.Route;
 import io.jmix.flowui.component.grid.DataGrid;
+import io.jmix.flowui.component.grid.DataGridColumn;
 import io.jmix.flowui.component.textfield.TypedTextField;
 import io.jmix.flowui.kit.action.Action;
 import io.jmix.flowui.model.CollectionContainer;
@@ -16,12 +18,14 @@ import io.jmix.flowui.view.ViewComponent;
 import io.jmix.flowui.view.ViewController;
 import io.jmix.flowui.view.ViewDescriptor;
 import io.jmix.reports.entity.Report;
+import io.jmix.reports.entity.ReportInputParameter;
 import io.jmix.reports.entity.ReportValueFormat;
 import io.jmix.reportsflowui.view.report.ReportDetailView;
 import org.springframework.beans.factory.annotation.Autowired;
 import uz.kapitalbank.umida.entity.dict.DictDataDomain;
 import uz.kapitalbank.umida.entity.report.ReportCustom;
 import uz.kapitalbank.umida.service.report.ReportCustomService;
+import uz.kapitalbank.umida.service.report.ReportSqlEnumerationService;
 import uz.kapitalbank.umida.view.main.MainView;
 
 import java.util.List;
@@ -45,6 +49,8 @@ public class ReportCustomDetailView extends ReportDetailView {
 
     @Autowired
     private ReportCustomService reportCustomService;
+    @Autowired
+    private ReportSqlEnumerationService sqlEnumerationService;
 
     @ViewComponent("mainTabSheet.securityTab")
     private Tab securityTab;
@@ -65,6 +71,7 @@ public class ReportCustomDetailView extends ReportDetailView {
         mainTabSheet.remove(securityTab);
         reportForm.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1));
         moveActionTextsToTitles();
+        showCustomParameterTypes();
         refreshCodeField();
         refreshSecondaryDomainOptions();
     }
@@ -107,6 +114,14 @@ public class ReportCustomDetailView extends ReportDetailView {
                     action.setText("");
                 }
             }
+        }
+    }
+
+    /** A parameter of a custom type is stored with its base type, which the column would show otherwise. */
+    private void showCustomParameterTypes() {
+        DataGridColumn<ReportInputParameter> typeColumn = inputParametersDataGrid.getColumnByKey("type");
+        if (typeColumn != null) {
+            typeColumn.setRenderer(new TextRenderer<>(sqlEnumerationService::getTypeCaption));
         }
     }
 
