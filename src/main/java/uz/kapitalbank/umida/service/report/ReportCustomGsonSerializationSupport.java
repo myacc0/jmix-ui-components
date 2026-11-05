@@ -10,6 +10,7 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.lang.Nullable;
 import uz.kapitalbank.umida.entity.dict.DictDataDomain;
 import uz.kapitalbank.umida.entity.dict.DictDataProduct;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.entity.report.ReportCustom;
 
 import java.io.IOException;
@@ -17,10 +18,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
- * The serialized structure of a report, with the domains and the data products kept away from the object
- * cache of the add-on.
+ * The serialized structure of a report, with the domains, the data products and the business owner kept
+ * away from the object cache of the add-on.
  *
  * <p>The add-on remembers the entities it has met in one map by the bare id, which only works for UUIDs. A
  * data product with the id of a domain comes back from that map as the domain, or the other way around:
@@ -33,7 +35,8 @@ import java.util.Set;
  */
 public class ReportCustomGsonSerializationSupport extends ReportGsonSerializationSupport {
 
-    private static final Set<String> CLASSIFICATION_REFERENCES = Set.of("domain", "secondaryDomains", "dataProducts");
+    private static final Set<String> CLASSIFICATION_REFERENCES =
+            Set.of("domain", "secondaryDomains", "dataProducts", "businessOwner");
 
     private final DataManager dataManager;
 
@@ -88,9 +91,11 @@ public class ReportCustomGsonSerializationSupport extends ReportGsonSerializatio
     protected void readUnresolvedProperty(Entity entity, String propertyName, JsonReader in) throws IOException {
         if (entity instanceof ReportCustom report && CLASSIFICATION_REFERENCES.contains(propertyName)) {
             switch (propertyName) {
-                case "domain" -> report.setDomain(readReference(in, DictDataDomain.class));
+                case "domain" -> report.setDomain(readReference(in, DictDataDomain.class, Integer::valueOf));
                 case "secondaryDomains" -> report.setSecondaryDomains(readReferences(in, DictDataDomain.class));
-                default -> report.setDataProducts(readReferences(in, DictDataProduct.class));
+                case "dataProducts" -> report.setDataProducts(readReferences(in, DictDataProduct.class));
+                // the subdivisions have the string ids of HR
+                default -> report.setBusinessOwner(readReference(in, OrgStructureSubdivision.class, id -> id));
             }
         } else {
             super.readUnresolvedProperty(entity, propertyName, in);
@@ -101,19 +106,20 @@ public class ReportCustomGsonSerializationSupport extends ReportGsonSerializatio
         List<E> references = new ArrayList<>();
         in.beginArray();
         while (in.hasNext()) {
-            references.add(readReference(in, referenceClass));
+            references.add(readReference(in, referenceClass, Integer::valueOf));
         }
         in.endArray();
         return references;
     }
 
     /** The structures stored earlier also have the attributes of the reference here: only the id matters. */
-    private <E> E readReference(JsonReader in, Class<E> referenceClass) throws IOException {
-        Integer id = null;
+    private <E> E readReference(JsonReader in, Class<E> referenceClass, Function<String, Object> idParser)
+            throws IOException {
+        Object id = null;
         in.beginObject();
         while (in.hasNext()) {
             if ("id".equals(in.nextName())) {
-                id = Integer.valueOf(in.nextString());
+                id = idParser.apply(in.nextString());
             } else {
                 in.skipValue();
             }

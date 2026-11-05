@@ -22,6 +22,7 @@ import io.jmix.core.querycondition.LogicalCondition;
 import io.jmix.core.querycondition.PropertyCondition;
 import io.jmix.core.security.CurrentAuthentication;
 import io.jmix.flowui.DialogWindows;
+import io.jmix.flowui.Dialogs;
 import io.jmix.flowui.Notifications;
 import io.jmix.flowui.UiComponents;
 import io.jmix.flowui.UiProperties;
@@ -30,6 +31,7 @@ import io.jmix.flowui.action.SecuredBaseAction;
 import io.jmix.flowui.action.entitypicker.EntityLookupAction;
 import io.jmix.flowui.action.multivaluepicker.MultiValueSelectAction;
 import io.jmix.flowui.component.checkbox.JmixCheckbox;
+import io.jmix.flowui.component.SupportsEnterPress.EnterPressEvent;
 import io.jmix.flowui.component.grid.DataGrid;
 import io.jmix.flowui.component.grid.DataGridColumn;
 import io.jmix.flowui.component.grid.TreeDataGrid;
@@ -41,6 +43,10 @@ import io.jmix.flowui.download.ByteArrayDownloadDataProvider;
 import io.jmix.flowui.download.DownloadFormat;
 import io.jmix.flowui.facet.UrlQueryParametersFacet;
 import io.jmix.flowui.facet.urlqueryparameters.AbstractUrlQueryParametersBinder;
+import io.jmix.flowui.app.inputdialog.DialogActions;
+import io.jmix.flowui.app.inputdialog.InputDialog;
+import io.jmix.flowui.app.inputdialog.InputParameter;
+import io.jmix.flowui.component.textarea.JmixTextArea;
 import io.jmix.flowui.kit.action.Action;
 import io.jmix.flowui.kit.action.ActionPerformedEvent;
 import io.jmix.flowui.kit.component.HasActions;
@@ -64,6 +70,8 @@ import org.springframework.lang.Nullable;
 import uz.kapitalbank.umida.component.reportgroup.ReportTile;
 import uz.kapitalbank.umida.dto.report.ReportTreeItem;
 import uz.kapitalbank.umida.entity.report.ReportCustom;
+import uz.kapitalbank.umida.service.report.ReportAccessException;
+import uz.kapitalbank.umida.service.report.ReportAccessService;
 import uz.kapitalbank.umida.entity.report.ReportGroupCustom;
 import uz.kapitalbank.umida.enums.report.ReportGrouping;
 import uz.kapitalbank.umida.enums.report.ReportTileSort;
@@ -73,6 +81,7 @@ import uz.kapitalbank.umida.service.report.ReportGroupCustomService;
 import uz.kapitalbank.umida.service.report.ReportGroupingService;
 import uz.kapitalbank.umida.view.main.MainView;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,6 +90,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -103,6 +113,12 @@ import java.util.stream.Collectors;
  * groups staying before the reports; the list takes the order back to the default. Above the tiles the
  * path of the folder shown is a row of breadcrumbs, each level above it opening its folder. The tiles, the
  * folder shown and their order are kept in the URL as well.
+ * <p>
+ * Everyone sees every report; what a user may do with one is decided by {@link ReportAccessService}. Creating,
+ * changing, copying and removing the reports, and the "mine" filter, are for the authors: the others do not
+ * see these buttons. Running a report and opening its history follow the business owner, the domains and the
+ * grants of the report, checked again when the action runs. Those who may not run a report request access to
+ * it; a double click on a report runs it for them, where it opens the editor for an author.
  */
 @Route(value = "custom-reports", layout = MainView.class)
 @ViewController(id = "umida_ReportCustom.list")
@@ -119,7 +135,9 @@ public class ReportCustomListView extends StandardListView<Report> {
             ReportGrouping.DOMAIN, "domain");
 
     /** The actions of the tree, all of them acting on the report of the selected row. */
-    private static final List<String> TREE_ACTIONS = List.of("edit", "remove", "copy", "export", "runReport", "executions");
+    private static final List<String> TREE_ACTIONS =
+            List.of("edit", "remove", "copy", "export", "runReport", "executions", "requestAccess");
+    private static final List<String> AUTHOR_ACTIONS = List.of("edit", "remove", "copy", "export");
 
     /** The view actions of the tiles, all of them acting on the report of the selected tile: {@code tile} and the id of the grid action. */
     private static final List<String> TILE_ACTIONS = TREE_ACTIONS.stream().map(ReportCustomListView::tileActionId).toList();
@@ -149,6 +167,8 @@ public class ReportCustomListView extends StandardListView<Report> {
     private JmixSelect<ReportTileSort> tileSortField;
     @ViewComponent
     private SimplePagination pagination;
+    @ViewComponent
+    private JmixButton requestAccessBtn;
     @ViewComponent
     private JmixButton editBtn;
     @ViewComponent
@@ -180,6 +200,10 @@ public class ReportCustomListView extends StandardListView<Report> {
 
     @Autowired
     private ReportCustomService reportCustomService;
+    @Autowired
+    private ReportAccessService accessService;
+    @Autowired
+    private Dialogs dialogs;
     @Autowired
     private ReportGroupingService reportGroupingService;
     @Autowired
@@ -239,6 +263,10 @@ public class ReportCustomListView extends StandardListView<Report> {
 
     /** The reports of the folder shown by id. */
     private final Map<UUID, ReportCustom> tileReports = new LinkedHashMap<>();
+    /** The rights of the user on the reports met so far, asked once each; forgotten on every reload. */
+    private final Map<UUID, Boolean> runnable = new HashMap<>();
+    private final Map<UUID, Boolean> historyViewable = new HashMap<>();
+    private boolean author;
 
     /** The id of the group or the report of the selected tile. */
     @Nullable
@@ -268,7 +296,46 @@ public class ReportCustomListView extends StandardListView<Report> {
                 .addEnabledRule(reportCustomService::isCreatePermitted);
         ((SecuredBaseAction) getViewActions().getAction(tileActionId("remove")))
                 .addEnabledRule(reportCustomService::isDeletePermitted);
+
+        author = accessService.isAuthor();
+        installAccessRules(reportsDataGrid::getAction, reportsDataGrid::getSingleSelectedItem);
+        installAccessRules(reportsTreeDataGrid::getAction, this::selectedTreeReport);
+        installAccessRules(id -> getViewActions().getAction(tileActionId(id)), this::selectedTileReport);
+        // the "mine" filter is the authors' too; the create and import buttons stay bound to the paged list
+        mineField.setVisible(author);
+        reportsDataGrid.getAction("create").setVisible(author);
+        reportsDataGrid.getAction("importAction").setVisible(reportsDataGrid.getAction("importAction").isVisible() && author);
+        reportsDataGrid.setEnterPressHandler(this::handleReportsDataGridEnterPress);
         refreshTileActions();
+    }
+
+    /**
+     * The rules of the access for the actions of the paged list, of the tree or of the tiles, acting on the
+     * report {@code selected} gives. The actions of the authors are hidden from the others, the request of
+     * access from the authors: hidden on the actions, not on the buttons, which take the visibility of the
+     * action they are bound to whenever the list, the tree or the tiles are shown.
+     */
+    private void installAccessRules(Function<String, Action> actions, Supplier<? extends Report> selected) {
+        AUTHOR_ACTIONS.forEach(id -> {
+            Action action = actions.apply(id);
+            ((SecuredBaseAction) action).addEnabledRule(() -> author);
+            action.setVisible(action.isVisible() && author);
+        });
+        actions.apply("requestAccess").setVisible(!author);
+        ((SecuredBaseAction) actions.apply("runReport")).addEnabledRule(() -> canRun(selected.get()));
+        ((SecuredBaseAction) actions.apply("executions")).addEnabledRule(() -> canViewHistory(selected.get()));
+        ((SecuredBaseAction) actions.apply("requestAccess"))
+                .addEnabledRule(() -> !author && selected.get() != null && !canRun(selected.get()));
+    }
+
+    private boolean canRun(@Nullable Report report) {
+        return report != null && runnable.computeIfAbsent(report.getId(),
+                id -> accessService.runnableAmong(List.of(id)).contains(id));
+    }
+
+    private boolean canViewHistory(@Nullable Report report) {
+        return report != null && historyViewable.computeIfAbsent(report.getId(),
+                id -> accessService.historyViewableAmong(List.of(id)).contains(id));
     }
 
     /** Adds the "mine" filter next to the conditions of the column header filters, which share the root condition. */
@@ -373,6 +440,8 @@ public class ReportCustomListView extends StandardListView<Report> {
     }
 
     private void reload() {
+        runnable.clear();
+        historyViewable.clear();
         if (tilesShown) {
             showFolder(folder != null ? folderId() : tilesBinder.initialFolderId);
         } else {
@@ -388,6 +457,7 @@ public class ReportCustomListView extends StandardListView<Report> {
         bindButton(exportBtn, actions.apply("export"));
         bindButton(runReportBtn, actions.apply("runReport"));
         bindButton(executionsBtn, actions.apply("executions"));
+        bindButton(requestAccessBtn, actions.apply("requestAccess"));
     }
 
     /** The buttons keep their own look: icon only, with the title as the tooltip. */
@@ -485,7 +555,7 @@ public class ReportCustomListView extends StandardListView<Report> {
     private void openTile(UUID id) {
         ReportCustom report = tileReports.get(id);
         if (report != null) {
-            edit(report);
+            open(report);
         } else {
             openFolder(id, null);
         }
@@ -570,7 +640,7 @@ public class ReportCustomListView extends StandardListView<Report> {
             return;
         }
         if (!item.isGroup()) {
-            edit(item.getReport());
+            open(item.getReport());
         } else if (reportsTreeDataGrid.isExpanded(item)) {
             reportsTreeDataGrid.collapse(item);
         } else {
@@ -679,8 +749,42 @@ public class ReportCustomListView extends StandardListView<Report> {
         runReport(selectedTreeReport());
     }
 
+    /**
+     * A double click or Enter on a report in the paged list: the editor for an author, a run for the others.
+     * Not a double click listener: the grid then stops calling its edit action, and a lookup could no longer
+     * select with it; the handler is the one the grid calls after selecting the row clicked, and a lookup sets
+     * its own over it.
+     */
+    private void handleReportsDataGridEnterPress(EnterPressEvent<DataGrid<Report>> event) {
+        Report report = reportsDataGrid.getSingleSelectedItem();
+        if (author) {
+            Action edit = reportsDataGrid.getAction("edit");
+            if (edit != null && edit.isEnabled()) {
+                edit.actionPerform(reportsDataGrid);
+            }
+        } else if (canRun(report)) {
+            runReport(report);
+        }
+    }
+
+    /** What a double click on a report does in the tree and the tiles: the editor for an author, a run for the others. */
+    private void open(@Nullable Report report) {
+        if (author) {
+            edit(report);
+        } else if (canRun(report)) {
+            runReport(report);
+        }
+    }
+
+    /** The right is checked here again: the button only follows what was known when the report was selected. */
     private void runReport(@Nullable Report report) {
         if (report == null) {
+            return;
+        }
+        if (!accessService.canRun((ReportCustom) report)) {
+            notifications.create(messageBundle.getMessage("noRunAccess.text"))
+                    .withType(Notifications.Type.WARNING)
+                    .show();
             return;
         }
 
@@ -711,13 +815,64 @@ public class ReportCustomListView extends StandardListView<Report> {
     }
 
     private void showExecutions(@Nullable Report report) {
-        if (report == null) {
+        if (report == null || !accessService.canViewHistory((ReportCustom) report)) {
             return;
         }
         DialogWindow<ReportExecutionListView> dialog = dialogWindows.view(this, ReportExecutionListView.class)
                 .build();
         dialog.getView().setFilterByReports(List.of(report));
         dialog.open();
+    }
+
+    @Subscribe("reportsDataGrid.requestAccess")
+    public void onReportsDataGridRequestAccess(final ActionPerformedEvent event) {
+        requestAccess(reportsDataGrid.getSingleSelectedItem());
+    }
+
+    @Subscribe("reportsTreeDataGrid.requestAccess")
+    public void onReportsTreeDataGridRequestAccess(final ActionPerformedEvent event) {
+        requestAccess(selectedTreeReport());
+    }
+
+    @Subscribe("tileRequestAccess")
+    public void onTileRequestAccess(final ActionPerformedEvent event) {
+        requestAccess(selectedTileReport());
+    }
+
+    /** Asks why the report is needed and sends the request to whoever decides on it. */
+    private void requestAccess(@Nullable Report report) {
+        if (report == null) {
+            return;
+        }
+        dialogs.createInputDialog(this)
+                .withHeader(messageBundle.formatMessage("requestAccessDialog.header", report.getName()))
+                .withLabelsPosition(Dialogs.InputDialogBuilder.LabelsPosition.TOP)
+                .withParameter(InputParameter.stringParameter("reason").withField(() -> {
+                    JmixTextArea reason = uiComponents.create(JmixTextArea.class);
+                    reason.setLabel(messageBundle.getMessage("requestAccessDialog.reason"));
+                    reason.setWidthFull();
+                    reason.setMinHeight("8em");
+                    return reason;
+                }))
+                .withActions(DialogActions.OK_CANCEL, result -> {
+                    if (result.getCloseAction() == InputDialog.INPUT_DIALOG_OK_ACTION) {
+                        sendRequest((ReportCustom) report, result.getValue("reason"));
+                    }
+                })
+                .open();
+    }
+
+    private void sendRequest(ReportCustom report, @Nullable String reason) {
+        try {
+            accessService.requestAccess(report, reason);
+            notifications.create(messageBundle.getMessage("requestAccess.sent"))
+                    .withType(Notifications.Type.SUCCESS)
+                    .show();
+        } catch (ReportAccessException e) {
+            notifications.create(e.getMessage())
+                    .withType(Notifications.Type.WARNING)
+                    .show();
+        }
     }
 
     /** What the edit action of the paged list does, which works on entities of a grid: the editor, coming back here. */

@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd"
+        objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS"
+        logicalFilePath="uz/kapitalbank/umida/liquibase/changelog/2026/11/04-120000-report-access.xml">
+    <!--
+        The business owner of a report and the access to the reports: the requests of the employees and the
+        grants. The org structure is written by HR outside the application, so its foreign keys act in the
+        database too: a removed employee takes its requests and grants along, a removed subdivision leaves
+        its reports without an owner.
+    -->
+    <changeSet id="1" author="umida">
+        <addColumn tableName="REPORT_REPORT">
+            <column name="BUSINESS_OWNER_ID" type="VARCHAR(36)"/>
+        </addColumn>
+
+        <createIndex indexName="IDX_REPORT_REPORT_BUSINESS_OWNER" tableName="REPORT_REPORT">
+            <column name="BUSINESS_OWNER_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="BUSINESS_OWNER_ID" baseTableName="REPORT_REPORT"
+                                 constraintName="FK_REPORT_REPORT_ON_BUSINESS_OWNER" onDelete="SET NULL"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_ORG_STRUCTURE_SUBDIVISIONS"/>
+    </changeSet>
+
+    <changeSet id="2" author="umida">
+        <createTable tableName="UMIDA_REPORT_ACCESS_REQUEST">
+            <column name="ID" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_UMIDA_REPORT_ACCESS_REQUEST"/>
+            </column>
+            <column name="VERSION" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REPORT_ID" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="EMPLOYEE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REASON" type="TEXT"/>
+            <column name="STATUS" type="VARCHAR(40)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DECIDED_BY" type="VARCHAR(255)"/>
+            <column name="DECIDED_AT" type="${offsetDateTime.type}"/>
+            <column name="DECISION_COMMENT" type="TEXT"/>
+            <column name="CREATED_BY" type="VARCHAR(255)"/>
+            <column name="CREATED_DATE" type="${offsetDateTime.type}"/>
+            <column name="LAST_MODIFIED_BY" type="VARCHAR(255)"/>
+            <column name="LAST_MODIFIED_DATE" type="${offsetDateTime.type}"/>
+        </createTable>
+
+        <createIndex indexName="IDX_UMIDA_REPORT_ACCESS_REQUEST_REPORT" tableName="UMIDA_REPORT_ACCESS_REQUEST">
+            <column name="REPORT_ID"/>
+        </createIndex>
+        <createIndex indexName="IDX_UMIDA_REPORT_ACCESS_REQUEST_EMPLOYEE" tableName="UMIDA_REPORT_ACCESS_REQUEST">
+            <column name="EMPLOYEE_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="REPORT_ID" baseTableName="UMIDA_REPORT_ACCESS_REQUEST"
+                                 constraintName="FK_UMIDA_REPORT_ACCESS_REQUEST_ON_REPORT" onDelete="CASCADE"
+                                 referencedColumnNames="ID" referencedTableName="REPORT_REPORT"/>
+        <addForeignKeyConstraint baseColumnNames="EMPLOYEE_ID" baseTableName="UMIDA_REPORT_ACCESS_REQUEST"
+                                 constraintName="FK_UMIDA_REPORT_ACCESS_REQUEST_ON_EMPLOYEE" onDelete="CASCADE"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_ORG_STRUCTURE_EMPLOYEES"/>
+    </changeSet>
+
+    <!-- At most one pending request of an employee for a report, whoever makes it at the same time. -->
+    <changeSet id="3" author="umida">
+        <sql>
+            CREATE UNIQUE INDEX IDX_UMIDA_REPORT_ACCESS_REQUEST_PENDING
+                ON UMIDA_REPORT_ACCESS_REQUEST (REPORT_ID, EMPLOYEE_ID)
+                WHERE STATUS = 'pending'
+        </sql>
+        <rollback>
+            DROP INDEX IDX_UMIDA_REPORT_ACCESS_REQUEST_PENDING
+        </rollback>
+    </changeSet>
+
+    <changeSet id="4" author="umida">
+        <createTable tableName="UMIDA_REPORT_ACCESS_GRANT">
+            <column name="ID" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_UMIDA_REPORT_ACCESS_GRANT"/>
+            </column>
+            <column name="VERSION" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REPORT_ID" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="EMPLOYEE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CAN_MANAGE" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SOURCE" type="VARCHAR(40)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REQUEST_ID" type="UUID"/>
+            <column name="VALID_FROM" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALID_TO" type="DATE"/>
+            <column name="REVOKED_BY" type="VARCHAR(255)"/>
+            <column name="REVOKED_AT" type="${offsetDateTime.type}"/>
+            <column name="REVOKE_REASON" type="TEXT"/>
+            <column name="CREATED_BY" type="VARCHAR(255)"/>
+            <column name="CREATED_DATE" type="${offsetDateTime.type}"/>
+            <column name="LAST_MODIFIED_BY" type="VARCHAR(255)"/>
+            <column name="LAST_MODIFIED_DATE" type="${offsetDateTime.type}"/>
+        </createTable>
+
+        <createIndex indexName="IDX_UMIDA_REPORT_ACCESS_GRANT_REPORT" tableName="UMIDA_REPORT_ACCESS_GRANT">
+            <column name="REPORT_ID"/>
+        </createIndex>
+        <createIndex indexName="IDX_UMIDA_REPORT_ACCESS_GRANT_EMPLOYEE" tableName="UMIDA_REPORT_ACCESS_GRANT">
+            <column name="EMPLOYEE_ID"/>
+        </createIndex>
+        <createIndex indexName="IDX_UMIDA_REPORT_ACCESS_GRANT_REQUEST" tableName="UMIDA_REPORT_ACCESS_GRANT">
+            <column name="REQUEST_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="REPORT_ID" baseTableName="UMIDA_REPORT_ACCESS_GRANT"
+                                 constraintName="FK_UMIDA_REPORT_ACCESS_GRANT_ON_REPORT" onDelete="CASCADE"
+                                 referencedColumnNames="ID" referencedTableName="REPORT_REPORT"/>
+        <addForeignKeyConstraint baseColumnNames="EMPLOYEE_ID" baseTableName="UMIDA_REPORT_ACCESS_GRANT"
+                                 constraintName="FK_UMIDA_REPORT_ACCESS_GRANT_ON_EMPLOYEE" onDelete="CASCADE"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_ORG_STRUCTURE_EMPLOYEES"/>
+        <addForeignKeyConstraint baseColumnNames="REQUEST_ID" baseTableName="UMIDA_REPORT_ACCESS_GRANT"
+                                 constraintName="FK_UMIDA_REPORT_ACCESS_GRANT_ON_REQUEST" onDelete="SET NULL"
+                                 referencedColumnNames="ID" referencedTableName="UMIDA_REPORT_ACCESS_REQUEST"/>
+    </changeSet>
+</databaseChangeLog>

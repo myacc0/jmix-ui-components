@@ -8,12 +8,13 @@ import io.jmix.reports.entity.Report;
 import jakarta.persistence.*;
 import uz.kapitalbank.umida.entity.dict.DictDataDomain;
 import uz.kapitalbank.umida.entity.dict.DictDataProduct;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 
 import java.util.List;
 
 /**
  * The report of the Reports add-on with the classification of its data: the sensitivity markers, the
- * data domains and the data products. It replaces {@link Report} everywhere, the add-on included, and is
+ * data domains and the data products, and its business owner. It replaces {@link Report} everywhere, the add-on included, and is
  * stored in the same {@code REPORT_REPORT} table, which tells the two apart by the {@code DTYPE} column.
  *
  * <p>The code is generated on save when the report has none, see
@@ -62,6 +63,17 @@ public class ReportCustom extends Report {
             inverseJoinColumns = @JoinColumn(name = "DATA_PRODUCT_ID", referencedColumnName = "ID"))
     @ManyToMany(fetch = FetchType.LAZY)
     private List<DictDataProduct> dataProducts;
+
+    /**
+     * The subdivision that ordered the report. Its head, and the delegates the author names among its
+     * employees, manage the access to the report, see
+     * {@link uz.kapitalbank.umida.service.report.ReportAccessService}. None until the author sets it, and
+     * once HR removes the subdivision.
+     */
+    @OnDeleteInverse(DeletePolicy.UNLINK)
+    @JoinColumn(name = "BUSINESS_OWNER_ID")
+    @ManyToOne(fetch = FetchType.LAZY)
+    private OrgStructureSubdivision businessOwner;
 
     public Boolean getPersonalData() {
         return personalData;
@@ -117,5 +129,13 @@ public class ReportCustom extends Report {
 
     public void setDataProducts(List<DictDataProduct> dataProducts) {
         this.dataProducts = dataProducts;
+    }
+
+    public OrgStructureSubdivision getBusinessOwner() {
+        return businessOwner;
+    }
+
+    public void setBusinessOwner(OrgStructureSubdivision businessOwner) {
+        this.businessOwner = businessOwner;
     }
 }

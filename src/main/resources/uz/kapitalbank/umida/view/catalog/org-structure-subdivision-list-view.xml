@@ -18,22 +18,12 @@
     </data>
     <facets>
         <dataLoadCoordinator auto="true"/>
-        <urlQueryParameters>
-            <pagination component="pagination"/>
-        </urlQueryParameters>
     </facets>
     <actions>
         <action id="selectAction" type="lookup_select"/>
         <action id="discardAction" type="lookup_discard"/>
     </actions>
     <layout>
-        <hbox id="buttonsPanel" classNames="buttons-panel">
-            <startSlot>
-            </startSlot>
-            <endSlot>
-                <simplePagination id="pagination" dataLoader="orgStructureSubdivisionsDl"/>
-            </endSlot>
-        </hbox>
         <treeDataGrid id="orgStructureSubdivisionsDataGrid"
                       width="100%"
                       minHeight="20em"

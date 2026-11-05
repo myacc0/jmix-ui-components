@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://reportAccessManagementView.title">
+    <data>
+        <!-- the three lists load with the queries the controller sets, narrowed by the filters of the columns -->
+        <collection id="grantsDc" class="uz.kapitalbank.umida.entity.report.ReportAccessGrant">
+            <fetchPlan extends="_base">
+                <property name="report" fetchPlan="_instance_name">
+                    <property name="code"/>
+                </property>
+                <property name="employee" fetchPlan="_base"/>
+                <property name="position">
+                    <property name="jobTitle" fetchPlan="_instance_name"/>
+                    <property name="subdivision" fetchPlan="_instance_name"/>
+                </property>
+            </fetchPlan>
+            <loader id="grantsDl" readOnly="true"/>
+        </collection>
+        <collection id="journalDc" class="uz.kapitalbank.umida.entity.report.ReportAccessGrant">
+            <fetchPlan extends="_base">
+                <property name="report" fetchPlan="_instance_name">
+                    <property name="code"/>
+                </property>
+                <property name="employee" fetchPlan="_base"/>
+                <property name="position">
+                    <property name="jobTitle" fetchPlan="_instance_name"/>
+                    <property name="subdivision" fetchPlan="_instance_name"/>
+                </property>
+            </fetchPlan>
+            <loader id="journalDl" readOnly="true"/>
+        </collection>
+        <collection id="requestsDc" class="uz.kapitalbank.umida.entity.report.ReportAccessRequest">
+            <fetchPlan extends="_base">
+                <property name="report" fetchPlan="_instance_name">
+                    <property name="code"/>
+                </property>
+                <property name="employee" fetchPlan="_base"/>
+                <property name="position">
+                    <property name="jobTitle" fetchPlan="_instance_name"/>
+                    <property name="subdivision" fetchPlan="_instance_name"/>
+                </property>
+            </fetchPlan>
+            <loader id="requestsDl" readOnly="true"/>
+        </collection>
+    </data>
+    <layout>
+        <span id="noAccessText" text="msg://noAccessText.text" visible="false"/>
+        <tabSheet id="tabSheet" width="100%" height="100%">
+            <tab id="grantsTab" label="msg://grantsTab.label">
+                <vbox id="grantsTabContent" padding="false" height="100%">
+                    <hbox id="grantsButtonsPanel" classNames="buttons-panel" padding="false">
+                        <button id="grantBtn" icon="PLUS" themeNames="primary" text="msg://grantBtn.text"/>
+                        <button id="revokeBtn" action="grantsDataGrid.revoke"/>
+                    </hbox>
+                    <dataGrid id="grantsDataGrid" dataContainer="grantsDc" width="100%" minHeight="20em"
+                              selectionMode="MULTI" columnReorderingAllowed="true">
+                        <actions>
+                            <action id="revoke" type="list_itemTracking" icon="BAN" text="msg://revoke.text"/>
+                        </actions>
+                        <columns resizable="true" filterable="true">
+                            <column property="report.code" header="msg://reportCodeColumn.header" autoWidth="true" flexGrow="0"/>
+                            <column property="report.name" header="msg://uz.kapitalbank.umida.entity.report/ReportAccessGrant.report" autoWidth="true" flexGrow="0"/>
+                            <column property="employee.fullName" header="msg://uz.kapitalbank.umida.entity.report/ReportAccessGrant.employee" autoWidth="true" flexGrow="0"/>
+                            <column property="position.jobTitle.name" header="msg://uz.kapitalbank.umida.entity.report/ReportAccessGrant.position" autoWidth="true" flexGrow="0"/>
+                            <column property="position.subdivision.name" header="msg://uz.kapitalbank.umida.entity.orgstructure/OrgStructurePosition.subdivision" autoWidth="true" flexGrow="0"/>
+                            <column property="canManage" autoWidth="true" flexGrow="0"/>
+                            <column property="source" autoWidth="true" flexGrow="0"/>
+                            <column property="validFrom" autoWidth="true" flexGrow="0"/>
+                            <column property="validTo" autoWidth="true" flexGrow="0"/>
+                            <column property="createdBy" autoWidth="true" flexGrow="0"/>
+                            <column property="createdDate" autoWidth="true" flexGrow="0"/>
+                        </columns>
+                    </dataGrid>
+                </vbox>
+            </tab>
+            <tab id="journalTab" label="msg://journalTab.label">
+                <vbox id="journalTabContent" padding="false" height="100%">
+                    <dataGrid id="journalDataGrid" dataContainer="journalDc" width="100%" minHeight="20em"
+                              columnReorderingAllowed="true">
+                        <columns resizable="true" filterable="true">
+                            <column property="report.code" header="msg://reportCodeColumn.header" autoWidth="true" flexGrow="0"/>
+                            <column property="report.name" header="msg://uz.kapitalbank.umida.entity.report/ReportAccessGrant.report" autoWidth="true" flexGrow="0"/>
+                            <column property="employee.fullName" header="msg://uz.kapitalbank.umida.entity.report/ReportAccessGrant.employee" autoWidth="true" flexGrow="0"/>
+                            <column property="position.jobTitle.name" header="msg://uz.kapitalbank.umida.entity.report/ReportAccessGrant.position" autoWidth="true" flexGrow="0"/>
+                            <column property="position.subdivision.name" header="msg://uz.kapitalbank.umida.entity.orgstructure/OrgStructurePosition.subdivision" autoWidth="true" flexGrow="0"/>
+                            <column key="status" filterable="false" header="msg://uz.kapitalbank.umida.enums.report/ReportAccessGrantStatus" autoWidth="true" flexGrow="0"/>
+                            <column property="canManage" autoWidth="true" flexGrow="0"/>
+                            <column property="source" autoWidth="true" flexGrow="0"/>
+                            <column property="validFrom" autoWidth="true" flexGrow="0"/>
+                            <column property="validTo" autoWidth="true" flexGrow="0"/>
+                            <column property="createdBy" autoWidth="true" flexGrow="0"/>
+                            <column property="createdDate" autoWidth="true" flexGrow="0"/>
+                            <column property="revokedBy" autoWidth="true" flexGrow="0"/>
+                            <column property="revokedAt" autoWidth="true" flexGrow="0"/>
+                            <column property="revokeReason" autoWidth="true" flexGrow="0"/>
+                        </columns>
+                    </dataGrid>
+                </vbox>
+            </tab>
+            <tab id="requestsTab" label="msg://requestsTab.label">
+                <vbox id="requestsTabContent" padding="false" height="100%">
+                    <hbox id="requestsButtonsPanel" classNames="buttons-panel" padding="false">
+                        <button id="approveBtn" action="requestsDataGrid.approve"/>
+                        <button id="rejectBtn" action="requestsDataGrid.reject"/>
+                    </hbox>
+                    <dataGrid id="requestsDataGrid" dataContainer="requestsDc" width="100%" minHeight="20em"
+                              columnReorderingAllowed="true">
+                        <actions>
+                            <action id="approve" type="list_itemTracking" icon="CHECK" text="msg://approve.text"/>
+                            <action id="reject" type="list_itemTracking" icon="CLOSE" text="msg://reject.text"/>
+                        </actions>
+                        <columns resizable="true" filterable="true">
+                            <column property="report.code" header="msg://reportCodeColumn.header" autoWidth="true" flexGrow="0"/>
+                            <column property="report.name" header="msg://uz.kapitalbank.umida.entity.report/ReportAccessRequest.report" autoWidth="true" flexGrow="0"/>
+                            <column property="employee.fullName" header="msg://uz.kapitalbank.umida.entity.report/ReportAccessRequest.employee" autoWidth="true" flexGrow="0"/>
+                            <column property="position.jobTitle.name" header="msg://uz.kapitalbank.umida.entity.report/ReportAccessRequest.position" autoWidth="true" flexGrow="0"/>
+                            <column property="position.subdivision.name" header="msg://uz.kapitalbank.umida.entity.orgstructure/OrgStructurePosition.subdivision" autoWidth="true" flexGrow="0"/>
+                            <column property="reason" autoWidth="true" flexGrow="0"/>
+                            <column property="createdDate" autoWidth="true" flexGrow="0"/>
+                            <column property="status" autoWidth="true" flexGrow="0"/>
+                            <column property="decidedBy" autoWidth="true" flexGrow="0"/>
+                            <column property="decidedAt" autoWidth="true" flexGrow="0"/>
+                            <column property="decisionComment" autoWidth="true" flexGrow="0"/>
+                        </columns>
+                    </dataGrid>
+                </vbox>
+            </tab>
+        </tabSheet>
+    </layout>
+</view>

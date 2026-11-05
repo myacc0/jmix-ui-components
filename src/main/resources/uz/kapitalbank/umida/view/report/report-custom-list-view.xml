@@ -46,6 +46,7 @@
         <action id="tileExport" visible="false"/>
         <action id="tileRunReport"/>
         <action id="tileExecutions"/>
+        <action id="tileRequestAccess"/>
     </actions>
     <layout>
         <hbox id="buttonsPanel" classNames="buttons-panel">
@@ -58,6 +59,8 @@
                 <button id="exportBtn" action="reportsDataGrid.export"/>
                 <button id="runReportBtn" action="reportsDataGrid.runReport"/>
                 <button id="executionsBtn" action="reportsDataGrid.executions"/>
+                <!-- for everyone but the authors, who run every report -->
+                <button id="requestAccessBtn" action="reportsDataGrid.requestAccess"/>
                 <checkbox id="mineField" label="msg://mineField.label" css="display: flex; align-items: center"/>
             </startSlot>
             <endSlot>
@@ -114,6 +117,8 @@
                         description="msg://io.jmix.reportsflowui.view.report/action.runReport.text"/>
                 <action id="executions" type="list_itemTracking" icon="vaadin:time-backward"
                         description="msg://io.jmix.reportsflowui.view.report/action.executions.text"/>
+                <action id="requestAccess" type="list_itemTracking" icon="vaadin:key"
+                        description="msg://requestAccess.description"/>
             </actions>
             <columns resizable="true" filterable="true">
                 <column property="name"/>
@@ -140,6 +145,7 @@
                 <action id="export" type="list_itemTracking" visible="false"/>
                 <action id="runReport" type="list_itemTracking"/>
                 <action id="executions" type="list_itemTracking"/>
+                <action id="requestAccess" type="list_itemTracking"/>
             </actions>
             <columns resizable="true">
                 <column key="caption"

@@ -9,23 +9,40 @@ import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.avatar.AvatarVariant;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.router.Route;
 import io.jmix.core.Messages;
 import io.jmix.core.usersubstitution.CurrentUserSubstitution;
 import io.jmix.flowui.UiComponents;
 import io.jmix.flowui.app.main.StandardMainView;
+import com.vaadin.flow.theme.lumo.LumoUtility;
+import io.jmix.core.security.CurrentAuthentication;
+import io.jmix.core.security.SystemAuthenticator;
+import io.jmix.flowui.component.main.JmixListMenu;
+import io.jmix.flowui.kit.component.main.ListMenu;
 import io.jmix.flowui.view.Install;
+import io.jmix.flowui.view.Subscribe;
+import io.jmix.flowui.view.ViewComponent;
 import io.jmix.flowui.view.ViewController;
 import io.jmix.flowui.view.ViewDescriptor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.event.EventListener;
+import uz.kapitalbank.umida.service.report.ReportAccessService;
+import uz.kapitalbank.umida.view.report.access.ReportAccessUiEventBridge;
 import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.List;
 
 @Route("")
 @JsModule("./src/icons/umida-icons.js")
 @ViewController(id = "umida_MainView")
 @ViewDescriptor(path = "main-view.xml")
 public class MainView extends StandardMainView {
+
+    /** The menu item of the access management of the reports, and the menu holding it, see menu.xml. */
+    private static final String REPORT_ACCESS_ITEM = "reportAccessManagement";
+    private static final String REPORTS_MENU = "reports_custom";
 
     @Autowired
     private Messages messages;
@@ -37,6 +54,63 @@ public class MainView extends StandardMainView {
     private UserProfileService userProfileService;
     @Autowired
     private UserAvatars userAvatars;
+    @Autowired
+    private ReportAccessService reportAccessService;
+    @Autowired
+    private CurrentAuthentication currentAuthentication;
+    @Autowired
+    private SystemAuthenticator systemAuthenticator;
+    @ViewComponent
+    private JmixListMenu menu;
+
+    private final Span reportAccessBadge = new Span();
+    /** The user of the view: the events of the other users arrive without a reliable authentication. */
+    private String username;
+    private boolean reportAccessShown;
+
+    /**
+     * The access management of the reports is in the menu for whoever has the role, but only those who manage
+     * the access to a report keep it — the authors, the heads and the delegates of the owners — with the
+     * number of the requests waiting for them.
+     */
+    @Subscribe
+    public void onReady(final ReadyEvent event) {
+        username = currentAuthentication.getUser().getUsername();
+        ListMenu.MenuItem item = menu.getMenuItem(REPORT_ACCESS_ITEM);
+        if (item == null) {
+            return;
+        }
+        if (!reportAccessService.canOpenAccessManagement()) {
+            if (menu.getMenuItem(REPORTS_MENU) instanceof ListMenu.MenuBarItem reports) {
+                reports.removeChildItem(item);
+            }
+            return;
+        }
+        reportAccessBadge.getElement().getThemeList().addAll(List.of("badge", "pill", "small", "primary"));
+        reportAccessBadge.addClassNames(LumoUtility.Margin.Left.SMALL);
+        item.setSuffixComponent(reportAccessBadge);
+        reportAccessShown = true;
+        refreshReportAccessBadge();
+    }
+
+    /** A change of the access made by anyone: the requests waiting for this user are counted again. */
+    @EventListener
+    public void onReportAccessRequestsChanged(final ReportAccessUiEventBridge.RequestsChangedUiEvent event) {
+        if (reportAccessShown) {
+            systemAuthenticator.runWithUser(username, this::refreshReportAccessBadge);
+        }
+    }
+
+    private void refreshReportAccessBadge() {
+        long pending = reportAccessService.countPendingRequests();
+        reportAccessBadge.setText(String.valueOf(pending));
+        // not setVisible: the display of the Lumo badge overrides the hidden attribute
+        if (pending > 0) {
+            reportAccessBadge.getStyle().remove("display");
+        } else {
+            reportAccessBadge.getStyle().setDisplay(Style.Display.NONE);
+        }
+    }
 
     @Install(to = "userMenu", subject = "buttonRenderer")
     private Component userMenuButtonRenderer(final UserDetails userDetails) {

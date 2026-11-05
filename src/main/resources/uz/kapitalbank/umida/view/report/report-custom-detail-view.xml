@@ -18,6 +18,9 @@
         </collection>
         <collection id="secondaryDomainOptionsDc"
                     class="uz.kapitalbank.umida.entity.dict.DictDataDomain"/>
+        <!-- the rows of the business owner list, filled by the controller from ReportOwnerMemberService -->
+        <collection id="ownerMembersDc"
+                    class="uz.kapitalbank.umida.dto.report.ReportOwnerMemberItem"/>
         <collection id="dataProductsDc"
                     class="uz.kapitalbank.umida.entity.dict.DictDataProduct">
             <fetchPlan extends="_instance_name"/>
@@ -85,7 +88,51 @@
             </tab>
             <tab id="businessOwnerTab"
                  label="msg://uz.kapitalbank.umida.view.report/mainTabSheet.businessOwnerTab.label">
-                <vbox id="businessOwnerTabContent" padding="false"/>
+                <!-- the owner and its list, saved with the report, see ReportCustomDetailView#onAfterSave -->
+                <vbox id="businessOwnerTabContent" padding="false" height="100%">
+                    <formLayout id="businessOwnerForm" width="50%" dataContainer="reportDc">
+                        <responsiveSteps>
+                            <responsiveStep minWidth="0" columns="1"/>
+                        </responsiveSteps>
+                        <!-- picked from the list of the subdivisions; an inactive one is refused, see
+                             ReportCustomDetailView#onInit -->
+                        <entityPicker id="businessOwnerField" property="businessOwner">
+                            <actions>
+                                <action id="entityLookupAction" type="entity_lookup">
+                                    <properties>
+                                        <property name="viewId" value="umida_OrgStructureSubdivision.list"/>
+                                    </properties>
+                                </action>
+                                <action id="entityClearAction" type="entity_clear"/>
+                            </actions>
+                        </entityPicker>
+                    </formLayout>
+                    <span id="ownerMembersHint" text="msg://uz.kapitalbank.umida.view.report/ownerMembersHint.text"
+                          classNames="text-secondary text-s"/>
+                    <hbox id="ownerMembersButtonsPanel" classNames="buttons-panel" padding="false"
+                          alignItems="CENTER" width="100%">
+                        <textField id="ownerMembersSearchField" width="50%"
+                                   placeholder="msg://uz.kapitalbank.umida.view.report/ownerMembersSearchField.placeholder"
+                                   valueChangeMode="LAZY" clearButtonVisible="true">
+                            <suffix>
+                                <icon icon="SEARCH"/>
+                            </suffix>
+                        </textField>
+                        <!-- ticks or unticks the right to run for the rows shown, the head aside; follows the rows,
+                             see ReportCustomDetailView#refreshCheckAllRun -->
+                        <checkbox id="checkAllRunField" label="msg://uz.kapitalbank.umida.view.report/checkAllRunField.label"/>
+                    </hbox>
+                    <dataGrid id="ownerMembersDataGrid" dataContainer="ownerMembersDc"
+                              width="100%" minHeight="20em" selectionMode="NONE">
+                        <columns resizable="true">
+                            <column property="employeeName" flexGrow="2"/>
+                            <column property="positionName" flexGrow="2"/>
+                            <column property="subdivisionName" flexGrow="2"/>
+                            <column property="run" autoWidth="true" flexGrow="0"/>
+                            <column property="manage" autoWidth="true" flexGrow="0"/>
+                        </columns>
+                    </dataGrid>
+                </vbox>
             </tab>
         </tabSheet>
     </layout>

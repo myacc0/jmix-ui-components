@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <menu-config xmlns="http://jmix.io/schema/flowui/menu">
 
-    <item view="umida_MainView" id="mainView" icon="umida-icons:home"
+    <item view="umida_MainView" id="main" icon="umida-icons:home"
           description="msg://uz.kapitalbank.umida/menu_config.mainView.description"
           title="msg://uz.kapitalbank.umida/menu_config.mainView.title"/>
     <menu id="orgstructure" icon="umida-icons:structure" description="msg://uz.kapitalbank.umida/menu_config.orgstructure.description"
@@ -50,6 +50,9 @@
     <menu id="reports_custom" icon="umida-icons:reports" title="msg://uz.kapitalbank.umida/menu_config.reports_custom.title">
         <item view="umida_ReportCustom.list" title="msg://uz.kapitalbank.umida.view.report/umida_ReportCustom.list.title"/>
         <item view="umida_ReportGroupCustom.list" title="msg://uz.kapitalbank.umida.view.report/umida_ReportGroupCustom.list.title"/>
+        <!-- for the authors and those who manage an owner's access, see MainView#refreshReportAccessItem -->
+        <item view="umida_ReportAccessManagementView" id="reportAccessManagement"
+              title="msg://uz.kapitalbank.umida.view.report.access/reportAccessManagementView.title"/>
     </menu>
     <menu id="reports" icon="umida-icons:reports" title="msg://io.jmix.reportsflowui/menu.reports.title">
         <item view="report_Report.list" title="msg://io.jmix.reportsflowui/reportListView.menu"/>
