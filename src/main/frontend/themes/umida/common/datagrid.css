@@ -6,6 +6,12 @@
 vaadin-grid::part(inactive-row) {
     opacity: 0.5;
 }
+/*
+ * A request for the access to a report waiting for a decision (ReportAccessManagementView): the row is bold.
+ */
+vaadin-grid::part(pending-request-row) {
+    font-weight: 600;
+}
 vaadin-grid.jmix-tree-data-grid[theme~="no-header"]::part(header) {
     display: none;
 }

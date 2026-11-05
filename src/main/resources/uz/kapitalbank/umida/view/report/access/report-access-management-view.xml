@@ -67,7 +67,7 @@
                             <column property="source" autoWidth="true" flexGrow="0"/>
                             <column property="validFrom" autoWidth="true" flexGrow="0"/>
                             <column property="validTo" autoWidth="true" flexGrow="0"/>
-                            <column property="createdBy" autoWidth="true" flexGrow="0"/>
+                            <column property="createdBy" filterable="false" autoWidth="true" flexGrow="0"/>
                             <column property="createdDate" autoWidth="true" flexGrow="0"/>
                         </columns>
                     </dataGrid>
@@ -88,9 +88,9 @@
                             <column property="source" autoWidth="true" flexGrow="0"/>
                             <column property="validFrom" autoWidth="true" flexGrow="0"/>
                             <column property="validTo" autoWidth="true" flexGrow="0"/>
-                            <column property="createdBy" autoWidth="true" flexGrow="0"/>
+                            <column property="createdBy" filterable="false" autoWidth="true" flexGrow="0"/>
                             <column property="createdDate" autoWidth="true" flexGrow="0"/>
-                            <column property="revokedBy" autoWidth="true" flexGrow="0"/>
+                            <column property="revokedBy" filterable="false" autoWidth="true" flexGrow="0"/>
                             <column property="revokedAt" autoWidth="true" flexGrow="0"/>
                             <column property="revokeReason" autoWidth="true" flexGrow="0"/>
                         </columns>
@@ -118,7 +118,7 @@
                             <column property="reason" autoWidth="true" flexGrow="0"/>
                             <column property="createdDate" autoWidth="true" flexGrow="0"/>
                             <column property="status" autoWidth="true" flexGrow="0"/>
-                            <column property="decidedBy" autoWidth="true" flexGrow="0"/>
+                            <column property="decidedBy" filterable="false" autoWidth="true" flexGrow="0"/>
                             <column property="decidedAt" autoWidth="true" flexGrow="0"/>
                             <column property="decisionComment" autoWidth="true" flexGrow="0"/>
                         </columns>

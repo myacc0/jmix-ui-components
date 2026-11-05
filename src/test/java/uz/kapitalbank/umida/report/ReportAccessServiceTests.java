@@ -35,7 +35,9 @@ import uz.kapitalbank.umida.test_support.ReportTestData;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -272,6 +274,33 @@ public class ReportAccessServiceTests {
         ReportAccessService.GrantResult result = as(head, () -> accessService.grant(report,
                 List.of(withoutPosition), ReportAccessGrantSource.DIRECT, null));
         assertNull(result.created().getFirst().getPosition(), "no position in force, none kept");
+    }
+
+    @Test
+    void theNamesOfTheUsersAreThoseOfTheirEmployees() {
+        OrgStructureEmployee employee = data.createEmployee(null);
+        User withEmployee = data.createUser(employee);
+        User withoutEmployee = data.createUser(null);
+
+        Map<String, String> names = accessService.userNames(
+                Arrays.asList(withEmployee.getUsername(), withoutEmployee.getUsername(), "no-such-user", null));
+
+        assertEquals(employee.getFullName(), names.get(withEmployee.getUsername()), "the name of the employee");
+        assertEquals("Report Test", names.get(withoutEmployee.getUsername()), "the name of the user");
+        assertFalse(names.containsKey("no-such-user"), "no user, no name");
+    }
+
+    @Test
+    void theRequesterIsShownWithTheJobTitleAndTheSubdivisionOfThePosition() {
+        OrgStructureEmployee employee = data.createEmployeeIn(owner, false, null);
+
+        ReportAccessService.Requester requester = as(data.createUser(employee),
+                () -> accessService.currentRequester().orElseThrow());
+
+        assertEquals(employee.getId(), requester.employee().getId());
+        assertEquals(owner.getName(), requester.position().getSubdivision().getName(), "the subdivision is loaded");
+        assertTrue(as(data.createUser(null), () -> accessService.currentRequester().isEmpty()),
+                "no employee, no requester");
     }
 
     @Test

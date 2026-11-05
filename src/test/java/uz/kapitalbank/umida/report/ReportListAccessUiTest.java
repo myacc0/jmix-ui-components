@@ -81,6 +81,7 @@ public class ReportListAccessUiTest {
     private ReportCustom grantedReport;
     private ReportCustom closedReport;
     private User member;
+    private OrgStructureEmployee memberEmployee;
     private User author;
 
     @BeforeEach
@@ -93,6 +94,7 @@ public class ReportListAccessUiTest {
 
         OrgStructureEmployee employee = data.createEmployeeIn(owner, false);
         member = data.createViewer(employee);
+        memberEmployee = employee;
         accessService.saveOwnerMembers(ownReport, List.of(new OwnerMember(employee, false)));
         accessService.grant(grantedReport, List.of(employee), ReportAccessGrantSource.DIRECT, null);
 
@@ -126,7 +128,9 @@ public class ReportListAccessUiTest {
 
         button(view, "requestAccessBtn").click();
         UI.getCurrent().getInternals().getStateTree().runExecutionsBeforeClientResponse();
-        assertTrue(openedInputDialog().isPresent(), "the request asks for the reason");
+        InputDialog dialog = openedInputDialog().orElseThrow(() -> new AssertionError("the request asks for the reason"));
+        assertEquals(closedReport.getName(), dialog.getValue("reportName"), "the dialog shows the report");
+        assertEquals(memberEmployee.getFullName(), dialog.getValue("employee"), "and the requester");
     }
 
     @Test

@@ -79,6 +79,10 @@ public class ReportAccessService {
     public record RevokeResult(int revoked, int skipped) {
     }
 
+    /** Who asks for the access: the employee of the current user and the position held now, if any. */
+    public record Requester(OrgStructureEmployee employee, @Nullable OrgStructurePosition position) {
+    }
+
     private static final String EMPLOYEE_PARAM = "employeeId";
     private static final String IDS_PARAM = "reportIds";
 
@@ -313,9 +317,46 @@ public class ReportAccessService {
         return counted.stream().mapToLong(pendingByReport::get).sum();
     }
 
+    /**
+     * The names to show for the users, keyed by the username: the full name of the linked employee, else the
+     * name of the user, else the username itself. The usernames of no user are left out.
+     */
+    public Map<String, String> userNames(Collection<String> usernames) {
+        Set<String> distinct = usernames.stream().filter(Objects::nonNull).collect(Collectors.toSet());
+        if (distinct.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, String> names = new HashMap<>();
+        dataManager.load(User.class)
+                .query("select u from umida_User u where u.username in :usernames")
+                .parameter("usernames", distinct)
+                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE).add("employee", FetchPlan.INSTANCE_NAME))
+                .list()
+                .forEach(user -> names.put(user.getUsername(), userName(user)));
+        return names;
+    }
+
+    private static String userName(User user) {
+        if (user.getEmployee() != null && user.getEmployee().getFullName() != null
+                && !user.getEmployee().getFullName().isBlank()) {
+            return user.getEmployee().getFullName();
+        }
+        String name = user.getDisplayNameWithoutUsername();
+        return name.isBlank() ? user.getUsername() : name;
+    }
+
     // ---------------------------------------------------------------------
     // requests
     // ---------------------------------------------------------------------
+
+    /**
+     * The current user as the request shows it: the employee, with the job title and the subdivision of the
+     * position held now; empty for a user without an employee in office, who cannot ask.
+     */
+    public Optional<Requester> currentRequester() {
+        return currentEmployee().map(employee ->
+                new Requester(employee, currentPositions(Set.of(employee.getId())).get(employee.getId())));
+    }
 
     /** The current user asks to run the report. */
     public ReportAccessRequest requestAccess(ReportCustom report, @Nullable String reason) {
@@ -681,7 +722,9 @@ public class ReportAccessService {
                 .parameter(TODAY_PARAM, today())
                 .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE)
                         .add("employee", FetchPlan.INSTANCE_NAME)
-                        .add("position", FetchPlan.BASE))
+                        .add("position", position -> position.addFetchPlan(FetchPlan.BASE)
+                                .add("jobTitle", FetchPlan.INSTANCE_NAME)
+                                .add("subdivision", FetchPlan.INSTANCE_NAME)))
                 .list()
                 .stream()
                 .collect(Collectors.groupingBy(a -> a.getEmployee().getId(),

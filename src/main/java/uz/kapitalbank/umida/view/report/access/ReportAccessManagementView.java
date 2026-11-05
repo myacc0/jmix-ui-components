@@ -5,6 +5,7 @@ import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.data.renderer.TextRenderer;
 import com.vaadin.flow.router.Route;
@@ -26,6 +27,7 @@ import io.jmix.flowui.component.tabsheet.JmixTabSheet;
 import io.jmix.flowui.component.textarea.JmixTextArea;
 import io.jmix.flowui.kit.action.ActionPerformedEvent;
 import io.jmix.flowui.kit.component.button.JmixButton;
+import io.jmix.flowui.model.CollectionContainer;
 import io.jmix.flowui.model.CollectionLoader;
 import io.jmix.flowui.view.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +37,7 @@ import org.springframework.security.core.Authentication;
 import uz.kapitalbank.umida.entity.report.ReportAccessGrant;
 import uz.kapitalbank.umida.entity.report.ReportAccessRequest;
 import uz.kapitalbank.umida.entity.report.ReportCustom;
+import uz.kapitalbank.umida.enums.report.ReportAccessGrantStatus;
 import uz.kapitalbank.umida.enums.report.ReportAccessRequestStatus;
 import uz.kapitalbank.umida.service.report.ReportAccessException;
 import uz.kapitalbank.umida.service.report.ReportAccessService;
@@ -42,8 +45,14 @@ import uz.kapitalbank.umida.service.report.ReportAccessService.RevokeResult;
 import uz.kapitalbank.umida.view.main.MainView;
 
 import java.time.LocalDate;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static uz.kapitalbank.umida.service.orgstructure.OrgStructureJpql.TODAY_PARAM;
 
@@ -105,6 +114,8 @@ public class ReportAccessManagementView extends StandardView {
     private CurrentAuthentication currentAuthentication;
 
     private final Span requestsBadge = new Span();
+    /** The names of the users who gave, revoked and decided, by the username: the lists show the names. */
+    private final Map<String, String> userNames = new HashMap<>();
     /** The authentication of the user of the view: the events arrive without a reliable one. */
     private Authentication authentication;
 
@@ -156,7 +167,111 @@ public class ReportAccessManagementView extends StandardView {
     /** The journal says where each grant stands today. */
     @Supply(to = "journalDataGrid.status", subject = "renderer")
     private Renderer<ReportAccessGrant> journalDataGridStatusRenderer() {
-        return new TextRenderer<>(grant -> messages.getMessage(accessService.grantStatus(grant)));
+        return new ComponentRenderer<>(grant -> statusBadge(accessService.grantStatus(grant)));
+    }
+
+    @Supply(to = "requestsDataGrid.status", subject = "renderer")
+    private Renderer<ReportAccessRequest> requestsDataGridStatusRenderer() {
+        return new ComponentRenderer<>(request -> statusBadge(request.getStatus()));
+    }
+
+    /** The pending requests stand out: they wait for a decision. */
+    @Install(to = "requestsDataGrid", subject = "partNameGenerator")
+    private String requestsDataGridPartNameGenerator(final ReportAccessRequest request) {
+        return request.getStatus() == ReportAccessRequestStatus.PENDING ? "pending-request-row" : null;
+    }
+
+    // who gave, revoked and decided: the names, not the usernames
+
+    @Supply(to = "grantsDataGrid.createdBy", subject = "renderer")
+    private Renderer<ReportAccessGrant> grantsDataGridCreatedByRenderer() {
+        return new TextRenderer<>(grant -> userName(grant.getCreatedBy()));
+    }
+
+    @Supply(to = "journalDataGrid.createdBy", subject = "renderer")
+    private Renderer<ReportAccessGrant> journalDataGridCreatedByRenderer() {
+        return new TextRenderer<>(grant -> userName(grant.getCreatedBy()));
+    }
+
+    @Supply(to = "journalDataGrid.revokedBy", subject = "renderer")
+    private Renderer<ReportAccessGrant> journalDataGridRevokedByRenderer() {
+        return new TextRenderer<>(grant -> userName(grant.getRevokedBy()));
+    }
+
+    @Supply(to = "requestsDataGrid.decidedBy", subject = "renderer")
+    private Renderer<ReportAccessRequest> requestsDataGridDecidedByRenderer() {
+        return new TextRenderer<>(request -> userName(request.getDecidedBy()));
+    }
+
+    @Subscribe(id = "grantsDc", target = Target.DATA_CONTAINER)
+    public void onGrantsDcCollectionChange(final CollectionContainer.CollectionChangeEvent<ReportAccessGrant> event) {
+        resolveUserNames(event.getSource().getItems(), ReportAccessGrant::getCreatedBy);
+    }
+
+    @Subscribe(id = "journalDc", target = Target.DATA_CONTAINER)
+    public void onJournalDcCollectionChange(final CollectionContainer.CollectionChangeEvent<ReportAccessGrant> event) {
+        resolveUserNames(event.getSource().getItems(), ReportAccessGrant::getCreatedBy,
+                ReportAccessGrant::getRevokedBy);
+    }
+
+    @Subscribe(id = "requestsDc", target = Target.DATA_CONTAINER)
+    public void onRequestsDcCollectionChange(final CollectionContainer.CollectionChangeEvent<ReportAccessRequest> event) {
+        resolveUserNames(event.getSource().getItems(), ReportAccessRequest::getDecidedBy);
+    }
+
+    /** Looks up the names of the usernames of the rows not known yet; the grid renders them afterwards. */
+    @SafeVarargs
+    private <E> void resolveUserNames(Collection<E> items, Function<E, String>... usernameGetters) {
+        List<String> unknown = items.stream()
+                .flatMap(item -> Stream.of(usernameGetters).map(getter -> getter.apply(item)))
+                .filter(Objects::nonNull)
+                .filter(username -> !userNames.containsKey(username))
+                .distinct()
+                .toList();
+        if (unknown.isEmpty()) {
+            return;
+        }
+        Map<String, String> found = accessService.userNames(unknown);
+        // a username of no user is shown as it is, and not looked up again
+        unknown.forEach(username -> userNames.put(username, found.getOrDefault(username, username)));
+    }
+
+    private String userName(@Nullable String username) {
+        return username == null ? "" : userNames.getOrDefault(username, username);
+    }
+
+    /** Where the grant stands, as a Lumo badge coloured by what it means. */
+    private Span statusBadge(ReportAccessGrantStatus status) {
+        return statusBadge(status, switch (status) {
+            // solid: the theme's success text colour is white, unreadable on the light success background
+            case ACTIVE -> "success primary";
+            case REVOKED -> "error";
+            case DISMISSED -> "warning";
+            case EXPIRED -> "contrast";
+            case NOT_STARTED -> null; // the plain badge
+        });
+    }
+
+    /** Where the request stands, as a Lumo badge coloured by what it means. */
+    private Span statusBadge(@Nullable ReportAccessRequestStatus status) {
+        if (status == null) {
+            return new Span();
+        }
+        return statusBadge(status, switch (status) {
+            case PENDING -> "primary";
+            case APPROVED -> "success primary";
+            case REJECTED -> "error";
+            case CANCELLED -> "contrast";
+        });
+    }
+
+    private Span statusBadge(Enum<?> status, @Nullable String color) {
+        Span badge = new Span(messages.getMessage(status));
+        badge.getElement().getThemeList().addAll(List.of("badge", "small", "pill"));
+        if (color != null) {
+            badge.getElement().getThemeList().addAll(List.of(color.split(" ")));
+        }
+        return badge;
     }
 
     // ---------------------------------------------------------------------

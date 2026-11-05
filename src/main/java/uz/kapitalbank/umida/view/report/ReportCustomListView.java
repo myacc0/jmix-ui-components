@@ -1,5 +1,6 @@
 package uz.kapitalbank.umida.view.report;
 
+import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -47,6 +48,7 @@ import io.jmix.flowui.app.inputdialog.DialogActions;
 import io.jmix.flowui.app.inputdialog.InputDialog;
 import io.jmix.flowui.app.inputdialog.InputParameter;
 import io.jmix.flowui.component.textarea.JmixTextArea;
+import io.jmix.flowui.component.textfield.TypedTextField;
 import io.jmix.flowui.kit.action.Action;
 import io.jmix.flowui.kit.action.ActionPerformedEvent;
 import io.jmix.flowui.kit.component.HasActions;
@@ -69,9 +71,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 import uz.kapitalbank.umida.component.reportgroup.ReportTile;
 import uz.kapitalbank.umida.dto.report.ReportTreeItem;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureJobTitle;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructurePosition;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.entity.report.ReportCustom;
 import uz.kapitalbank.umida.service.report.ReportAccessException;
 import uz.kapitalbank.umida.service.report.ReportAccessService;
+import uz.kapitalbank.umida.service.report.ReportAccessService.Requester;
 import uz.kapitalbank.umida.entity.report.ReportGroupCustom;
 import uz.kapitalbank.umida.enums.report.ReportGrouping;
 import uz.kapitalbank.umida.enums.report.ReportTileSort;
@@ -839,27 +845,61 @@ public class ReportCustomListView extends StandardListView<Report> {
         requestAccess(selectedTileReport());
     }
 
-    /** Asks why the report is needed and sends the request to whoever decides on it. */
+    /**
+     * Shows the report and the requester, asks why the report is needed and sends the request to whoever decides
+     * on it.
+     */
     private void requestAccess(@Nullable Report report) {
         if (report == null) {
             return;
         }
+        Optional<Requester> requester = accessService.currentRequester();
+        Optional<OrgStructurePosition> position = requester.map(Requester::position);
         dialogs.createInputDialog(this)
-                .withHeader(messageBundle.formatMessage("requestAccessDialog.header", report.getName()))
+                .withHeader(messageBundle.getMessage("requestAccessDialog.header"))
                 .withLabelsPosition(Dialogs.InputDialogBuilder.LabelsPosition.TOP)
-                .withParameter(InputParameter.stringParameter("reason").withField(() -> {
-                    JmixTextArea reason = uiComponents.create(JmixTextArea.class);
-                    reason.setLabel(messageBundle.getMessage("requestAccessDialog.reason"));
-                    reason.setWidthFull();
-                    reason.setMinHeight("8em");
-                    return reason;
-                }))
+                // one field under another, the width of the dialog
+                .withResponsiveSteps(List.of(new ResponsiveStep("0", 1, ResponsiveStep.LabelsPosition.TOP)))
+                .withParameters(
+                        readOnlyParameter("reportCode", "requestAccessDialog.reportCode", report.getCode()),
+                        readOnlyParameter("reportName", "requestAccessDialog.reportName", report.getName()),
+                        readOnlyParameter("employee", "requestAccessDialog.employee",
+                                requester.map(r -> r.employee().getFullName()).orElse(null)),
+                        readOnlyParameter("position", "requestAccessDialog.position", position
+                                .map(OrgStructurePosition::getJobTitle).map(OrgStructureJobTitle::getName)
+                                .orElse(null)),
+                        readOnlyParameter("subdivision", "requestAccessDialog.subdivision", position
+                                .map(OrgStructurePosition::getSubdivision).map(OrgStructureSubdivision::getName)
+                                .orElse(null)),
+                        InputParameter.stringParameter("reason")
+                                .withLabel(messageBundle.getMessage("requestAccessDialog.reason"))
+                                .withField(() -> {
+                                    JmixTextArea reason = uiComponents.create(JmixTextArea.class);
+                                    reason.setWidthFull();
+                                    reason.setMinHeight("8em");
+                                    return reason;
+                                }))
                 .withActions(DialogActions.OK_CANCEL, result -> {
                     if (result.getCloseAction() == InputDialog.INPUT_DIALOG_OK_ACTION) {
                         sendRequest((ReportCustom) report, result.getValue("reason"));
                     }
                 })
                 .open();
+    }
+
+    /**
+     * A read-only text of the request dialog. The label goes on the item of the form, not on the field: a label on
+     * the field leaves the empty label of the item above it.
+     */
+    @SuppressWarnings("unchecked")
+    private InputParameter readOnlyParameter(String id, String labelKey, @Nullable String value) {
+        return InputParameter.stringParameter(id).withLabel(messageBundle.getMessage(labelKey)).withField(() -> {
+            TypedTextField<String> field = uiComponents.create(TypedTextField.class);
+            field.setValue(value == null ? "" : value);
+            field.setReadOnly(true);
+            field.setWidthFull();
+            return field;
+        });
     }
 
     private void sendRequest(ReportCustom report, @Nullable String reason) {
