@@ -255,7 +255,7 @@ public class ReportAccessServiceTests {
         data.assign(employee, headed, true);
         User user = data.createUser(employee);
 
-        ReportAccessRequest request = as(user, () -> accessService.requestAccess(report, null));
+        ReportAccessRequest request = as(user, () -> accessService.requestAccess(report, "for the work"));
         as(head, () -> accessService.approve(request, null, null));
 
         ReportAccessRequest saved = dataManager.load(ReportAccessRequest.class)
@@ -305,12 +305,12 @@ public class ReportAccessServiceTests {
 
     @Test
     void aRejectedOrCancelledRequestGivesNothing() {
-        ReportAccessRequest first = as(outsider, () -> accessService.requestAccess(report, null));
+        ReportAccessRequest first = as(outsider, () -> accessService.requestAccess(report, "for the work"));
         assertEquals(ReportAccessRequestStatus.REJECTED,
                 as(head, () -> accessService.reject(first, "no need")).getStatus());
         assertFalse(as(outsider, () -> accessService.canRun(report)));
 
-        ReportAccessRequest second = as(outsider, () -> accessService.requestAccess(report, null));
+        ReportAccessRequest second = as(outsider, () -> accessService.requestAccess(report, "for the work"));
         assertThrows(AccessDeniedException.class,
                 () -> as(head, () -> accessService.cancelRequest(second)), "only the requester cancels");
         assertEquals(ReportAccessRequestStatus.CANCELLED,
@@ -318,17 +318,56 @@ public class ReportAccessServiceTests {
     }
 
     @Test
+    void aRequestNeedsAReasonAndARejectionAComment() {
+        assertThrows(ReportAccessException.class,
+                () -> as(outsider, () -> accessService.requestAccess(report, null)), "no reason");
+        assertThrows(ReportAccessException.class,
+                () -> as(outsider, () -> accessService.requestAccess(report, "  ")), "a blank reason");
+        assertEquals(0, as(head, accessService::countPendingRequests), "nothing was sent");
+
+        ReportAccessRequest request = as(outsider, () -> accessService.requestAccess(report, " for the audit "));
+        assertEquals("for the audit", request.getReason());
+        assertThrows(ReportAccessException.class,
+                () -> as(head, () -> accessService.reject(request, null)), "no comment");
+        assertThrows(ReportAccessException.class,
+                () -> as(head, () -> accessService.reject(request, " ")), "a blank comment");
+        assertEquals(ReportAccessRequestStatus.PENDING,
+                dataManager.load(ReportAccessRequest.class).id(request.getId()).one().getStatus());
+
+        ReportAccessRequest rejected = as(head, () -> accessService.reject(request, "not needed"));
+        assertEquals(ReportAccessRequestStatus.REJECTED, rejected.getStatus());
+        assertEquals("not needed", rejected.getDecisionComment());
+    }
+
+    @Test
+    void theGrantOfARequestIsFoundForItsRequesterOnly() {
+        ReportAccessRequest rejected = as(outsider, () -> accessService.requestAccess(report, "for the work"));
+        as(head, () -> accessService.reject(rejected, "not now"));
+        ReportAccessRequest approved = as(outsider, () -> accessService.requestAccess(report, "for the audit"));
+        as(head, () -> accessService.approve(approved, null, "ok"));
+        List<UUID> ids = List.of(rejected.getId(), approved.getId());
+
+        Map<UUID, ReportAccessGrant> grants = as(outsider, () -> accessService.grantsOfOwnRequests(ids));
+
+        assertEquals(Set.of(approved.getId()), grants.keySet(), "only the approved request has a grant");
+        ReportAccessGrant grant = grants.get(approved.getId());
+        assertEquals(ReportAccessGrantSource.REQUEST, grant.getSource());
+        assertEquals(ReportAccessGrantStatus.ACTIVE, accessService.grantStatus(grant), "the employee is loaded");
+        assertTrue(as(head, () -> accessService.grantsOfOwnRequests(ids)).isEmpty(), "not the head's requests");
+    }
+
+    @Test
     void someoneWhoDoesNotManageCannotDecide() {
-        ReportAccessRequest request = as(outsider, () -> accessService.requestAccess(report, null));
+        ReportAccessRequest request = as(outsider, () -> accessService.requestAccess(report, "for the work"));
         User stranger = data.createUser(data.createEmployeeIn(data.createSubdivision(true), true, null));
 
         assertThrows(AccessDeniedException.class, () -> as(stranger, () -> accessService.approve(request, null, null)));
-        assertThrows(AccessDeniedException.class, () -> as(stranger, () -> accessService.reject(request, null)));
+        assertThrows(AccessDeniedException.class, () -> as(stranger, () -> accessService.reject(request, "not needed")));
     }
 
     @Test
     void aRequestChangedSinceLoadingIsNotDecided() {
-        ReportAccessRequest request = as(outsider, () -> accessService.requestAccess(report, null));
+        ReportAccessRequest request = as(outsider, () -> accessService.requestAccess(report, "for the work"));
         ReportAccessRequest stale = dataManager.load(ReportAccessRequest.class).id(request.getId()).one();
         ReportAccessRequest changed = dataManager.load(ReportAccessRequest.class).id(request.getId()).one();
         changed.setReason("edited");
@@ -367,8 +406,8 @@ public class ReportAccessServiceTests {
         ReportCustom ownerless = data.createReport(null, null);
         long before = accessService.countPendingRequests();
 
-        as(outsider, () -> accessService.requestAccess(ownerless, null));
-        as(outsider, () -> accessService.requestAccess(report, null));
+        as(outsider, () -> accessService.requestAccess(ownerless, "for the work"));
+        as(outsider, () -> accessService.requestAccess(report, "for the work"));
 
         assertEquals(before + 1, accessService.countPendingRequests(), "the report with a head is not counted");
         assertEquals(1, as(head, accessService::countPendingRequests));
@@ -518,8 +557,8 @@ public class ReportAccessServiceTests {
     @Test
     void everyChangeOfTheAccessIsAnnounced() {
         long before = events.stream(ReportAccessChangedEvent.class).count();
-        ReportAccessRequest request = as(outsider, () -> accessService.requestAccess(report, null));
-        as(head, () -> accessService.reject(request, null));
+        ReportAccessRequest request = as(outsider, () -> accessService.requestAccess(report, "for the work"));
+        as(head, () -> accessService.reject(request, "not needed"));
         createGrant(data.createEmployeeIn(data.createSubdivision(true), false));
 
         assertEquals(before + 3, events.stream(ReportAccessChangedEvent.class).count());

@@ -125,7 +125,7 @@ public class ReportAccessRolesTests {
         data.assignRole(author, UiMinimalRole.CODE, RoleAssignmentRoleType.RESOURCE);
         data.assignRole(author, ReportAuthorRole.CODE, RoleAssignmentRoleType.RESOURCE);
         data.assignRole(author, ReportViewerRowsRole.CODE, RoleAssignmentRoleType.ROW_LEVEL);
-        ReportAccessRequest request = as(outsider, () -> accessService.requestAccess(otherReport, null));
+        ReportAccessRequest request = as(outsider, () -> accessService.requestAccess(otherReport, "for the work"));
 
         assertTrue(as(author, accessService::isAuthor));
         assertTrue(as(author, () -> canShow("umida_ReportCustom.detail")));
@@ -149,7 +149,7 @@ public class ReportAccessRolesTests {
     @Test
     void theGrantsAndTheRequestsAreReadByThoseWhoManageTheReport() {
         ReportAccessRequest request = as(outsider, () -> accessService.requestAccess(ownReport, "audit"));
-        ReportAccessRequest otherRequest = as(member, () -> accessService.requestAccess(otherReport, null));
+        ReportAccessRequest otherRequest = as(member, () -> accessService.requestAccess(otherReport, "for the work"));
 
         assertEquals(1, visibleGrants(head).size(), "the grant of the member of the own report");
         assertEquals(Set.of(), visibleGrants(member).keySet(), "a member manages nothing");

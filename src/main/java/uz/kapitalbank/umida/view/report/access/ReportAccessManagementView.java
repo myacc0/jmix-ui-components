@@ -345,8 +345,13 @@ public class ReportAccessManagementView extends StandardView {
         dialogs.createInputDialog(this)
                 .withHeader(messageBundle.formatMessage("rejectDialog.header", request.getInstanceName()))
                 .withLabelsPosition(Dialogs.InputDialogBuilder.LabelsPosition.TOP)
-                .withParameter(InputParameter.stringParameter("comment")
-                        .withField(() -> textArea(messageBundle.getMessage("decisionDialog.comment"))))
+                // the requester is told why: the comment is required
+                .withParameter(InputParameter.stringParameter("comment").withField(() -> {
+                    JmixTextArea comment = textArea(messageBundle.getMessage("decisionDialog.comment"));
+                    comment.setRequired(true);
+                    comment.setRequiredMessage(messageBundle.getMessage("rejectDialog.commentRequired"));
+                    return comment;
+                }))
                 .withActions(DialogActions.OK_CANCEL, result -> {
                     if (result.getCloseAction() == InputDialog.INPUT_DIALOG_OK_ACTION) {
                         decide(() -> accessService.reject(request, result.getValue("comment")), "rejected.text");

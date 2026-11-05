@@ -1,11 +1,23 @@
 package uz.kapitalbank.umida.view.report.access;
 
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
+import com.vaadin.flow.component.html.DescriptionList;
+import com.vaadin.flow.component.html.DescriptionList.Description;
+import com.vaadin.flow.component.html.DescriptionList.Term;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.popover.Popover;
+import com.vaadin.flow.component.popover.PopoverPosition;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.data.renderer.TextRenderer;
 import io.jmix.core.security.AccessDeniedException;
+import io.jmix.core.Messages;
+import io.jmix.core.metamodel.datatype.DatatypeFormatter;
 import io.jmix.core.security.CurrentAuthentication;
 import io.jmix.flowui.Dialogs;
 import io.jmix.flowui.Notifications;
@@ -18,6 +30,7 @@ import io.jmix.flowui.app.inputdialog.InputParameter;
 import io.jmix.flowui.component.grid.DataGrid;
 import io.jmix.flowui.component.textarea.JmixTextArea;
 import io.jmix.flowui.component.textfield.TypedTextField;
+import io.jmix.flowui.kit.component.button.JmixButton;
 import io.jmix.flowui.kit.action.ActionPerformedEvent;
 import io.jmix.flowui.model.CollectionContainer;
 import io.jmix.flowui.model.CollectionLoader;
@@ -29,6 +42,7 @@ import org.springframework.security.core.Authentication;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureJobTitle;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructurePosition;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
+import uz.kapitalbank.umida.entity.report.ReportAccessGrant;
 import uz.kapitalbank.umida.entity.report.ReportAccessRequest;
 import uz.kapitalbank.umida.entity.report.ReportCustom;
 import uz.kapitalbank.umida.enums.report.ReportAccessRequestStatus;
@@ -41,6 +55,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Stream;
 
 /**
  * The requests of the current user for the access to one report, the newest first and the pending one on top,
@@ -77,12 +93,18 @@ public class ReportAccessRequestsView extends StandardView {
     private UiComponents uiComponents;
     @Autowired
     private CurrentAuthentication currentAuthentication;
+    @Autowired
+    private Messages messages;
+    @Autowired
+    private DatatypeFormatter datatypeFormatter;
 
     private ReportCustom report;
     /** Whether a new request may be sent: asked of the service at each load of the list. */
     private boolean canRequest;
-    /** The names of the users who decided, by the username. */
+    /** The names of the users who decided, gave or revoked, by the username. */
     private final Map<String, String> userNames = new HashMap<>();
+    /** The grants given on the requests of the list, by the id of the request. */
+    private Map<UUID, ReportAccessGrant> grants = Map.of();
     /** The authentication of the user of the view: the events arrive without a reliable one. */
     private Authentication authentication;
 
@@ -120,14 +142,103 @@ public class ReportAccessRequestsView extends StandardView {
 
     @Supply(to = "requestsDataGrid.decidedBy", subject = "renderer")
     private Renderer<ReportAccessRequest> requestsDataGridDecidedByRenderer() {
-        return new TextRenderer<>(request -> request.getDecidedBy() == null ? ""
-                : userNames.getOrDefault(request.getDecidedBy(), request.getDecidedBy()));
+        return new TextRenderer<>(request -> userName(request.getDecidedBy()));
     }
 
+    /**
+     * Where the grant given on the request stands, with a button showing its details; nothing for a request
+     * without a grant.
+     */
+    @Supply(to = "requestsDataGrid.grantStatus", subject = "renderer")
+    private Renderer<ReportAccessRequest> requestsDataGridGrantStatusRenderer() {
+        return new ComponentRenderer<>(request -> {
+            ReportAccessGrant grant = grants.get(request.getId());
+            if (grant == null) {
+                return new Span();
+            }
+            JmixButton infoButton = uiComponents.create(JmixButton.class);
+            infoButton.setIcon(VaadinIcon.INFO_CIRCLE_O.create());
+            infoButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE, ButtonVariant.LUMO_ICON);
+            infoButton.setTitle(messageBundle.getMessage("grantDetails.title"));
+            infoButton.setAriaLabel(messageBundle.getMessage("grantDetails.title"));
+            grantDetailsPopover(grant, infoButton);
+
+            HorizontalLayout cell = new HorizontalLayout(statusBadges.grant(accessService.grantStatus(grant)),
+                    infoButton);
+            cell.setPadding(false);
+            cell.setSpacing("var(--lumo-space-xs)");
+            cell.setAlignItems(FlexComponent.Alignment.CENTER);
+            return cell;
+        });
+    }
+
+    /**
+     * The details of the grant in a popover opened by a click on the button; the popover goes along with the
+     * button, which the grid makes anew at each render.
+     */
+    private void grantDetailsPopover(ReportAccessGrant grant, Component target) {
+        Popover popover = new Popover();
+        popover.setTarget(target);
+        popover.setPosition(PopoverPosition.BOTTOM_START);
+        popover.setAriaLabel(messageBundle.getMessage("grantDetails.title"));
+        // filled when first opened: the popovers of the rows not looked at stay empty
+        popover.addOpenedChangeListener(event -> {
+            if (event.isOpened() && popover.getChildren().findAny().isEmpty()) {
+                popover.add(grantDetails(grant));
+            }
+        });
+    }
+
+    private DescriptionList grantDetails(ReportAccessGrant grant) {
+        DescriptionList list = new DescriptionList();
+        list.addClassName("property-list");
+        list.setMaxWidth("32em");
+        // the popovers have no padding of their own in this theme
+        list.getStyle().set("padding", "var(--lumo-space-xs) var(--lumo-space-m)");
+        String revokedBy = grant.getRevokedBy();
+        String validTo = grant.getValidTo() == null
+                ? messageBundle.getMessage("grantDetails.openEnded")
+                : datatypeFormatter.formatLocalDate(grant.getValidTo());
+        addDetail(list, messageBundle.getMessage("grantStatusColumn.header"),
+                statusBadges.grant(accessService.grantStatus(grant)));
+        addDetail(list, grantCaption("source"), messages.getMessage(grant.getSource()));
+        addDetail(list, grantCaption("validFrom"), datatypeFormatter.formatLocalDate(grant.getValidFrom()));
+        addDetail(list, grantCaption("validTo"), validTo);
+        addDetail(list, grantCaption("createdBy"), userName(grant.getCreatedBy()));
+        addDetail(list, grantCaption("createdDate"), datatypeFormatter.formatOffsetDateTime(grant.getCreatedDate()));
+        if (grant.getRevokedAt() != null) {
+            addDetail(list, grantCaption("revokedBy"), userName(revokedBy));
+            addDetail(list, grantCaption("revokedAt"), datatypeFormatter.formatOffsetDateTime(grant.getRevokedAt()));
+            addDetail(list, grantCaption("revokeReason"), Objects.toString(grant.getRevokeReason(), ""));
+        }
+        return list;
+    }
+
+    private static void addDetail(DescriptionList list, String term, String text) {
+        list.add(new Term(term), new Description(text));
+    }
+
+    private static void addDetail(DescriptionList list, String term, Component value) {
+        list.add(new Term(term), new Description(value));
+    }
+
+    private String grantCaption(String property) {
+        return messages.getMessage("uz.kapitalbank.umida.entity.report/ReportAccessGrant." + property);
+    }
+
+    private String userName(@Nullable String username) {
+        return username == null ? "" : userNames.getOrDefault(username, username);
+    }
+
+    /** The grants of the requests listed, and the names of who decided, gave and revoked, not known yet. */
     @Subscribe(id = "requestsDc", target = Target.DATA_CONTAINER)
     public void onRequestsDcCollectionChange(final CollectionContainer.CollectionChangeEvent<ReportAccessRequest> event) {
-        List<String> unknown = event.getSource().getItems().stream()
-                .map(ReportAccessRequest::getDecidedBy)
+        List<ReportAccessRequest> requests = event.getSource().getItems();
+        grants = accessService.grantsOfOwnRequests(requests.stream().map(ReportAccessRequest::getId).toList());
+        List<String> unknown = Stream.concat(
+                        requests.stream().map(ReportAccessRequest::getDecidedBy),
+                        grants.values().stream()
+                                .flatMap(grant -> Stream.of(grant.getCreatedBy(), grant.getRevokedBy())))
                 .filter(Objects::nonNull)
                 .filter(username -> !userNames.containsKey(username))
                 .distinct()
@@ -169,6 +280,10 @@ public class ReportAccessRequestsView extends StandardView {
                                     JmixTextArea reason = uiComponents.create(JmixTextArea.class);
                                     reason.setWidthFull();
                                     reason.setMinHeight("8em");
+                                    // the owner decides on it: the reason is required
+                                    reason.setRequired(true);
+                                    reason.setRequiredMessage(
+                                            messageBundle.getMessage("requestAccessDialog.reasonRequired"));
                                     return reason;
                                 }))
                 .withActions(DialogActions.OK_CANCEL, result -> {

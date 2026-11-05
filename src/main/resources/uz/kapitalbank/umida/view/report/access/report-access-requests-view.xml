@@ -35,6 +35,9 @@
             <columns resizable="true">
                 <column property="createdDate" autoWidth="true" flexGrow="0"/>
                 <column property="status" autoWidth="true" flexGrow="0"/>
+                <!-- the grant given on the request: where it stands and, on the button, its details -->
+                <column key="grantStatus" header="msg://grantStatusColumn.header" sortable="false"
+                        autoWidth="true" flexGrow="0"/>
                 <column property="reason" autoWidth="true" flexGrow="0"/>
                 <column property="decidedBy" autoWidth="true" flexGrow="0"/>
                 <column property="decidedAt" autoWidth="true" flexGrow="0"/>

@@ -17,6 +17,7 @@ import io.jmix.flowui.component.checkbox.JmixCheckbox;
 import io.jmix.flowui.component.grid.DataGrid;
 import io.jmix.flowui.component.grid.TreeDataGrid;
 import io.jmix.flowui.component.select.JmixSelect;
+import io.jmix.flowui.component.textarea.JmixTextArea;
 import io.jmix.flowui.kit.component.button.JmixButton;
 import io.jmix.flowui.testassist.FlowuiTestAssistConfiguration;
 import io.jmix.flowui.testassist.UiTest;
@@ -131,9 +132,9 @@ public class ReportListAccessUiTest {
 
         DataGrid<Report> grid = UiTestUtils.getComponent(view, "reportsDataGrid");
         select(grid, ownReport);
-        assertButtons(view, true, true, false, "a member runs and sees the own runs");
+        assertButtons(view, true, true, true, "a member runs and sees the own runs");
         select(grid, grantedReport);
-        assertButtons(view, true, false, false, "a grant gives no history");
+        assertButtons(view, true, false, true, "a grant gives no history");
         select(grid, closedReport);
         assertButtons(view, false, false, true, "no access: request it");
 
@@ -162,9 +163,14 @@ public class ReportListAccessUiTest {
         assertFalse(cancel.isEnabled(), "nothing to cancel");
 
         send.click();
+        InputDialog requestDialog = opened(InputDialog.class).orElseGet(() -> fail("the request asks for the reason"));
+        press(DialogAction.Type.OK);
+        assertTrue(requests.getItems().getItems().isEmpty(), "no request without a reason");
+        UiTestUtils.<JmixTextArea>getComponent(requestDialog, "reason").setValue("for the audit");
         press(DialogAction.Type.OK);
 
         ReportAccessRequest pending = single(requests);
+        assertEquals("for the audit", pending.getReason());
         assertEquals(ReportAccessRequestStatus.PENDING, pending.getStatus());
         assertEquals(pending, requests.getSingleSelectedItem(), "the pending request is selected");
         assertFalse(send.isEnabled(), "no new request while one is pending");
@@ -183,11 +189,11 @@ public class ReportListAccessUiTest {
     @Test
     void theListShowsOnlyTheRequestsOfTheUserForTheReport() {
         User other = data.createViewer(data.createEmployeeIn(data.createSubdivision(true), false));
-        systemAuthenticator.withUser(other.getUsername(), () -> accessService.requestAccess(closedReport, null));
+        systemAuthenticator.withUser(other.getUsername(), () -> accessService.requestAccess(closedReport, "for the work"));
         ReportCustom anotherClosed = data.createReport(data.createSubdivision(true));
         ReportAccessRequest own = systemAuthenticator.withUser(member.getUsername(),
                 () -> accessService.requestAccess(closedReport, "mine"));
-        systemAuthenticator.withUser(member.getUsername(), () -> accessService.requestAccess(anotherClosed, null));
+        systemAuthenticator.withUser(member.getUsername(), () -> accessService.requestAccess(anotherClosed, "for the work"));
 
         ReportCustomListView view = openListAs(member);
         select(UiTestUtils.getComponent(view, "reportsDataGrid"), closedReport);
@@ -211,7 +217,7 @@ public class ReportListAccessUiTest {
         tree.select(treeItem(tree, closedReport));
         assertButtons(view, false, false, true, "the tree: no access");
         tree.select(treeItem(tree, ownReport));
-        assertButtons(view, true, true, false, "the tree: a member");
+        assertButtons(view, true, true, true, "the tree: a member");
         assertFalse(button(view, "editBtn").isVisible(), "still no editing in the tree");
     }
 

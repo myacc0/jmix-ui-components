@@ -367,8 +367,11 @@ public class ReportAccessService {
                 new Requester(employee, currentPositions(Set.of(employee.getId())).get(employee.getId())));
     }
 
-    /** The current user asks to run the report. */
+    /** The current user asks to run the report, saying why. */
     public ReportAccessRequest requestAccess(ReportCustom report, @Nullable String reason) {
+        if (isBlank(reason)) {
+            throw new ReportAccessException(message("reasonRequired"));
+        }
         OrgStructureEmployee employee = currentEmployee()
                 .orElseThrow(() -> new ReportAccessException(message("noEmployee")));
         if (canRun(report)) {
@@ -382,7 +385,7 @@ public class ReportAccessService {
         request.setReport(dataManager.getReference(ReportCustom.class, report.getId()));
         request.setEmployee(employee);
         request.setPosition(currentPositions(Set.of(employee.getId())).get(employee.getId()));
-        request.setReason(reason);
+        request.setReason(reason.strip());
         ReportAccessRequest saved = dataManager.save(request);
         changed();
         return saved;
@@ -401,6 +404,29 @@ public class ReportAccessService {
     /** The employee of the current user, whose requests the user reads and cancels; empty without one. */
     public Optional<String> currentEmployeeId() {
         return currentEmployee().map(OrgStructureEmployee::getId);
+    }
+
+    /**
+     * The grants given on the requests of the current user among the given ones, keyed by the id of the request,
+     * with the employee loaded for {@link #grantStatus}. The requests of the others and those without a grant are
+     * left out.
+     */
+    public Map<UUID, ReportAccessGrant> grantsOfOwnRequests(Collection<UUID> requestIds) {
+        Optional<String> employeeId = currentEmployeeId();
+        if (requestIds.isEmpty() || employeeId.isEmpty()) {
+            return Map.of();
+        }
+        return dataManager.load(ReportAccessGrant.class)
+                .query("select g from umida_ReportAccessGrant g" +
+                        " where g.request.id in :requestIds and g.employee.id = :" + EMPLOYEE_PARAM)
+                .parameter("requestIds", requestIds)
+                .parameter(EMPLOYEE_PARAM, employeeId.get())
+                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE)
+                        .add("employee", FetchPlan.BASE)
+                        .add("request.id"))
+                .list()
+                .stream()
+                .collect(Collectors.toMap(grant -> grant.getRequest().getId(), grant -> grant, (a, b) -> a));
     }
 
     private boolean hasPendingRequest(UUID reportId, String employeeId) {
@@ -456,11 +482,17 @@ public class ReportAccessService {
         return saved;
     }
 
-    /** Rejects a pending request. Fails if someone else has decided on the request meanwhile. */
+    /**
+     * Rejects a pending request, saying why: the comment is required. Fails if someone else has decided on the
+     * request meanwhile.
+     */
     public ReportAccessRequest reject(ReportAccessRequest request, @Nullable String comment) {
+        if (isBlank(comment)) {
+            throw new ReportAccessException(message("commentRequired"));
+        }
         ReportAccessRequest current = reloadPending(request);
         requireManaged(current.getReport());
-        decide(current, ReportAccessRequestStatus.REJECTED, comment);
+        decide(current, ReportAccessRequestStatus.REJECTED, comment.strip());
         ReportAccessRequest saved = dataManager.save(current);
         changed();
         return saved;
@@ -812,6 +844,10 @@ public class ReportAccessService {
         grant.setRevokedBy(currentAuthentication.getUser().getUsername());
         grant.setRevokedAt(now());
         grant.setRevokeReason(reason);
+    }
+
+    private static boolean isBlank(@Nullable String text) {
+        return text == null || text.isBlank();
     }
 
     /** Dismissed from the day of the dismissal on, as for {@code EmployeeUserLinkService}. */

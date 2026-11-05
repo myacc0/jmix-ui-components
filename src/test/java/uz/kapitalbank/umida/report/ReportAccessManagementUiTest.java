@@ -112,7 +112,7 @@ public class ReportAccessManagementUiTest {
 
         request = systemAuthenticator.withUser(requester.getUsername(),
                 () -> accessService.requestAccess(ownReport, "for the audit"));
-        systemAuthenticator.withUser(requester.getUsername(), () -> accessService.requestAccess(otherReport, null));
+        systemAuthenticator.withUser(requester.getUsername(), () -> accessService.requestAccess(otherReport, "for the work"));
     }
 
     @AfterEach

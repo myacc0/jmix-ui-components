@@ -317,8 +317,8 @@ public class ReportCustomListView extends StandardListView<Report> {
         actions.apply("requestAccess").setVisible(!author);
         ((SecuredBaseAction) actions.apply("runReport")).addEnabledRule(() -> canRun(selected.get()));
         ((SecuredBaseAction) actions.apply("executions")).addEnabledRule(() -> canViewHistory(selected.get()));
-        ((SecuredBaseAction) actions.apply("requestAccess"))
-                .addEnabledRule(() -> !author && selected.get() != null && !canRun(selected.get()));
+        // the requests of a report are shown whatever the access: a new one is sent from there only when it may be
+        ((SecuredBaseAction) actions.apply("requestAccess")).addEnabledRule(() -> !author && selected.get() != null);
     }
 
     private boolean canRun(@Nullable Report report) {
