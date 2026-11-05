@@ -37,7 +37,6 @@ import org.springframework.security.core.Authentication;
 import uz.kapitalbank.umida.entity.report.ReportAccessGrant;
 import uz.kapitalbank.umida.entity.report.ReportAccessRequest;
 import uz.kapitalbank.umida.entity.report.ReportCustom;
-import uz.kapitalbank.umida.enums.report.ReportAccessGrantStatus;
 import uz.kapitalbank.umida.enums.report.ReportAccessRequestStatus;
 import uz.kapitalbank.umida.service.report.ReportAccessException;
 import uz.kapitalbank.umida.service.report.ReportAccessService;
@@ -50,7 +49,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -76,6 +77,8 @@ import static uz.kapitalbank.umida.service.orgstructure.OrgStructureJpql.TODAY_P
 @ViewController(id = "umida_ReportAccessManagementView")
 @ViewDescriptor(path = "report-access-management-view.xml")
 public class ReportAccessManagementView extends StandardView {
+
+    private static final String MANAGED_REPORTS_PARAM = "managedReportIds";
 
     @ViewComponent
     private CollectionLoader<ReportAccessGrant> grantsDl;
@@ -112,6 +115,8 @@ public class ReportAccessManagementView extends StandardView {
     private TimeSource timeSource;
     @Autowired
     private CurrentAuthentication currentAuthentication;
+    @Autowired
+    private ReportAccessStatusBadges statusBadges;
 
     private final Span requestsBadge = new Span();
     /** The names of the users who gave, revoked and decided, by the username: the lists show the names. */
@@ -167,12 +172,12 @@ public class ReportAccessManagementView extends StandardView {
     /** The journal says where each grant stands today. */
     @Supply(to = "journalDataGrid.status", subject = "renderer")
     private Renderer<ReportAccessGrant> journalDataGridStatusRenderer() {
-        return new ComponentRenderer<>(grant -> statusBadge(accessService.grantStatus(grant)));
+        return new ComponentRenderer<>(grant -> statusBadges.grant(accessService.grantStatus(grant)));
     }
 
     @Supply(to = "requestsDataGrid.status", subject = "renderer")
     private Renderer<ReportAccessRequest> requestsDataGridStatusRenderer() {
-        return new ComponentRenderer<>(request -> statusBadge(request.getStatus()));
+        return new ComponentRenderer<>(request -> statusBadges.request(request.getStatus()));
     }
 
     /** The pending requests stand out: they wait for a decision. */
@@ -238,40 +243,6 @@ public class ReportAccessManagementView extends StandardView {
 
     private String userName(@Nullable String username) {
         return username == null ? "" : userNames.getOrDefault(username, username);
-    }
-
-    /** Where the grant stands, as a Lumo badge coloured by what it means. */
-    private Span statusBadge(ReportAccessGrantStatus status) {
-        return statusBadge(status, switch (status) {
-            // solid: the theme's success text colour is white, unreadable on the light success background
-            case ACTIVE -> "success primary";
-            case REVOKED -> "error";
-            case DISMISSED -> "warning";
-            case EXPIRED -> "contrast";
-            case NOT_STARTED -> null; // the plain badge
-        });
-    }
-
-    /** Where the request stands, as a Lumo badge coloured by what it means. */
-    private Span statusBadge(@Nullable ReportAccessRequestStatus status) {
-        if (status == null) {
-            return new Span();
-        }
-        return statusBadge(status, switch (status) {
-            case PENDING -> "primary";
-            case APPROVED -> "success primary";
-            case REJECTED -> "error";
-            case CANCELLED -> "contrast";
-        });
-    }
-
-    private Span statusBadge(Enum<?> status, @Nullable String color) {
-        Span badge = new Span(messages.getMessage(status));
-        badge.getElement().getThemeList().addAll(List.of("badge", "small", "pill"));
-        if (color != null) {
-            badge.getElement().getThemeList().addAll(List.of(color.split(" ")));
-        }
-        return badge;
     }
 
     // ---------------------------------------------------------------------
@@ -419,23 +390,40 @@ public class ReportAccessManagementView extends StandardView {
 
     private void loadGrants() {
         grantsDl.setQuery("select g from umida_ReportAccessGrant g where " + ReportAccessService.inForce("g")
-                + " order by g.report.name, g.employee.fullName");
+                + managedReportsOnly(grantsDl, "g", " and ") + " order by g.report.name, g.employee.fullName");
         grantsDl.setParameter(TODAY_PARAM, today());
         grantsDl.load();
     }
 
     private void loadJournal() {
-        journalDl.setQuery("select g from umida_ReportAccessGrant g order by g.createdDate desc");
+        journalDl.setQuery("select g from umida_ReportAccessGrant g" + managedReportsOnly(journalDl, "g", " where ")
+                + " order by g.createdDate desc");
         journalDl.load();
     }
 
     private void loadRequests() {
         // the pending ones first, the newest first among them and among the others
-        requestsDl.setQuery("select q from umida_ReportAccessRequest q order by"
-                + " case when q.status = '" + ReportAccessRequestStatus.PENDING.getId() + "' then 0 else 1 end,"
+        requestsDl.setQuery("select q from umida_ReportAccessRequest q" + managedReportsOnly(requestsDl, "q", " where ")
+                + " order by case when q.status = '" + ReportAccessRequestStatus.PENDING.getId() + "' then 0 else 1 end,"
                 + " q.createdDate desc");
         requestsDl.load();
         refreshRequestsBadge();
+    }
+
+    /**
+     * The condition keeping the rows of the reports the user manages, after {@code keyword} ({@code where} or
+     * {@code and}), its parameter set on the loader; none for an author. The roles let the user read the own requests too, made for the reports of the others:
+     * they are not the user's to decide on and stay out of the lists.
+     */
+    private String managedReportsOnly(CollectionLoader<?> loader, String alias, String keyword) {
+        Optional<Set<UUID>> managed = accessService.managedReportIdsUnlessAuthor();
+        if (managed.isEmpty()) {
+            loader.removeParameter(MANAGED_REPORTS_PARAM);
+            return "";
+        }
+        // no report left to manage: an id of no report, an empty list is no valid parameter of "in"
+        loader.setParameter(MANAGED_REPORTS_PARAM, managed.get().isEmpty() ? Set.of(new UUID(0, 0)) : managed.get());
+        return keyword + alias + ".report.id in :" + MANAGED_REPORTS_PARAM;
     }
 
     /** The number of the requests waiting for this user's decision, on the tab of the requests. */

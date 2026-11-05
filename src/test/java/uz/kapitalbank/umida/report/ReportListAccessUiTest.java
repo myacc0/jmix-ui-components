@@ -3,11 +3,15 @@ package uz.kapitalbank.umida.report;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.dom.Element;
+import com.vaadin.flow.internal.nodefeature.VirtualChildrenList;
 import com.vaadin.flow.component.grid.ItemDoubleClickEvent;
 import io.jmix.core.DataManager;
 import io.jmix.core.Metadata;
 import io.jmix.core.security.SystemAuthenticator;
 import io.jmix.flowui.ViewNavigators;
+import io.jmix.flowui.action.DialogAction;
 import io.jmix.flowui.app.inputdialog.InputDialog;
 import io.jmix.flowui.component.checkbox.JmixCheckbox;
 import io.jmix.flowui.component.grid.DataGrid;
@@ -33,7 +37,9 @@ import uz.kapitalbank.umida.dto.report.ReportTreeItem;
 import uz.kapitalbank.umida.entity.User;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureEmployee;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
+import uz.kapitalbank.umida.entity.report.ReportAccessRequest;
 import uz.kapitalbank.umida.entity.report.ReportCustom;
+import uz.kapitalbank.umida.enums.report.ReportAccessRequestStatus;
 import uz.kapitalbank.umida.enums.report.ReportAccessGrantSource;
 import uz.kapitalbank.umida.enums.report.ReportGrouping;
 import uz.kapitalbank.umida.security.ReportAuthorRole;
@@ -44,15 +50,20 @@ import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
 import uz.kapitalbank.umida.test_support.ReportTestData;
 import uz.kapitalbank.umida.view.report.ReportCustomDetailView;
 import uz.kapitalbank.umida.view.report.ReportCustomListView;
+import uz.kapitalbank.umida.view.report.access.ReportAccessRequestsView;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.Spliterators;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * What the list of the reports offers by the rights of the user: the authors' buttons, running, the history
- * and the request of access, in the paged list and in the grouped one.
+ * and the request of access, in the paged list and in the grouped one; the requests of the user for a report,
+ * sent and cancelled in the dialog the request opens.
  */
 @UiTest
 @SpringBootTest(classes = {UmidaApplication.class, FlowuiTestAssistConfiguration.class})
@@ -127,10 +138,68 @@ public class ReportListAccessUiTest {
         assertButtons(view, false, false, true, "no access: request it");
 
         button(view, "requestAccessBtn").click();
-        UI.getCurrent().getInternals().getStateTree().runExecutionsBeforeClientResponse();
-        InputDialog dialog = openedInputDialog().orElseThrow(() -> new AssertionError("the request asks for the reason"));
+        ReportAccessRequestsView requests = opened(ReportAccessRequestsView.class)
+                .orElseGet(() -> fail("the request opens the list of the requests"));
+        UiTestUtils.<JmixButton>getComponent(requests, "sendRequestBtn").click();
+        InputDialog dialog = opened(InputDialog.class).orElseGet(() -> fail("the request asks for the reason"));
         assertEquals(closedReport.getName(), dialog.getValue("reportName"), "the dialog shows the report");
         assertEquals(memberEmployee.getFullName(), dialog.getValue("employee"), "and the requester");
+    }
+
+    @Test
+    void theRequestsOfAReportAreListedTheNewOneIsSentAndThePendingOneCancelled() {
+        ReportCustomListView view = openListAs(member);
+        select(UiTestUtils.getComponent(view, "reportsDataGrid"), closedReport);
+        button(view, "requestAccessBtn").click();
+        ReportAccessRequestsView dialog = opened(ReportAccessRequestsView.class)
+                .orElseGet(() -> fail("the request opens the list of the requests"));
+        DataGrid<ReportAccessRequest> requests = UiTestUtils.getComponent(dialog, "requestsDataGrid");
+        JmixButton send = UiTestUtils.getComponent(dialog, "sendRequestBtn");
+        JmixButton cancel = UiTestUtils.getComponent(dialog, "cancelRequestBtn");
+        assertNotNull(UiTestUtils.getComponent(dialog, "pagination"), "the list goes page by page");
+        assertTrue(requests.getItems().getItems().isEmpty(), "no request yet");
+        assertTrue(send.isEnabled(), "a request may be sent");
+        assertFalse(cancel.isEnabled(), "nothing to cancel");
+
+        send.click();
+        press(DialogAction.Type.OK);
+
+        ReportAccessRequest pending = single(requests);
+        assertEquals(ReportAccessRequestStatus.PENDING, pending.getStatus());
+        assertEquals(pending, requests.getSingleSelectedItem(), "the pending request is selected");
+        assertFalse(send.isEnabled(), "no new request while one is pending");
+        assertTrue(cancel.isEnabled(), "the pending request may be cancelled");
+
+        cancel.click();
+        press(DialogAction.Type.YES);
+
+        assertEquals(ReportAccessRequestStatus.CANCELLED,
+                dataManager.load(ReportAccessRequest.class).id(pending.getId()).one().getStatus());
+        assertEquals(ReportAccessRequestStatus.CANCELLED, single(requests).getStatus(), "kept in the list, cancelled");
+        assertTrue(send.isEnabled(), "a new request may be sent again");
+        assertFalse(cancel.isEnabled(), "a cancelled request is not cancelled again");
+    }
+
+    @Test
+    void theListShowsOnlyTheRequestsOfTheUserForTheReport() {
+        User other = data.createViewer(data.createEmployeeIn(data.createSubdivision(true), false));
+        systemAuthenticator.withUser(other.getUsername(), () -> accessService.requestAccess(closedReport, null));
+        ReportCustom anotherClosed = data.createReport(data.createSubdivision(true));
+        ReportAccessRequest own = systemAuthenticator.withUser(member.getUsername(),
+                () -> accessService.requestAccess(closedReport, "mine"));
+        systemAuthenticator.withUser(member.getUsername(), () -> accessService.requestAccess(anotherClosed, null));
+
+        ReportCustomListView view = openListAs(member);
+        select(UiTestUtils.getComponent(view, "reportsDataGrid"), closedReport);
+        button(view, "requestAccessBtn").click();
+        ReportAccessRequestsView dialog = opened(ReportAccessRequestsView.class)
+                .orElseGet(() -> fail("the request opens the list of the requests"));
+
+        DataGrid<ReportAccessRequest> requests = UiTestUtils.getComponent(dialog, "requestsDataGrid");
+        assertEquals(own.getId(), single(requests).getId(), "neither the other's request nor the other report's");
+        assertFalse(UiTestUtils.<JmixButton>getComponent(dialog, "sendRequestBtn").isEnabled(), "one is pending");
+        assertTrue(UiTestUtils.<JmixButton>getComponent(dialog, "cancelRequestBtn").isEnabled(),
+                "the pending request is selected at once");
     }
 
     @Test
@@ -223,12 +292,46 @@ public class ReportListAccessUiTest {
                 .orElseGet(() -> fail("the report is in the tree"));
     }
 
-    private static java.util.Optional<InputDialog> openedInputDialog() {
+    private static <C extends Component> Optional<C> opened(Class<C> componentClass) {
+        UI.getCurrent().getInternals().getStateTree().runExecutionsBeforeClientResponse();
         return UI.getCurrent().getChildren()
                 .flatMap(ReportListAccessUiTest::selfAndDescendants)
-                .filter(InputDialog.class::isInstance)
-                .map(InputDialog.class::cast)
+                .filter(componentClass::isInstance)
+                .map(componentClass::cast)
                 .findFirst();
+    }
+
+    /** Presses the button of the given action in the dialog just opened: an input or an option dialog. */
+    private static void press(DialogAction.Type type) {
+        UI.getCurrent().getInternals().getStateTree().runExecutionsBeforeClientResponse();
+        // by the elements: the buttons of the option dialog sit in its footer, which is no child component
+        elementsBelow(UI.getCurrent().getElement())
+                .flatMap(element -> element.getComponent().stream())
+                .filter(Button.class::isInstance)
+                .map(Button.class::cast)
+                // the input dialog binds the action to its button, the option dialog gives the button its id
+                .filter(button -> button instanceof JmixButton jmixButton
+                        && jmixButton.getAction() instanceof DialogAction action && action.getType() == type
+                        || button.getId().filter(type.getId()::equals).isPresent())
+                .findFirst()
+                .orElseGet(() -> fail("the dialog has its " + type + " button"))
+                .click();
+    }
+
+    /** The element and those below it, the virtual children included: the footer of a dialog is one. */
+    private static Stream<Element> elementsBelow(Element element) {
+        Stream<Element> virtual = Optional.of(element.getNode())
+                .filter(node -> node.hasFeature(VirtualChildrenList.class)) // not on a text node
+                .flatMap(node -> node.getFeatureIfInitialized(VirtualChildrenList.class))
+                .map(list -> StreamSupport.stream(Spliterators.spliteratorUnknownSize(list.iterator(), 0), false).map(Element::get))
+                .orElseGet(Stream::empty);
+        return Stream.concat(Stream.of(element), Stream.concat(element.getChildren(), virtual)
+                .flatMap(ReportListAccessUiTest::elementsBelow));
+    }
+
+    private static ReportAccessRequest single(DataGrid<ReportAccessRequest> grid) {
+        assertEquals(1, grid.getItems().getItems().size(), "one request in the list");
+        return grid.getItems().getItems().iterator().next();
     }
 
     private static Stream<Component> selfAndDescendants(Component component) {

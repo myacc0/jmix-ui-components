@@ -1,6 +1,5 @@
 package uz.kapitalbank.umida.view.report;
 
-import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -23,7 +22,6 @@ import io.jmix.core.querycondition.LogicalCondition;
 import io.jmix.core.querycondition.PropertyCondition;
 import io.jmix.core.security.CurrentAuthentication;
 import io.jmix.flowui.DialogWindows;
-import io.jmix.flowui.Dialogs;
 import io.jmix.flowui.Notifications;
 import io.jmix.flowui.UiComponents;
 import io.jmix.flowui.UiProperties;
@@ -44,11 +42,6 @@ import io.jmix.flowui.download.ByteArrayDownloadDataProvider;
 import io.jmix.flowui.download.DownloadFormat;
 import io.jmix.flowui.facet.UrlQueryParametersFacet;
 import io.jmix.flowui.facet.urlqueryparameters.AbstractUrlQueryParametersBinder;
-import io.jmix.flowui.app.inputdialog.DialogActions;
-import io.jmix.flowui.app.inputdialog.InputDialog;
-import io.jmix.flowui.app.inputdialog.InputParameter;
-import io.jmix.flowui.component.textarea.JmixTextArea;
-import io.jmix.flowui.component.textfield.TypedTextField;
 import io.jmix.flowui.kit.action.Action;
 import io.jmix.flowui.kit.action.ActionPerformedEvent;
 import io.jmix.flowui.kit.component.HasActions;
@@ -71,13 +64,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 import uz.kapitalbank.umida.component.reportgroup.ReportTile;
 import uz.kapitalbank.umida.dto.report.ReportTreeItem;
-import uz.kapitalbank.umida.entity.orgstructure.OrgStructureJobTitle;
-import uz.kapitalbank.umida.entity.orgstructure.OrgStructurePosition;
-import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.entity.report.ReportCustom;
-import uz.kapitalbank.umida.service.report.ReportAccessException;
 import uz.kapitalbank.umida.service.report.ReportAccessService;
-import uz.kapitalbank.umida.service.report.ReportAccessService.Requester;
+import uz.kapitalbank.umida.view.report.access.ReportAccessRequestsView;
 import uz.kapitalbank.umida.entity.report.ReportGroupCustom;
 import uz.kapitalbank.umida.enums.report.ReportGrouping;
 import uz.kapitalbank.umida.enums.report.ReportTileSort;
@@ -208,8 +197,6 @@ public class ReportCustomListView extends StandardListView<Report> {
     private ReportCustomService reportCustomService;
     @Autowired
     private ReportAccessService accessService;
-    @Autowired
-    private Dialogs dialogs;
     @Autowired
     private ReportGroupingService reportGroupingService;
     @Autowired
@@ -845,74 +832,14 @@ public class ReportCustomListView extends StandardListView<Report> {
         requestAccess(selectedTileReport());
     }
 
-    /**
-     * Shows the report and the requester, asks why the report is needed and sends the request to whoever decides
-     * on it.
-     */
+    /** The requests of the user for the report: sends a new one or cancels the pending one. */
     private void requestAccess(@Nullable Report report) {
         if (report == null) {
             return;
         }
-        Optional<Requester> requester = accessService.currentRequester();
-        Optional<OrgStructurePosition> position = requester.map(Requester::position);
-        dialogs.createInputDialog(this)
-                .withHeader(messageBundle.getMessage("requestAccessDialog.header"))
-                .withLabelsPosition(Dialogs.InputDialogBuilder.LabelsPosition.TOP)
-                // one field under another, the width of the dialog
-                .withResponsiveSteps(List.of(new ResponsiveStep("0", 1, ResponsiveStep.LabelsPosition.TOP)))
-                .withParameters(
-                        readOnlyParameter("reportCode", "requestAccessDialog.reportCode", report.getCode()),
-                        readOnlyParameter("reportName", "requestAccessDialog.reportName", report.getName()),
-                        readOnlyParameter("employee", "requestAccessDialog.employee",
-                                requester.map(r -> r.employee().getFullName()).orElse(null)),
-                        readOnlyParameter("position", "requestAccessDialog.position", position
-                                .map(OrgStructurePosition::getJobTitle).map(OrgStructureJobTitle::getName)
-                                .orElse(null)),
-                        readOnlyParameter("subdivision", "requestAccessDialog.subdivision", position
-                                .map(OrgStructurePosition::getSubdivision).map(OrgStructureSubdivision::getName)
-                                .orElse(null)),
-                        InputParameter.stringParameter("reason")
-                                .withLabel(messageBundle.getMessage("requestAccessDialog.reason"))
-                                .withField(() -> {
-                                    JmixTextArea reason = uiComponents.create(JmixTextArea.class);
-                                    reason.setWidthFull();
-                                    reason.setMinHeight("8em");
-                                    return reason;
-                                }))
-                .withActions(DialogActions.OK_CANCEL, result -> {
-                    if (result.getCloseAction() == InputDialog.INPUT_DIALOG_OK_ACTION) {
-                        sendRequest((ReportCustom) report, result.getValue("reason"));
-                    }
-                })
+        dialogWindows.view(this, ReportAccessRequestsView.class)
+                .withViewConfigurer(view -> view.setReport((ReportCustom) report))
                 .open();
-    }
-
-    /**
-     * A read-only text of the request dialog. The label goes on the item of the form, not on the field: a label on
-     * the field leaves the empty label of the item above it.
-     */
-    @SuppressWarnings("unchecked")
-    private InputParameter readOnlyParameter(String id, String labelKey, @Nullable String value) {
-        return InputParameter.stringParameter(id).withLabel(messageBundle.getMessage(labelKey)).withField(() -> {
-            TypedTextField<String> field = uiComponents.create(TypedTextField.class);
-            field.setValue(value == null ? "" : value);
-            field.setReadOnly(true);
-            field.setWidthFull();
-            return field;
-        });
-    }
-
-    private void sendRequest(ReportCustom report, @Nullable String reason) {
-        try {
-            accessService.requestAccess(report, reason);
-            notifications.create(messageBundle.getMessage("requestAccess.sent"))
-                    .withType(Notifications.Type.SUCCESS)
-                    .show();
-        } catch (ReportAccessException e) {
-            notifications.create(e.getMessage())
-                    .withType(Notifications.Type.WARNING)
-                    .show();
-        }
     }
 
     /** What the edit action of the paged list does, which works on entities of a grid: the editor, coming back here. */

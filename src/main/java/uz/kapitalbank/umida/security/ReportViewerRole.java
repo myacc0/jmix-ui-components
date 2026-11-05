@@ -137,7 +137,9 @@ public interface ReportViewerRole {
             "report_ReportTableView",
             "report_ReportExecution.list",
             "umida_ReportAccessManagementView",
-            "umida_ReportAccessGrantView"
+            "umida_ReportAccessGrantView",
+            // the requests of the user for a report, a dialog of the list of the reports
+            "umida_ReportAccessRequestsView"
     })
     @MenuPolicy(menuIds = {"umida_ReportCustom.list", "reportAccessManagement"})
     void views();

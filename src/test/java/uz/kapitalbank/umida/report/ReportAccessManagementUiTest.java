@@ -135,6 +135,19 @@ public class ReportAccessManagementUiTest {
     }
 
     @Test
+    void theOwnRequestOfTheHeadForAnotherReportIsNotAmongTheRequestsToDecide() {
+        ReportAccessRequest own = systemAuthenticator.withUser(head.getUsername(),
+                () -> accessService.requestAccess(otherReport, "for the head"));
+
+        ReportAccessManagementView view = open(head);
+
+        Set<UUID> listed = ids(requestsGrid(view));
+        assertFalse(listed.contains(own.getId()), "the head's own request is decided by the owner of the other report");
+        assertEquals(Set.of(request.getId()), listed);
+        assertEquals("1", badgeOf(UiTestUtils.getComponent(view, "tabSheet.requestsTab")));
+    }
+
+    @Test
     void someoneWhoManagesNothingSeesNeitherTheMenuItemNorTheLists() {
         ReportAccessManagementView view = open(outsider);
 

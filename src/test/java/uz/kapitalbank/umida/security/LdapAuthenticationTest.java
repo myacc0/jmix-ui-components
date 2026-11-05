@@ -68,7 +68,9 @@ class LdapAuthenticationTest {
         assertThat(user.getEmail()).isEqualTo("yuliya.kim@gmail.com");
         assertThat(authentication.getAuthorities())
                 .extracting(GrantedAuthority::getAuthority)
-                .contains(roleGrantedAuthorityUtils.getDefaultRolePrefix() + LdapMinimalRole.CODE);
+                .contains(roleGrantedAuthorityUtils.getDefaultRolePrefix() + LdapMinimalRole.CODE,
+                        // by its own code: the resource role extending it would lose its row-level policies
+                        roleGrantedAuthorityUtils.getDefaultRowLevelRolePrefix() + ReportViewerRowsRole.CODE);
     }
 
     @Test

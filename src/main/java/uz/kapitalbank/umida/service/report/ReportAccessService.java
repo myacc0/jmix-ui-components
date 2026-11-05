@@ -212,6 +212,15 @@ public class ReportAccessService {
         return personallyManaged(null);
     }
 
+    /**
+     * The reports the lists of the access management are narrowed down to: those the current user manages
+     * as the head of their owner or as a delegate; empty for an author, who manages every report. The rows
+     * of the user's own requests, which the roles let the user read, are not among them.
+     */
+    public Optional<Set<UUID>> managedReportIdsUnlessAuthor() {
+        return isAuthor() ? Optional.empty() : Optional.of(personallyManagedReportIds());
+    }
+
     /** Whether the current user has anything to manage: an author, or the head or a delegate of an owner. */
     public boolean canOpenAccessManagement() {
         return isAuthor() || !personallyManagedReportIds().isEmpty();
@@ -365,17 +374,7 @@ public class ReportAccessService {
         if (canRun(report)) {
             throw new ReportAccessException(message("alreadyHasAccess"));
         }
-        boolean pending = dataManager.load(ReportAccessRequest.class)
-                .query("select q from umida_ReportAccessRequest q" +
-                        " where q.report.id = :reportId and q.employee.id = :" + EMPLOYEE_PARAM + " and q.status = :status")
-                .parameter("reportId", report.getId())
-                .parameter(EMPLOYEE_PARAM, employee.getId())
-                .parameter("status", ReportAccessRequestStatus.PENDING.getId())
-                .fetchPlanProperties("id")
-                .maxResults(1)
-                .optional()
-                .isPresent();
-        if (pending) {
+        if (hasPendingRequest(report.getId(), employee.getId())) {
             throw new ReportAccessException(message("requestPending"));
         }
 
@@ -387,6 +386,34 @@ public class ReportAccessService {
         ReportAccessRequest saved = dataManager.save(request);
         changed();
         return saved;
+    }
+
+    /**
+     * Whether the current user may ask for the report now: has an employee in office, cannot run the report
+     * yet and has no request for it waiting for a decision.
+     */
+    public boolean canRequestAccess(ReportCustom report) {
+        return currentEmployee()
+                .map(employee -> !canRun(report) && !hasPendingRequest(report.getId(), employee.getId()))
+                .orElse(false);
+    }
+
+    /** The employee of the current user, whose requests the user reads and cancels; empty without one. */
+    public Optional<String> currentEmployeeId() {
+        return currentEmployee().map(OrgStructureEmployee::getId);
+    }
+
+    private boolean hasPendingRequest(UUID reportId, String employeeId) {
+        return dataManager.load(ReportAccessRequest.class)
+                .query("select q from umida_ReportAccessRequest q" +
+                        " where q.report.id = :reportId and q.employee.id = :" + EMPLOYEE_PARAM + " and q.status = :status")
+                .parameter("reportId", reportId)
+                .parameter(EMPLOYEE_PARAM, employeeId)
+                .parameter("status", ReportAccessRequestStatus.PENDING.getId())
+                .fetchPlanProperties("id")
+                .maxResults(1)
+                .optional()
+                .isPresent();
     }
 
     /** The requester withdraws a pending request of their own. */

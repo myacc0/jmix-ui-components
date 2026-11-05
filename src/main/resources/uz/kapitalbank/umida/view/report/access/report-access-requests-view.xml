@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://reportAccessRequestsView.title">
+    <data>
+        <!-- the requests of the current user for the report, the controller sets the parameters and loads -->
+        <collection id="requestsDc" class="uz.kapitalbank.umida.entity.report.ReportAccessRequest">
+            <fetchPlan extends="_base">
+                <property name="position">
+                    <property name="jobTitle" fetchPlan="_instance_name"/>
+                    <property name="subdivision" fetchPlan="_instance_name"/>
+                </property>
+            </fetchPlan>
+            <loader id="requestsDl" readOnly="true">
+                <query>
+                    <![CDATA[select q from umida_ReportAccessRequest q
+                    where q.report.id = :reportId and q.employee.id = :employeeId
+                    order by case when q.status = 'pending' then 0 else 1 end, q.createdDate desc]]>
+                </query>
+            </loader>
+        </collection>
+    </data>
+    <layout>
+        <span id="reportText" classNames="font-semibold"/>
+        <hbox id="buttonsPanel" classNames="buttons-panel" padding="false" width="100%">
+            <button id="sendRequestBtn" action="requestsDataGrid.sendRequest" themeNames="primary" text="" title="msg://sendRequest.text"/>
+            <button id="cancelRequestBtn" action="requestsDataGrid.cancelRequest" text="" title="msg://cancelRequest.text"/>
+            <simplePagination id="pagination" dataLoader="requestsDl" classNames="ms-auto"/>
+        </hbox>
+        <dataGrid id="requestsDataGrid" dataContainer="requestsDc" width="100%" minHeight="20em"
+                  columnReorderingAllowed="true">
+            <actions>
+                <action id="sendRequest" icon="vaadin:envelope-o" text="msg://sendRequest.text"/>
+                <action id="cancelRequest" type="list_itemTracking" icon="BAN" text="msg://cancelRequest.text"/>
+            </actions>
+            <columns resizable="true">
+                <column property="createdDate" autoWidth="true" flexGrow="0"/>
+                <column property="status" autoWidth="true" flexGrow="0"/>
+                <column property="reason" autoWidth="true" flexGrow="0"/>
+                <column property="decidedBy" autoWidth="true" flexGrow="0"/>
+                <column property="decidedAt" autoWidth="true" flexGrow="0"/>
+                <column property="decisionComment" autoWidth="true" flexGrow="0"/>
+            </columns>
+        </dataGrid>
+    </layout>
+</view>

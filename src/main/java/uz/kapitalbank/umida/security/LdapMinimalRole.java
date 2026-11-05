@@ -11,9 +11,14 @@ import io.jmix.securityflowui.role.annotation.MenuPolicy;
 import io.jmix.securityflowui.role.annotation.ViewPolicy;
 import uz.kapitalbank.umida.entity.User;
 
+/**
+ * The resource role every LDAP user gets at the login ({@code jmix.ldap.default-roles}). A resource role takes
+ * only the resource policies of the interfaces it extends: the row-level ones, {@link ReportViewerRowsRole}
+ * among them, are lost there, so that role is given at the login next to this one, by its own code.
+ */
 @ResourceRole(name = "LDAP minimal role", code = LdapMinimalRole.CODE, scope = SecurityScope.UI)
 public interface LdapMinimalRole extends UiMinimalRole, DqViewerRole,
-        OrgStructureViewerRole, ReportViewerRole, ReportViewerRowsRole {
+        OrgStructureViewerRole, ReportViewerRole {
     String CODE = "ldap-minimal-role";
 
     @ViewPolicy(viewIds = "umida_LoginView")
