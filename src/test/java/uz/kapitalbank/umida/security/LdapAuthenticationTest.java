@@ -68,7 +68,7 @@ class LdapAuthenticationTest {
         assertThat(user.getEmail()).isEqualTo("yuliya.kim@gmail.com");
         assertThat(authentication.getAuthorities())
                 .extracting(GrantedAuthority::getAuthority)
-                .contains(roleGrantedAuthorityUtils.getDefaultRolePrefix() + UiMinimalRole.CODE);
+                .contains(roleGrantedAuthorityUtils.getDefaultRolePrefix() + LdapMinimalRole.CODE);
     }
 
     @Test

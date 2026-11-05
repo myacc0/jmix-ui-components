@@ -13,7 +13,6 @@ import io.jmix.core.Messages;
 import io.jmix.core.TimeSource;
 import io.jmix.core.security.AccessDeniedException;
 import io.jmix.core.security.CurrentAuthentication;
-import io.jmix.core.security.SystemAuthenticator;
 import io.jmix.flowui.DialogWindows;
 import io.jmix.flowui.Dialogs;
 import io.jmix.flowui.Notifications;
@@ -32,6 +31,7 @@ import io.jmix.flowui.view.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.lang.Nullable;
+import org.springframework.security.core.Authentication;
 import uz.kapitalbank.umida.entity.report.ReportAccessGrant;
 import uz.kapitalbank.umida.entity.report.ReportAccessRequest;
 import uz.kapitalbank.umida.entity.report.ReportCustom;
@@ -60,8 +60,8 @@ import static uz.kapitalbank.umida.service.orgstructure.OrgStructureJpql.TODAY_P
  * {@link uz.kapitalbank.umida.security.ReportViewerRowsRole}, the operations checked by
  * {@link ReportAccessService}. Every tab is filtered by the filters in the headers of its columns; the
  * position and the subdivision are those the employee held when the grant was given or the request made.
- * The number of the pending requests follows the changes made by anyone, see
- * {@link ReportAccessUiEventBridge}.
+ * The requests, the pending ones first, and their number follow the changes made by anyone, see
+ * {@link ReportAccessUiEventBridge}; a tab loads its list again when selected.
  */
 @Route(value = "report-access", layout = MainView.class)
 @ViewController(id = "umida_ReportAccessManagementView")
@@ -103,16 +103,14 @@ public class ReportAccessManagementView extends StandardView {
     private TimeSource timeSource;
     @Autowired
     private CurrentAuthentication currentAuthentication;
-    @Autowired
-    private SystemAuthenticator systemAuthenticator;
 
     private final Span requestsBadge = new Span();
-    /** The user of the view: the events of the other users arrive without a reliable authentication. */
-    private String username;
+    /** The authentication of the user of the view: the events arrive without a reliable one. */
+    private Authentication authentication;
 
     @Subscribe
     public void onInit(final InitEvent event) {
-        username = currentAuthentication.getUser().getUsername();
+        authentication = currentAuthentication.getAuthentication();
         requestsBadge.getElement().getThemeList().addAll(List.of("badge", "pill", "small", "primary"));
         requestsBadge.addClassNames(LumoUtility.Margin.Left.SMALL);
         requestsTab.add(requestsBadge);
@@ -135,10 +133,23 @@ public class ReportAccessManagementView extends StandardView {
     @EventListener
     public void onRequestsChanged(final ReportAccessUiEventBridge.RequestsChangedUiEvent event) {
         if (tabSheet.isVisible()) {
-            systemAuthenticator.runWithUser(username, () -> {
-                requestsDl.load();
-                refreshRequestsBadge();
-            });
+            ReportAccessUiEventBridge.runAs(authentication, this::loadRequests);
+        }
+    }
+
+    /** Each tab shows its list as it is now: the others may have changed it since it was loaded. */
+    @Subscribe("tabSheet")
+    public void onTabSheetSelectedChange(final JmixTabSheet.SelectedChangeEvent event) {
+        if (event.isInitialSelection() || !tabSheet.isVisible() || event.getSelectedTab() == null) {
+            return;
+        }
+        String tabId = event.getSelectedTab().getId().orElse("");
+        switch (tabId) {
+            case "grantsTab" -> loadGrants();
+            case "journalTab" -> loadJournal();
+            case "requestsTab" -> loadRequests();
+            default -> {
+            }
         }
     }
 
@@ -283,7 +294,7 @@ public class ReportAccessManagementView extends StandardView {
     // ---------------------------------------------------------------------
 
     private void reloadAll() {
-        if (!tabSheet.isVisible() || username == null) {
+        if (!tabSheet.isVisible() || authentication == null) {
             return;
         }
         loadGrants();
@@ -304,7 +315,10 @@ public class ReportAccessManagementView extends StandardView {
     }
 
     private void loadRequests() {
-        requestsDl.setQuery("select q from umida_ReportAccessRequest q order by q.createdDate desc");
+        // the pending ones first, the newest first among them and among the others
+        requestsDl.setQuery("select q from umida_ReportAccessRequest q order by"
+                + " case when q.status = '" + ReportAccessRequestStatus.PENDING.getId() + "' then 0 else 1 end,"
+                + " q.createdDate desc");
         requestsDl.load();
         refreshRequestsBadge();
     }

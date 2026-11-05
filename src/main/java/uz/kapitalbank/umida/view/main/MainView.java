@@ -18,7 +18,6 @@ import io.jmix.flowui.UiComponents;
 import io.jmix.flowui.app.main.StandardMainView;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import io.jmix.core.security.CurrentAuthentication;
-import io.jmix.core.security.SystemAuthenticator;
 import io.jmix.flowui.component.main.JmixListMenu;
 import io.jmix.flowui.kit.component.main.ListMenu;
 import io.jmix.flowui.view.Install;
@@ -30,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import uz.kapitalbank.umida.service.report.ReportAccessService;
 import uz.kapitalbank.umida.view.report.access.ReportAccessUiEventBridge;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.List;
@@ -58,14 +58,12 @@ public class MainView extends StandardMainView {
     private ReportAccessService reportAccessService;
     @Autowired
     private CurrentAuthentication currentAuthentication;
-    @Autowired
-    private SystemAuthenticator systemAuthenticator;
     @ViewComponent
     private JmixListMenu menu;
 
     private final Span reportAccessBadge = new Span();
-    /** The user of the view: the events of the other users arrive without a reliable authentication. */
-    private String username;
+    /** The authentication of the user of the view: the events arrive without a reliable one. */
+    private Authentication authentication;
     private boolean reportAccessShown;
 
     /**
@@ -75,7 +73,7 @@ public class MainView extends StandardMainView {
      */
     @Subscribe
     public void onReady(final ReadyEvent event) {
-        username = currentAuthentication.getUser().getUsername();
+        authentication = currentAuthentication.getAuthentication();
         ListMenu.MenuItem item = menu.getMenuItem(REPORT_ACCESS_ITEM);
         if (item == null) {
             return;
@@ -97,7 +95,7 @@ public class MainView extends StandardMainView {
     @EventListener
     public void onReportAccessRequestsChanged(final ReportAccessUiEventBridge.RequestsChangedUiEvent event) {
         if (reportAccessShown) {
-            systemAuthenticator.runWithUser(username, this::refreshReportAccessBadge);
+            ReportAccessUiEventBridge.runAs(authentication, this::refreshReportAccessBadge);
         }
     }
 
