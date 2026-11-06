@@ -165,6 +165,32 @@ public class ReportAccessServiceTests {
     }
 
     @Test
+    void theOwnerSideAndTheDomainsHaveTheirOwnAccessTheGrantsAndTheAuthorsNot() {
+        OrgStructureEmployee memberEmployee = data.createEmployeeIn(owner, false, null);
+        User member = data.createUser(memberEmployee);
+        accessService.saveOwnerMembers(report, List.of(new OwnerMember(memberEmployee, false)));
+
+        OrgStructureSubdivision domainOwner = data.createSubdivision(true);
+        User domainHead = data.createUser(data.createEmployeeIn(domainOwner, true, null));
+        DictDataDomain domain = data.createDomain(domainOwner, null);
+        ReportCustom domainReport = data.createReport(data.createSubdivision(true), domain);
+
+        OrgStructureEmployee granteeEmployee = data.createEmployeeIn(data.createSubdivision(true), false, null);
+        User grantee = data.createUser(granteeEmployee);
+        accessService.grant(report, List.of(granteeEmployee), ReportAccessGrantSource.DIRECT, null);
+
+        List<UUID> ids = List.of(report.getId(), domainReport.getId());
+        assertEquals(Set.of(report.getId()), as(head, () -> accessService.ownerOrDomainAccessAmong(ids)), "the head");
+        assertEquals(Set.of(report.getId()), as(member, () -> accessService.ownerOrDomainAccessAmong(ids)),
+                "a member of the owner list");
+        assertEquals(Set.of(domainReport.getId()), as(domainHead, () -> accessService.ownerOrDomainAccessAmong(ids)),
+                "the responsible of the domain");
+        assertEquals(Set.of(), as(grantee, () -> accessService.ownerOrDomainAccessAmong(ids)),
+                "a direct grant runs, yet is no access of the owner");
+        assertEquals(Set.of(), accessService.ownerOrDomainAccessAmong(ids), "the author asks for nothing anyway");
+    }
+
+    @Test
     void aStewardOutOfOfficeOrOfTheParentDomainDoesNotRun() {
         DictDataDomain parent = data.createDomain(data.createSubdivision(true), null);
         DictDataDomain child = data.createDomain(data.createSubdivision(true), parent);

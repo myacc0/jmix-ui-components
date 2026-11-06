@@ -48,6 +48,7 @@ import io.jmix.flowui.kit.component.HasActions;
 import io.jmix.flowui.kit.component.button.JmixButton;
 import io.jmix.flowui.model.CollectionContainer;
 import io.jmix.flowui.model.CollectionLoader;
+import io.jmix.flowui.model.InstanceContainer;
 import io.jmix.flowui.util.RemoveOperation;
 import io.jmix.flowui.view.*;
 import io.jmix.reports.ReportImportExport;
@@ -259,6 +260,7 @@ public class ReportCustomListView extends StandardListView<Report> {
     /** The rights of the user on the reports met so far, asked once each; forgotten on every reload. */
     private final Map<UUID, Boolean> runnable = new HashMap<>();
     private final Map<UUID, Boolean> historyViewable = new HashMap<>();
+    private final Map<UUID, Boolean> ownerOrDomainAccess = new HashMap<>();
     private boolean author;
 
     /** The id of the group or the report of the selected tile. */
@@ -305,7 +307,8 @@ public class ReportCustomListView extends StandardListView<Report> {
     /**
      * The rules of the access for the actions of the paged list, of the tree or of the tiles, acting on the
      * report {@code selected} gives. The actions of the authors are hidden from the others, the request of
-     * access from the authors: hidden on the actions, not on the buttons, which take the visibility of the
+     * access from the authors and on the reports of the owner or of the domain of the user (see
+     * {@link #updateRequestAccessVisible}): hidden on the actions, not on the buttons, which take the visibility of the
      * action they are bound to whenever the list, the tree or the tiles are shown.
      */
     private void installAccessRules(Function<String, Action> actions, Supplier<? extends Report> selected) {
@@ -314,11 +317,46 @@ public class ReportCustomListView extends StandardListView<Report> {
             ((SecuredBaseAction) action).addEnabledRule(() -> author);
             action.setVisible(action.isVisible() && author);
         });
-        actions.apply("requestAccess").setVisible(!author);
+        updateRequestAccessVisible(actions.apply("requestAccess"), selected.get());
         ((SecuredBaseAction) actions.apply("runReport")).addEnabledRule(() -> canRun(selected.get()));
         ((SecuredBaseAction) actions.apply("executions")).addEnabledRule(() -> canViewHistory(selected.get()));
         // the requests of a report are shown whatever the access: a new one is sent from there only when it may be
         ((SecuredBaseAction) actions.apply("requestAccess")).addEnabledRule(() -> !author && selected.get() != null);
+    }
+
+    /**
+     * The request of access is hidden from the authors, and on a report the user runs as the head or a member
+     * of the list of its business owner, or as the responsible of its domain: nothing is to be asked for there.
+     * A grant given on a request keeps the button, which opens the requests of the report.
+     */
+    private void updateRequestAccessVisible(Action action, @Nullable Report report) {
+        action.setVisible(!author && !hasOwnerOrDomainAccess(report));
+    }
+
+    private boolean hasOwnerOrDomainAccess(@Nullable Report report) {
+        return report != null && ownerOrDomainAccess.computeIfAbsent(report.getId(),
+                id -> accessService.ownerOrDomainAccessAmong(List.of(id)).contains(id));
+    }
+
+    /** The selected row of the paged list or of the tree changes, or a reload brings a fresh instance of it. */
+    @Subscribe(id = "reportsDc", target = Target.DATA_CONTAINER)
+    public void onReportsDcItemChange(final InstanceContainer.ItemChangeEvent<Report> event) {
+        updateRequestAccessVisible(reportsDataGrid.getAction("requestAccess"), reportsDataGrid.getSingleSelectedItem());
+    }
+
+    @Subscribe(id = "reportsDc", target = Target.DATA_CONTAINER)
+    public void onReportsDcCollectionChange(final CollectionContainer.CollectionChangeEvent<Report> event) {
+        updateRequestAccessVisible(reportsDataGrid.getAction("requestAccess"), reportsDataGrid.getSingleSelectedItem());
+    }
+
+    @Subscribe(id = "reportTreeItemsDc", target = Target.DATA_CONTAINER)
+    public void onReportTreeItemsDcItemChange(final InstanceContainer.ItemChangeEvent<ReportTreeItem> event) {
+        updateRequestAccessVisible(reportsTreeDataGrid.getAction("requestAccess"), selectedTreeReport());
+    }
+
+    @Subscribe(id = "reportTreeItemsDc", target = Target.DATA_CONTAINER)
+    public void onReportTreeItemsDcCollectionChange(final CollectionContainer.CollectionChangeEvent<ReportTreeItem> event) {
+        updateRequestAccessVisible(reportsTreeDataGrid.getAction("requestAccess"), selectedTreeReport());
     }
 
     private boolean canRun(@Nullable Report report) {
@@ -435,6 +473,7 @@ public class ReportCustomListView extends StandardListView<Report> {
     private void reload() {
         runnable.clear();
         historyViewable.clear();
+        ownerOrDomainAccess.clear();
         if (tilesShown) {
             showFolder(folder != null ? folderId() : tilesBinder.initialFolderId);
         } else {
@@ -562,6 +601,7 @@ public class ReportCustomListView extends StandardListView<Report> {
 
     private void refreshTileActions() {
         TILE_ACTIONS.forEach(id -> getViewActions().getAction(id).refreshState());
+        updateRequestAccessVisible(getViewActions().getAction(tileActionId("requestAccess")), selectedTileReport());
     }
 
     /** The report of the selected tile; none for the tile of a group. */

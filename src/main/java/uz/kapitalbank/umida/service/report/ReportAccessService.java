@@ -181,15 +181,29 @@ public class ReportAccessService {
         }
 
         Set<UUID> viewable = new HashSet<>(personallyManaged(reportIds));
-        viewable.addAll(reportIds(dataManager.loadValues("select g.report.id from umida_ReportAccessGrant g" +
-                        " where g.employee.id = :" + EMPLOYEE_PARAM + " and g.source = :source and " + inForce("g") +
-                        " and g.report.id in :" + IDS_PARAM)
-                .parameter(EMPLOYEE_PARAM, employeeId.get())
-                .parameter("source", ReportAccessGrantSource.OWNER.getId())
-                .parameter(IDS_PARAM, reportIds)
-                .parameter(TODAY_PARAM, today())));
+        viewable.addAll(ownerListReports(employeeId.get(), reportIds));
         viewable.addAll(domainReports(employeeId.get(), reportIds));
         return viewable;
+    }
+
+    /**
+     * The reports among the given ones the current user runs on the side of the report itself, not by a grant
+     * given on a request: as the head of the business owner, as a member of the list of the business owner or
+     * as the responsible of a domain. There is nothing to ask for on such a report; empty for an author.
+     */
+    public Set<UUID> ownerOrDomainAccessAmong(Collection<UUID> reportIds) {
+        if (reportIds.isEmpty() || isAuthor()) {
+            return Set.of();
+        }
+        Optional<String> employeeId = currentEmployee().map(OrgStructureEmployee::getId);
+        if (employeeId.isEmpty()) {
+            return Set.of();
+        }
+
+        Set<UUID> reports = new HashSet<>(headedReports(employeeId.get(), reportIds, false));
+        reports.addAll(ownerListReports(employeeId.get(), reportIds));
+        reports.addAll(domainReports(employeeId.get(), reportIds));
+        return reports;
     }
 
     public boolean canManageAccess(ReportCustom report) {
@@ -695,6 +709,17 @@ public class ReportAccessService {
             loader.parameter(IDS_PARAM, reportIds);
         }
         return reportIds(loader);
+    }
+
+    /** The reports among the given ones the employee is on the list of the business owner of: a grant in force of the source {@code OWNER}. */
+    private Set<UUID> ownerListReports(String employeeId, Collection<UUID> reportIds) {
+        return reportIds(dataManager.loadValues("select g.report.id from umida_ReportAccessGrant g" +
+                        " where g.employee.id = :" + EMPLOYEE_PARAM + " and g.source = :source and " + inForce("g") +
+                        " and g.report.id in :" + IDS_PARAM)
+                .parameter(EMPLOYEE_PARAM, employeeId)
+                .parameter("source", ReportAccessGrantSource.OWNER.getId())
+                .parameter(IDS_PARAM, reportIds)
+                .parameter(TODAY_PARAM, today()));
     }
 
     /** The reports among the given ones with a primary or secondary domain the employee is responsible for. */

@@ -133,10 +133,13 @@ public class ReportListAccessUiTest {
         DataGrid<Report> grid = UiTestUtils.getComponent(view, "reportsDataGrid");
         select(grid, ownReport);
         assertButtons(view, true, true, true, "a member runs and sees the own runs");
+        assertFalse(button(view, "requestAccessBtn").isVisible(), "a member of the owner list asks for nothing");
         select(grid, grantedReport);
         assertButtons(view, true, false, true, "a grant gives no history");
+        assertTrue(button(view, "requestAccessBtn").isVisible(), "a grant keeps the requests of the report");
         select(grid, closedReport);
         assertButtons(view, false, false, true, "no access: request it");
+        assertTrue(button(view, "requestAccessBtn").isVisible(), "no access: request it");
 
         button(view, "requestAccessBtn").click();
         ReportAccessRequestsView requests = opened(ReportAccessRequestsView.class)
@@ -216,8 +219,10 @@ public class ReportListAccessUiTest {
 
         tree.select(treeItem(tree, closedReport));
         assertButtons(view, false, false, true, "the tree: no access");
+        assertTrue(button(view, "requestAccessBtn").isVisible(), "the tree: no access");
         tree.select(treeItem(tree, ownReport));
         assertButtons(view, true, true, true, "the tree: a member");
+        assertFalse(button(view, "requestAccessBtn").isVisible(), "the tree: a member asks for nothing");
         assertFalse(button(view, "editBtn").isVisible(), "still no editing in the tree");
     }
 
