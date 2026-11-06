@@ -1,9 +1,12 @@
 package uz.kapitalbank.umida.view.report.access;
 
 import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
+import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.component.html.DescriptionList;
 import com.vaadin.flow.component.html.DescriptionList.Description;
@@ -54,6 +57,7 @@ import uz.kapitalbank.umida.view.main.MainView;
 
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -290,17 +294,58 @@ public class ReportAccessManagementView extends StandardView {
         if (grants.isEmpty()) {
             return;
         }
-        dialogs.createInputDialog(this)
+        InputDialog dialog = dialogs.createInputDialog(this)
                 .withHeader(messageBundle.formatMessage("revokeDialog.header", grants.size()))
+                .withWidth("70em")
                 .withLabelsPosition(Dialogs.InputDialogBuilder.LabelsPosition.TOP)
+                .withResponsiveSteps(List.of(new ResponsiveStep("0", 1, ResponsiveStep.LabelsPosition.TOP)))
+                // the label of the parameter, not of the field: the form item of a parameter without a label
+                // keeps its empty label, a gap above the field
                 .withParameter(InputParameter.stringParameter("reason")
-                        .withField(() -> textArea(messageBundle.getMessage("revokeDialog.reason"))))
+                        .withLabel(messageBundle.getMessage("revokeDialog.reason"))
+                        .withField(() -> textArea()))
                 .withActions(DialogActions.OK_CANCEL, result -> {
                     if (result.getCloseAction() == InputDialog.INPUT_DIALOG_OK_ACTION) {
                         revoke(grants, result.getValue("reason"));
                     }
                 })
                 .open();
+        addAboveFields(dialog, revokedGrantsGrid(grants));
+    }
+
+    /** The grants being revoked, read-only: whose access to which report goes. */
+    private Grid<ReportAccessGrant> revokedGrantsGrid(Collection<ReportAccessGrant> grants) {
+        Grid<ReportAccessGrant> grid = new Grid<>();
+        grid.setId("revokeGrantsGrid");
+        grid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_ROW_STRIPES);
+        grid.setSelectionMode(Grid.SelectionMode.NONE);
+        grid.setWidthFull();
+        addTextColumn(grid, "decisionDialog.reportCode", grant -> grant.getReport().getCode());
+        addTextColumn(grid, "decisionDialog.reportName", grant -> grant.getReport().getName());
+        addTextColumn(grid, "decisionDialog.employee", grant -> grant.getEmployee().getFullName());
+        addTextColumn(grid, "decisionDialog.position", grant -> jobTitleName(grant.getPosition()));
+        addTextColumn(grid, "decisionDialog.subdivision", grant -> subdivisionName(grant.getPosition()));
+        grid.setItems(grants.stream()
+                .sorted(Comparator.comparing((ReportAccessGrant grant) -> grant.getReport().getName(),
+                                Comparator.nullsLast(Comparator.naturalOrder()))
+                        .thenComparing(grant -> grant.getEmployee().getFullName(),
+                                Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList());
+        // a few grants are shown whole, more of them scroll
+        if (grants.size() <= 8) {
+            grid.setAllRowsVisible(true);
+        } else {
+            grid.setHeight("20em");
+        }
+        return grid;
+    }
+
+    private void addTextColumn(Grid<ReportAccessGrant> grid, String headerKey,
+                               Function<ReportAccessGrant, String> value) {
+        grid.addColumn(value::apply)
+                .setHeader(messageBundle.getMessage(headerKey))
+                .setAutoWidth(true)
+                .setResizable(true);
     }
 
     private void revoke(Set<ReportAccessGrant> grants, @Nullable String reason) {
@@ -345,7 +390,7 @@ public class ReportAccessManagementView extends StandardView {
                         }),
                 InputParameter.stringParameter("comment")
                         .withLabel(messageBundle.getMessage("decisionDialog.comment"))
-                        .withField(() -> textArea(null)));
+                        .withField(() -> textArea()));
     }
 
     /** Refuses the request; the requester is told why: the comment is required. */
@@ -363,7 +408,7 @@ public class ReportAccessManagementView extends StandardView {
                 InputParameter.stringParameter("comment")
                         .withLabel(messageBundle.getMessage("decisionDialog.comment"))
                         .withField(() -> {
-                            JmixTextArea comment = textArea(null);
+                            JmixTextArea comment = textArea();
                             comment.setRequired(true);
                             comment.setRequiredMessage(messageBundle.getMessage("rejectDialog.commentRequired"));
                             return comment;
@@ -385,14 +430,21 @@ public class ReportAccessManagementView extends StandardView {
                 .withParameters(parameters)
                 .withActions(DialogActions.OK_CANCEL, resultHandler)
                 .open();
+        addAboveFields(dialog, requestDetails(request));
+    }
+
+    /**
+     * Puts a component on top of the input dialog, above its fields: it is no parameter of the dialog, which
+     * takes the value of each of its parameters when closed.
+     */
+    private static void addAboveFields(InputDialog dialog, Component component) {
         dialog.getFormLayout().getParent()
                 .map(HasComponents.class::cast)
-                .ifPresent(content -> content.addComponentAsFirst(requestDetails(request)));
+                .ifPresent(content -> content.addComponentAsFirst(component));
     }
 
     /** The request decided on, as "label: value" rows. */
     private DescriptionList requestDetails(ReportAccessRequest request) {
-        Optional<OrgStructurePosition> position = Optional.ofNullable(request.getPosition());
         DescriptionList details = new DescriptionList();
         details.addClassName("property-list");
         details.setWidthFull();
@@ -400,14 +452,25 @@ public class ReportAccessManagementView extends StandardView {
         addDetail(details, "decisionDialog.reportName", request.getReport().getName());
         addDetail(details, "decisionDialog.employee",
                 request.getEmployee() == null ? null : request.getEmployee().getFullName());
-        addDetail(details, "decisionDialog.position", position
-                .map(OrgStructurePosition::getJobTitle).map(OrgStructureJobTitle::getName).orElse(null));
-        addDetail(details, "decisionDialog.subdivision", position
-                .map(OrgStructurePosition::getSubdivision).map(OrgStructureSubdivision::getName).orElse(null));
+        addDetail(details, "decisionDialog.position", jobTitleName(request.getPosition()));
+        addDetail(details, "decisionDialog.subdivision", subdivisionName(request.getPosition()));
         addDetail(details, "decisionDialog.reason", request.getReason());
         addDetail(details, "decisionDialog.createdDate",
                 datatypeFormatter.formatOffsetDateTime(request.getCreatedDate()));
         return details;
+    }
+
+    /** The job title of the position held when the grant was given or the request made, if any. */
+    @Nullable
+    private static String jobTitleName(@Nullable OrgStructurePosition position) {
+        return Optional.ofNullable(position)
+                .map(OrgStructurePosition::getJobTitle).map(OrgStructureJobTitle::getName).orElse(null);
+    }
+
+    @Nullable
+    private static String subdivisionName(@Nullable OrgStructurePosition position) {
+        return Optional.ofNullable(position)
+                .map(OrgStructurePosition::getSubdivision).map(OrgStructureSubdivision::getName).orElse(null);
     }
 
     /** A row of the details; one without a value shows a dash, see property-list.css. */
@@ -498,11 +561,9 @@ public class ReportAccessManagementView extends StandardView {
         }
     }
 
-    private JmixTextArea textArea(@Nullable String label) {
+    /** A field of a text of several lines; its label is that of the parameter of the dialog. */
+    private JmixTextArea textArea() {
         JmixTextArea textArea = uiComponents.create(JmixTextArea.class);
-        if (label != null) {
-            textArea.setLabel(label);
-        }
         textArea.setWidthFull();
         textArea.setMinHeight("6em");
         return textArea;

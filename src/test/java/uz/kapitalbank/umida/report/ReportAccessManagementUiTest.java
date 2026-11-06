@@ -2,6 +2,7 @@ package uz.kapitalbank.umida.report;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.tabs.Tab;
 import io.jmix.core.DataManager;
@@ -50,6 +51,7 @@ import uz.kapitalbank.umida.test_support.ReportTestData;
 import uz.kapitalbank.umida.view.report.access.ReportAccessGrantView;
 import uz.kapitalbank.umida.view.report.access.ReportAccessManagementView;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -179,6 +181,7 @@ public class ReportAccessManagementUiTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void theHeadGivesAccessToASubdivisionAndRevokesItAgain() {
         ReportAccessManagementView view = open(head);
 
@@ -205,6 +208,14 @@ public class ReportAccessManagementUiTest {
         assertEquals(1, grants.getItems().getItems().size());
         grants.select(grants.getItems().getItems());
         UiTestUtils.<JmixButton>getComponent(view, "revokeBtn").click();
+        Grid<ReportAccessGrant> revoked = opened(InputDialog.class)
+                .flatMap(d -> descendants(d).filter(c -> c.getId().filter("revokeGrantsGrid"::equals).isPresent())
+                        .findFirst())
+                .map(c -> (Grid<ReportAccessGrant>) c)
+                .orElseGet(() -> fail("the dialog lists the grants revoked"));
+        assertEquals(5, revoked.getColumns().size(), "code, name of the report, employee, position, subdivision");
+        assertEquals(List.of(teamMember.getId()), revoked.getListDataView().getItems()
+                .map(g -> g.getEmployee().getId()).toList());
         pressOk();
 
         assertEquals(0, grants.getItems().getItems().size(), "the revoked grant leaves the access tab");
