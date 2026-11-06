@@ -11,6 +11,9 @@ vaadin-dialog-overlay::part(title) {
     margin-inline-start: 0;
     font-size: 20px;
 }
+vaadin-dialog-overlay .jmix-dialog-window-view-wrapper vaadin-vertical-layout {
+    padding: 20px 16px;
+}
 
 .data-asset-card-view {
     padding: 15px 15px 30px 15px;

@@ -100,8 +100,10 @@
             <tab id="requestsTab" label="msg://requestsTab.label">
                 <vbox id="requestsTabContent" padding="false" height="100%">
                     <hbox id="requestsButtonsPanel" classNames="buttons-panel" padding="false">
-                        <button id="approveBtn" action="requestsDataGrid.approve"/>
-                        <button id="rejectBtn" action="requestsDataGrid.reject"/>
+                        <button id="approveBtn" action="requestsDataGrid.approve" text="" title="msg://approve.text"
+                                themeNames="primary success"/>
+                        <button id="rejectBtn" action="requestsDataGrid.reject" text="" title="msg://reject.text"
+                                themeNames="primary error"/>
                     </hbox>
                     <dataGrid id="requestsDataGrid" dataContainer="requestsDc" width="100%" minHeight="20em"
                               columnReorderingAllowed="true">

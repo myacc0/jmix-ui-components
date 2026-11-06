@@ -1,8 +1,13 @@
 package uz.kapitalbank.umida.view.report.access;
 
 import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.dom.Style;
+import com.vaadin.flow.component.html.DescriptionList;
+import com.vaadin.flow.component.html.DescriptionList.Description;
+import com.vaadin.flow.component.html.DescriptionList.Term;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
@@ -12,6 +17,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import io.jmix.core.Messages;
 import io.jmix.core.TimeSource;
+import io.jmix.core.metamodel.datatype.DatatypeFormatter;
 import io.jmix.core.security.AccessDeniedException;
 import io.jmix.core.security.CurrentAuthentication;
 import io.jmix.flowui.DialogWindows;
@@ -34,6 +40,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.lang.Nullable;
 import org.springframework.security.core.Authentication;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureJobTitle;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructurePosition;
+import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.entity.report.ReportAccessGrant;
 import uz.kapitalbank.umida.entity.report.ReportAccessRequest;
 import uz.kapitalbank.umida.entity.report.ReportCustom;
@@ -52,6 +61,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -63,7 +73,7 @@ import static uz.kapitalbank.umida.service.orgstructure.OrgStructureJpql.TODAY_P
  *     <li><b>Access</b> — the grants in force, given here to an employee or to a subdivision and revoked here,
  *     one by one or all those selected;</li>
  *     <li><b>Journal</b> — every grant with where it stands: in force, expired, revoked;</li>
- *     <li><b>Requests</b> — the requests of the employees, approved or rejected here; the number of the
+ *     <li><b>Requests</b> — the requests of the employees, accepted or refused here; the number of the
  *     pending ones on the tab.</li>
  * </ul>
  * An author sees every report, the others those they manage: the rows are narrowed by
@@ -113,6 +123,8 @@ public class ReportAccessManagementView extends StandardView {
     private Messages messages;
     @Autowired
     private TimeSource timeSource;
+    @Autowired
+    private DatatypeFormatter datatypeFormatter;
     @Autowired
     private CurrentAuthentication currentAuthentication;
     @Autowired
@@ -307,57 +319,100 @@ public class ReportAccessManagementView extends StandardView {
     // requests
     // ---------------------------------------------------------------------
 
-    /** Approves the request, with an optional last day of the access and a comment. */
+    /** Accepts the request, with an optional last day of the access and a comment. */
     @Subscribe("requestsDataGrid.approve")
     public void onRequestsDataGridApprove(final ActionPerformedEvent event) {
         ReportAccessRequest request = requestsDataGrid.getSingleSelectedItem();
         if (request == null) {
             return;
         }
-        dialogs.createInputDialog(this)
-                .withHeader(messageBundle.formatMessage("approveDialog.header", request.getInstanceName()))
-                .withLabelsPosition(Dialogs.InputDialogBuilder.LabelsPosition.TOP)
-                .withParameters(
-                        InputParameter.parameter("validTo").withField(() -> {
-                            DatePicker validTo = new DatePicker(messages.getMessage(
-                                    "uz.kapitalbank.umida.entity.report/ReportAccessGrant.validTo"));
-                            validTo.setMin(today());
-                            validTo.setHelperText(messageBundle.getMessage("approveDialog.validToHelper"));
-                            return validTo;
-                        }),
-                        InputParameter.stringParameter("comment")
-                                .withField(() -> textArea(messageBundle.getMessage("decisionDialog.comment"))))
-                .withActions(DialogActions.OK_CANCEL, result -> {
+        openDecisionDialog(request, messageBundle.getMessage("approveDialog.header"), result -> {
                     if (result.getCloseAction() == InputDialog.INPUT_DIALOG_OK_ACTION) {
                         decide(() -> accessService.approve(request, result.getValue("validTo"),
                                 result.getValue("comment")), "approved.text");
                     }
-                })
-                .open();
+                },
+                InputParameter.parameter("validTo")
+                        .withLabel(messages.getMessage("uz.kapitalbank.umida.entity.report/ReportAccessGrant.validTo"))
+                        .withField(() -> {
+                            DatePicker validTo = new DatePicker();
+                            validTo.setWidthFull();
+                            validTo.setMin(today());
+                            // a date picked by mistake is cleared: no date is an access without an end
+                            validTo.setClearButtonVisible(true);
+                            validTo.setHelperText(messageBundle.getMessage("approveDialog.validToHelper"));
+                            return validTo;
+                        }),
+                InputParameter.stringParameter("comment")
+                        .withLabel(messageBundle.getMessage("decisionDialog.comment"))
+                        .withField(() -> textArea(null)));
     }
 
+    /** Refuses the request; the requester is told why: the comment is required. */
     @Subscribe("requestsDataGrid.reject")
     public void onRequestsDataGridReject(final ActionPerformedEvent event) {
         ReportAccessRequest request = requestsDataGrid.getSingleSelectedItem();
         if (request == null) {
             return;
         }
-        dialogs.createInputDialog(this)
-                .withHeader(messageBundle.formatMessage("rejectDialog.header", request.getInstanceName()))
-                .withLabelsPosition(Dialogs.InputDialogBuilder.LabelsPosition.TOP)
-                // the requester is told why: the comment is required
-                .withParameter(InputParameter.stringParameter("comment").withField(() -> {
-                    JmixTextArea comment = textArea(messageBundle.getMessage("decisionDialog.comment"));
-                    comment.setRequired(true);
-                    comment.setRequiredMessage(messageBundle.getMessage("rejectDialog.commentRequired"));
-                    return comment;
-                }))
-                .withActions(DialogActions.OK_CANCEL, result -> {
+        openDecisionDialog(request, messageBundle.getMessage("rejectDialog.header"), result -> {
                     if (result.getCloseAction() == InputDialog.INPUT_DIALOG_OK_ACTION) {
                         decide(() -> accessService.reject(request, result.getValue("comment")), "rejected.text");
                     }
-                })
+                },
+                InputParameter.stringParameter("comment")
+                        .withLabel(messageBundle.getMessage("decisionDialog.comment"))
+                        .withField(() -> {
+                            JmixTextArea comment = textArea(null);
+                            comment.setRequired(true);
+                            comment.setRequiredMessage(messageBundle.getMessage("rejectDialog.commentRequired"));
+                            return comment;
+                        }));
+    }
+
+    /**
+     * The dialog of a decision on a request: the request read-only on top, then the fields of the decision, one
+     * under another, the width of the dialog. The request is no parameter of the dialog: the dialog takes the
+     * value of each of its parameters when closed, and a list of the details has none.
+     */
+    private void openDecisionDialog(ReportAccessRequest request, String header,
+                                    Consumer<InputDialog.InputDialogResult> resultHandler,
+                                    InputParameter... parameters) {
+        InputDialog dialog = dialogs.createInputDialog(this)
+                .withHeader(header)
+                .withLabelsPosition(Dialogs.InputDialogBuilder.LabelsPosition.TOP)
+                .withResponsiveSteps(List.of(new ResponsiveStep("0", 1, ResponsiveStep.LabelsPosition.TOP)))
+                .withParameters(parameters)
+                .withActions(DialogActions.OK_CANCEL, resultHandler)
                 .open();
+        dialog.getFormLayout().getParent()
+                .map(HasComponents.class::cast)
+                .ifPresent(content -> content.addComponentAsFirst(requestDetails(request)));
+    }
+
+    /** The request decided on, as "label: value" rows. */
+    private DescriptionList requestDetails(ReportAccessRequest request) {
+        Optional<OrgStructurePosition> position = Optional.ofNullable(request.getPosition());
+        DescriptionList details = new DescriptionList();
+        details.addClassName("property-list");
+        details.setWidthFull();
+        addDetail(details, "decisionDialog.reportCode", request.getReport().getCode());
+        addDetail(details, "decisionDialog.reportName", request.getReport().getName());
+        addDetail(details, "decisionDialog.employee",
+                request.getEmployee() == null ? null : request.getEmployee().getFullName());
+        addDetail(details, "decisionDialog.position", position
+                .map(OrgStructurePosition::getJobTitle).map(OrgStructureJobTitle::getName).orElse(null));
+        addDetail(details, "decisionDialog.subdivision", position
+                .map(OrgStructurePosition::getSubdivision).map(OrgStructureSubdivision::getName).orElse(null));
+        addDetail(details, "decisionDialog.reason", request.getReason());
+        addDetail(details, "decisionDialog.createdDate",
+                datatypeFormatter.formatOffsetDateTime(request.getCreatedDate()));
+        return details;
+    }
+
+    /** A row of the details; one without a value shows a dash, see property-list.css. */
+    private void addDetail(DescriptionList details, String labelKey, @Nullable String value) {
+        details.add(new Term(messageBundle.getMessage(labelKey)), new Description(Objects.toString(value, "")));
     }
 
     /** Runs a decision on a request, reporting what came of it; someone else may have decided meanwhile. */
@@ -443,9 +498,11 @@ public class ReportAccessManagementView extends StandardView {
         }
     }
 
-    private JmixTextArea textArea(String label) {
+    private JmixTextArea textArea(@Nullable String label) {
         JmixTextArea textArea = uiComponents.create(JmixTextArea.class);
-        textArea.setLabel(label);
+        if (label != null) {
+            textArea.setLabel(label);
+        }
         textArea.setWidthFull();
         textArea.setMinHeight("6em");
         return textArea;
