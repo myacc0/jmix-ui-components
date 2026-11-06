@@ -79,6 +79,7 @@ configurations.implementation {
 
 test {
     useJUnitPlatform()
+    maxHeapSize = '6g'
 }
 
 idea {

@@ -1,16 +1,24 @@
 package uz.kapitalbank.umida.report;
 
+import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentUtil;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.dom.Element;
+import com.vaadin.flow.internal.nodefeature.VirtualChildrenList;
 import io.jmix.core.DataManager;
 import io.jmix.core.Metadata;
 import io.jmix.core.security.SystemAuthenticator;
 import io.jmix.flowui.ViewNavigators;
 import io.jmix.flowui.action.DialogAction;
 import io.jmix.flowui.app.inputdialog.InputDialog;
+import io.jmix.flowui.component.UiComponentUtils;
+import io.jmix.flowui.component.checkbox.JmixCheckbox;
 import io.jmix.flowui.component.combobox.EntityComboBox;
 import io.jmix.flowui.component.grid.DataGrid;
 import io.jmix.flowui.component.grid.headerfilter.DataGridHeaderFilter;
@@ -20,9 +28,11 @@ import io.jmix.flowui.component.radiobuttongroup.JmixRadioButtonGroup;
 import io.jmix.flowui.component.tabsheet.JmixTabSheet;
 import io.jmix.flowui.kit.component.button.JmixButton;
 import io.jmix.flowui.kit.component.main.ListMenu;
+import io.jmix.flowui.model.CollectionContainer;
 import io.jmix.flowui.testassist.FlowuiTestAssistConfiguration;
 import io.jmix.flowui.testassist.UiTest;
 import io.jmix.flowui.testassist.UiTestUtils;
+import io.jmix.flowui.view.ViewControllerUtils;
 import io.jmix.reports.ReportsPersistence;
 import io.jmix.reports.ReportsSerialization;
 import io.jmix.security.role.assignment.RoleAssignmentRoleType;
@@ -49,20 +59,25 @@ import uz.kapitalbank.umida.service.report.ReportAccessService;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
 import uz.kapitalbank.umida.test_support.ReportTestData;
 import uz.kapitalbank.umida.view.report.access.ReportAccessGrantView;
+import uz.kapitalbank.umida.view.report.ReportCustomListView;
 import uz.kapitalbank.umida.view.report.access.ReportAccessManagementView;
+import uz.kapitalbank.umida.view.report.access.ReportOwnerMembersFragment;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Spliterators;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * The access management as the head of an owner, someone who manages nothing and an author use it: the
- * tabs, the filters of the columns, the number of the pending requests on the tab and in the menu, the decisions, the
+ * The access management as the head of an owner, a delegate, someone who manages nothing and an author use it:
+ * the tabs, the owner list kept on the tab Owners, the filters of the columns, the number of the pending requests on the tab and in the menu, the decisions, the
  * grants to a subdivision and the revocations.
  */
 @UiTest
@@ -88,6 +103,7 @@ public class ReportAccessManagementUiTest {
     ReportAccessService accessService;
 
     private ReportTestData data;
+    private OrgStructureSubdivision owner;
     private ReportCustom ownReport;
     private ReportCustom otherReport;
     private User head;
@@ -101,7 +117,7 @@ public class ReportAccessManagementUiTest {
     @BeforeEach
     void setUp() {
         data = new ReportTestData(dataManager, metadata, reportsPersistence, reportsSerialization, jdbcTemplate);
-        OrgStructureSubdivision owner = data.createSubdivision(true);
+        owner = data.createSubdivision(true);
         ownReport = data.createReport(owner);
         otherReport = data.createReport(data.createSubdivision(true));
         head = data.createViewer(data.createEmployeeIn(owner, true));
@@ -184,6 +200,9 @@ public class ReportAccessManagementUiTest {
     @SuppressWarnings("unchecked")
     void theHeadGivesAccessToASubdivisionAndRevokesItAgain() {
         ReportAccessManagementView view = open(head);
+        // as the user does: the content of a tab is attached once the tab is opened
+        UiTestUtils.<JmixTabSheet>getComponent(view, "tabSheet")
+                .setSelectedTab(UiTestUtils.getComponent(view, "tabSheet.grantsTab"));
 
         UiTestUtils.<JmixButton>getComponent(view, "grantBtn").click();
         ReportAccessGrantView dialog = opened(ReportAccessGrantView.class).orElseGet(() -> fail("the dialog opens"));
@@ -242,6 +261,110 @@ public class ReportAccessManagementUiTest {
     }
 
     // ---------------------------------------------------------------------
+    // owners
+    // ---------------------------------------------------------------------
+
+    @Test
+    void theHeadKeepsTheOwnerListOfTheFirstReportByTheCodeAndTheAccessTabLeavesItOut() {
+        ReportCustom secondOwn = data.createReport(owner);
+        jdbcTemplate.update("update REPORT_REPORT set CODE = ? where ID = ?", "ZZ-" + UUID.randomUUID(), ownReport.getId());
+        jdbcTemplate.update("update REPORT_REPORT set CODE = ? where ID = ?", "AA-" + UUID.randomUUID(), secondOwn.getId());
+        OrgStructureEmployee member = data.createEmployeeIn(owner, false);
+
+        ReportAccessManagementView view = open(head);
+
+        assertEquals("ownersTab", UiTestUtils.<JmixTabSheet>getComponent(view, "tabSheet").getSelectedTab()
+                .getId().orElse(null), "the tab Owners comes first");
+        EntityComboBox<ReportCustom> reportField = UiTestUtils.getComponent(view, "ownersReportField");
+        assertEquals(secondOwn.getId(), reportField.getValue().getId(), "the first of the own reports by the code");
+        assertEquals(Set.of(secondOwn.getId(), ownReport.getId()), ownerReports(view), "not the report of the others");
+        JmixButton save = UiTestUtils.getComponent(view, "saveOwnersBtn");
+        assertFalse(save.isEnabled(), "nothing to save yet");
+
+        Map<String, ReportOwnerMemberItem> rows = ownerRows(view);
+        assertFalse(checkbox(view, "run", rows.get(head.getEmployee().getId())).isEnabled(), "the head keeps the rights");
+        tick(checkbox(view, "run", rows.get(member.getId())), true);
+        assertTrue(save.isEnabled());
+        save.click();
+
+        List<ReportAccessGrant> members = accessService.ownerMembers(secondOwn);
+        assertEquals(List.of(member.getId()), members.stream().map(g -> g.getEmployee().getId()).toList());
+        assertEquals(head.getUsername(), members.getFirst().getCreatedBy());
+        assertFalse(save.isEnabled(), "saved");
+        assertTrue(ownerRows(view).get(member.getId()).getRun(), "the list as saved");
+        DataGrid<ReportAccessGrant> grants = UiTestUtils.getComponent(view, "grantsDataGrid");
+        assertTrue(grants.getItems().getItems().stream().noneMatch(g -> g.getSource() == ReportAccessGrantSource.OWNER),
+                "the owner list is not on the tab Access");
+        DataGrid<ReportAccessGrant> journal = UiTestUtils.getComponent(view, "journalDataGrid");
+        assertTrue(journal.getItems().getItems().stream().anyMatch(g -> g.getId().equals(members.getFirst().getId())),
+                "the journal shows the change");
+    }
+
+    @Test
+    void aDelegateKeepsTheOwnRowAndCancelPutsTheTicksBack() {
+        OrgStructureEmployee member = data.createEmployeeIn(owner, false);
+        OrgStructureEmployee delegateEmployee = data.createEmployeeIn(owner, false);
+        accessService.saveOwnerMembers(ownReport, List.of(new ReportAccessService.OwnerMember(delegateEmployee, true)));
+        User delegate = data.createViewer(delegateEmployee);
+
+        ReportAccessManagementView view = open(delegate);
+
+        Map<String, ReportOwnerMemberItem> rows = ownerRows(view);
+        assertFalse(checkbox(view, "manage", rows.get(delegateEmployee.getId())).isEnabled(), "the own row is locked");
+        tick(checkbox(view, "manage", rows.get(member.getId())), true);
+        assertTrue(rows.get(member.getId()).getRun(), "managing implies running");
+        JmixButton cancel = UiTestUtils.getComponent(view, "cancelOwnersBtn");
+        assertTrue(cancel.isEnabled());
+        cancel.click();
+
+        assertFalse(ownerRows(view).get(member.getId()).getRun(), "back as saved");
+        assertFalse(cancel.isEnabled());
+        assertEquals(List.of(delegateEmployee.getId()), accessService.ownerMembers(ownReport).stream()
+                .map(g -> g.getEmployee().getId()).toList(), "nothing saved");
+    }
+
+    @Test
+    void anotherReportWithTheListChangedAsksFirst() {
+        ReportCustom secondOwn = data.createReport(owner);
+        OrgStructureEmployee member = data.createEmployeeIn(owner, false);
+        ReportAccessManagementView view = open(head);
+        EntityComboBox<ReportCustom> reportField = UiTestUtils.getComponent(view, "ownersReportField");
+        ReportCustom shown = reportField.getValue();
+        ReportCustom other = ownerReportsDc(view).getItems().stream()
+                .filter(r -> !r.getId().equals(shown.getId())).findFirst().orElseGet(() -> fail("two own reports"));
+        tick(checkbox(view, "run", ownerRows(view).get(member.getId())), true);
+
+        reportField.setValue(other);
+        assertEquals(shown.getId(), reportField.getValue().getId(), "the report stays until the user decides");
+        press(DialogAction.Type.NO);
+        assertEquals(shown.getId(), reportField.getValue().getId());
+        assertTrue(ownerRows(view).get(member.getId()).getRun(), "the tick stays");
+
+        reportField.setValue(other);
+        press(DialogAction.Type.YES);
+        assertEquals(other.getId(), reportField.getValue().getId());
+        assertFalse(ownerRows(view).get(member.getId()).getRun(), "the list of the other report");
+        assertTrue(Set.of(ownReport.getId(), secondOwn.getId()).contains(other.getId()));
+        assertEquals(List.of(), accessService.ownerMembers(shown), "the dropped tick is not saved");
+    }
+
+    @Test
+    void leavingTheViewWithTheListChangedAsksFirst() {
+        OrgStructureEmployee member = data.createEmployeeIn(owner, false);
+        ReportAccessManagementView view = open(head);
+        tick(checkbox(view, "run", ownerRows(view).get(member.getId())), true);
+
+        viewNavigators.view(view, ReportCustomListView.class).navigate();
+        press(DialogAction.Type.NO);
+        assertSame(view, UiTestUtils.getCurrentView(), "the user stays");
+
+        viewNavigators.view(view, ReportCustomListView.class).navigate();
+        press(DialogAction.Type.YES);
+        assertInstanceOf(ReportCustomListView.class, UiTestUtils.getCurrentView());
+        assertEquals(List.of(), accessService.ownerMembers(ownReport));
+    }
+
+    // ---------------------------------------------------------------------
 
     private ReportAccessManagementView open(User user) {
         systemAuthenticator.begin(user.getUsername());
@@ -255,6 +378,67 @@ public class ReportAccessManagementUiTest {
         DataGridHeaderFilter filter = (DataGridHeaderFilter) grid.getColumnByKey(columnKey).getHeaderComponent();
         ((PropertyFilter<Object>) filter.getPropertyFilter()).setValue(value);
         filter.apply();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static CollectionContainer<ReportCustom> ownerReportsDc(ReportAccessManagementView view) {
+        return ViewControllerUtils.getViewData(view).getContainer("ownerReportsDc");
+    }
+
+    private static Set<UUID> ownerReports(ReportAccessManagementView view) {
+        return ownerReportsDc(view).getItems().stream().map(ReportCustom::getId).collect(Collectors.toSet());
+    }
+
+    /** The rows of the owner list shown, by the employee. */
+    private static Map<String, ReportOwnerMemberItem> ownerRows(ReportAccessManagementView view) {
+        DataGrid<ReportOwnerMemberItem> grid = inOwnersFragment(view, "ownerMembersDataGrid");
+        return grid.getItems().getItems().stream().collect(Collectors.toMap(i -> i.getEmployee().getId(), i -> i));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends Component> T inOwnersFragment(ReportAccessManagementView view, String id) {
+        ReportOwnerMembersFragment fragment = UiTestUtils.getComponent(view, "ownersFragment");
+        return (T) UiComponentUtils.getComponent(fragment, id);
+    }
+
+    /** The check box of the right in the row, as the grid renders it. */
+    @SuppressWarnings("unchecked")
+    private static JmixCheckbox checkbox(ReportAccessManagementView view, String column, ReportOwnerMemberItem item) {
+        DataGrid<ReportOwnerMemberItem> grid = inOwnersFragment(view, "ownerMembersDataGrid");
+        return ((ComponentRenderer<JmixCheckbox, ReportOwnerMemberItem>) grid.getColumnByKey(column).getRenderer())
+                .createComponent(item);
+    }
+
+    /** A tick as the user makes it: the value changes in the browser. */
+    private static void tick(JmixCheckbox checkbox, boolean value) {
+        boolean old = Boolean.TRUE.equals(checkbox.getValue());
+        checkbox.setValue(value);
+        ComponentUtil.fireEvent(checkbox, new AbstractField.ComponentValueChangeEvent<>(checkbox, checkbox, old, true));
+    }
+
+    /** Presses the button of the option dialog just opened, see ReportListAccessUiTest. */
+    private static void press(DialogAction.Type type) {
+        UI.getCurrent().getInternals().getStateTree().runExecutionsBeforeClientResponse();
+        elementsBelow(UI.getCurrent().getElement())
+                .flatMap(element -> element.getComponent().stream())
+                .filter(Button.class::isInstance)
+                .map(Button.class::cast)
+                .filter(button -> button.getId().filter(type.getId()::equals).isPresent())
+                .findFirst()
+                .orElseGet(() -> fail("the dialog has its " + type + " button"))
+                .click();
+    }
+
+    /** The element and those below it, the virtual children included: the footer of a dialog is one. */
+    private static Stream<Element> elementsBelow(Element element) {
+        Stream<Element> virtual = Optional.of(element.getNode())
+                .filter(node -> node.hasFeature(VirtualChildrenList.class))
+                .flatMap(node -> node.getFeatureIfInitialized(VirtualChildrenList.class))
+                .map(list -> StreamSupport.stream(Spliterators.spliteratorUnknownSize(list.iterator(), 0), false)
+                        .map(Element::get))
+                .orElseGet(Stream::empty);
+        return Stream.concat(Stream.of(element), Stream.concat(element.getChildren(), virtual)
+                .flatMap(ReportAccessManagementUiTest::elementsBelow));
     }
 
     private static DataGrid<ReportAccessRequest> requestsGrid(ReportAccessManagementView view) {

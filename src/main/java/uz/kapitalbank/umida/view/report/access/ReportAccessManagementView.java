@@ -1,5 +1,6 @@
 package uz.kapitalbank.umida.view.report.access;
 
+import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasComponents;
@@ -12,10 +13,12 @@ import com.vaadin.flow.component.html.DescriptionList;
 import com.vaadin.flow.component.html.DescriptionList.Description;
 import com.vaadin.flow.component.html.DescriptionList.Term;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.data.renderer.TextRenderer;
+import com.vaadin.flow.router.BeforeLeaveEvent;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import io.jmix.core.Messages;
@@ -31,6 +34,7 @@ import io.jmix.flowui.action.SecuredBaseAction;
 import io.jmix.flowui.app.inputdialog.DialogActions;
 import io.jmix.flowui.app.inputdialog.InputDialog;
 import io.jmix.flowui.app.inputdialog.InputParameter;
+import io.jmix.flowui.component.combobox.EntityComboBox;
 import io.jmix.flowui.component.grid.DataGrid;
 import io.jmix.flowui.component.tabsheet.JmixTabSheet;
 import io.jmix.flowui.component.textarea.JmixTextArea;
@@ -38,6 +42,7 @@ import io.jmix.flowui.kit.action.ActionPerformedEvent;
 import io.jmix.flowui.kit.component.button.JmixButton;
 import io.jmix.flowui.model.CollectionContainer;
 import io.jmix.flowui.model.CollectionLoader;
+import io.jmix.flowui.util.UnknownOperationResult;
 import io.jmix.flowui.view.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
@@ -49,10 +54,12 @@ import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.entity.report.ReportAccessGrant;
 import uz.kapitalbank.umida.entity.report.ReportAccessRequest;
 import uz.kapitalbank.umida.entity.report.ReportCustom;
+import uz.kapitalbank.umida.enums.report.ReportAccessGrantSource;
 import uz.kapitalbank.umida.enums.report.ReportAccessRequestStatus;
 import uz.kapitalbank.umida.service.report.ReportAccessException;
 import uz.kapitalbank.umida.service.report.ReportAccessService;
 import uz.kapitalbank.umida.service.report.ReportAccessService.RevokeResult;
+import uz.kapitalbank.umida.service.report.ReportOwnerMemberService;
 import uz.kapitalbank.umida.view.main.MainView;
 
 import java.time.LocalDate;
@@ -74,7 +81,11 @@ import static uz.kapitalbank.umida.service.orgstructure.OrgStructureJpql.TODAY_P
 /**
  * The access management of the reports, for the authors and for the heads and the delegates of the owners:
  * <ul>
- *     <li><b>Access</b> — the grants in force, given here to an employee or to a subdivision and revoked here,
+ *     <li><b>Owners</b> — the list of the business owner of the report picked, {@link ReportOwnerMembersFragment}:
+ *     who runs the report on behalf of the owner and who manages the access to it, the delegates. The rows
+ *     changed are saved with the button, row by row; a head or a delegate does not change the own row. The
+ *     changes not saved are asked about before another report is picked or the view is left;</li>
+ *     <li><b>Access</b> — the grants in force but those of the owner lists, given here to an employee or to a subdivision and revoked here,
  *     one by one or all those selected;</li>
  *     <li><b>Journal</b> — every grant with where it stands: in force, expired, revoked;</li>
  *     <li><b>Requests</b> — the requests of the employees, accepted or refused here; the number of the
@@ -112,6 +123,20 @@ public class ReportAccessManagementView extends StandardView {
     private Span noAccessText;
     @ViewComponent
     private MessageBundle messageBundle;
+    @ViewComponent
+    private CollectionContainer<ReportCustom> ownerReportsDc;
+    @ViewComponent
+    private EntityComboBox<ReportCustom> ownersReportField;
+    @ViewComponent
+    private ReportOwnerMembersFragment ownersFragment;
+    @ViewComponent
+    private Span ownersNoReportsText;
+    @ViewComponent
+    private HorizontalLayout ownersButtonsPanel;
+    @ViewComponent
+    private JmixButton saveOwnersBtn;
+    @ViewComponent
+    private JmixButton cancelOwnersBtn;
 
     @Autowired
     private ReportAccessService accessService;
@@ -133,12 +158,18 @@ public class ReportAccessManagementView extends StandardView {
     private CurrentAuthentication currentAuthentication;
     @Autowired
     private ReportAccessStatusBadges statusBadges;
+    @Autowired
+    private ReportOwnerMemberService ownerMemberService;
+    @Autowired
+    private ViewValidation viewValidation;
 
     private final Span requestsBadge = new Span();
     /** The names of the users who gave, revoked and decided, by the username: the lists show the names. */
     private final Map<String, String> userNames = new HashMap<>();
     /** The authentication of the user of the view: the events arrive without a reliable one. */
     private Authentication authentication;
+    /** The report of the owner list is being set by the view, not picked by the user. */
+    private boolean settingOwnersReport;
 
     @Subscribe
     public void onInit(final InitEvent event) {
@@ -149,6 +180,9 @@ public class ReportAccessManagementView extends StandardView {
 
         ((SecuredBaseAction) requestsDataGrid.getAction("approve")).addEnabledRule(this::pendingSelected);
         ((SecuredBaseAction) requestsDataGrid.getAction("reject")).addEnabledRule(this::pendingSelected);
+
+        ownersReportField.setItemLabelGenerator(ReportAccessManagementView::reportCaption);
+        ownersFragment.addChangeListener(this::refreshOwnersButtons);
     }
 
     @Subscribe
@@ -158,7 +192,44 @@ public class ReportAccessManagementView extends StandardView {
             noAccessText.setVisible(true);
             return;
         }
+        // the head and the delegates keep their own rows, an author changes them all
+        ownersFragment.setLockedEmployeeId(accessService.isAuthor() ? null : accessService.currentEmployeeId().orElse(null));
+        loadOwnerReports();
         reloadAll();
+    }
+
+    /** Leaving the view with the owner list changed and not saved asks whether to drop the changes. */
+    @Subscribe
+    public void onBeforeClose(final BeforeCloseEvent event) {
+        CloseAction action = event.getCloseAction();
+        if (!(action instanceof ChangeTrackerCloseAction tracker) || !tracker.isCheckForUnsavedChanges()
+                || !tabSheet.isVisible() || !ownersFragment.hasChanges()) {
+            return;
+        }
+        UnknownOperationResult result = new UnknownOperationResult();
+        if (action instanceof NavigateCloseAction navigateAction) {
+            BeforeLeaveEvent.ContinueNavigationAction navigation = navigateAction.getBeforeLeaveEvent().postpone();
+            viewValidation.showUnsavedChangesDialog(this)
+                    .onDiscard(() -> {
+                        ownersFragment.discardChanges();
+                        navigation.proceed();
+                        fireEvent(new AfterCloseEvent(this, action));
+                        result.success();
+                    })
+                    .onCancel(() -> {
+                        // the router waits for the navigation to be cancelled explicitly
+                        navigation.cancel();
+                        result.fail();
+                    });
+        } else {
+            viewValidation.showUnsavedChangesDialog(this)
+                    .onDiscard(() -> {
+                        ownersFragment.discardChanges();
+                        result.resume(close(action));
+                    })
+                    .onCancel(result::fail);
+        }
+        event.preventClose(result);
     }
 
     /** A change made by anyone: the requests and their number again, as the user of this view sees them. */
@@ -177,6 +248,12 @@ public class ReportAccessManagementView extends StandardView {
         }
         String tabId = event.getSelectedTab().getId().orElse("");
         switch (tabId) {
+            // the changes not saved stay as they are
+            case "ownersTab" -> {
+                if (!ownersFragment.hasChanges()) {
+                    loadOwnerReports();
+                }
+            }
             case "grantsTab" -> loadGrants();
             case "journalTab" -> loadJournal();
             case "requestsTab" -> loadRequests();
@@ -259,6 +336,104 @@ public class ReportAccessManagementView extends StandardView {
 
     private String userName(@Nullable String username) {
         return username == null ? "" : userNames.getOrDefault(username, username);
+    }
+
+    // ---------------------------------------------------------------------
+    // owners
+    // ---------------------------------------------------------------------
+
+    /** Another report: its list, once the changes of the list shown are saved or dropped. */
+    @Subscribe("ownersReportField")
+    public void onOwnersReportFieldValueChange(
+            final ComponentValueChangeEvent<EntityComboBox<ReportCustom>, ReportCustom> event) {
+        if (settingOwnersReport) {
+            return;
+        }
+        if (!ownersFragment.hasChanges()) {
+            loadOwners();
+            return;
+        }
+        ReportCustom picked = event.getValue();
+        setOwnersReport(event.getOldValue());
+        viewValidation.showUnsavedChangesDialog(this)
+                .onDiscard(() -> {
+                    setOwnersReport(picked);
+                    loadOwners();
+                });
+    }
+
+    @Subscribe(id = "saveOwnersBtn", subject = "clickListener")
+    public void onSaveOwnersBtnClick(final ClickEvent<JmixButton> event) {
+        ReportCustom report = ownersReportField.getValue();
+        if (report == null) {
+            return;
+        }
+        try {
+            ownerMemberService.saveChanges(report, ownersFragment.getChangedItems());
+            notifications.create(messageBundle.getMessage("ownersSaved.text"))
+                    .withType(Notifications.Type.SUCCESS)
+                    .show();
+        } catch (ReportAccessException e) {
+            notifications.create(e.getMessage()).withType(Notifications.Type.WARNING).show();
+        } catch (AccessDeniedException e) {
+            showDenied();
+        }
+        loadOwners();
+        reloadAll();
+    }
+
+    /** Back to the list as it is saved now. */
+    @Subscribe(id = "cancelOwnersBtn", subject = "clickListener")
+    public void onCancelOwnersBtnClick(final ClickEvent<JmixButton> event) {
+        loadOwners();
+    }
+
+    /**
+     * The reports whose owner list the user keeps, the one picked before staying picked while the user keeps
+     * it, the first one by the code otherwise.
+     */
+    private void loadOwnerReports() {
+        ReportCustom picked = ownersReportField.getValue();
+        List<ReportCustom> reports = accessService.ownerListManagedReports();
+        ownerReportsDc.setItems(reports);
+        boolean any = !reports.isEmpty();
+        ownersNoReportsText.setVisible(!any);
+        ownersReportField.setVisible(any);
+        ownersFragment.setVisible(any);
+        ownersButtonsPanel.setVisible(any);
+        setOwnersReport(reports.stream()
+                .filter(report -> picked != null && report.getId().equals(picked.getId()))
+                .findFirst()
+                .orElse(any ? reports.getFirst() : null));
+        loadOwners();
+    }
+
+    /** The rows of the owner list of the report picked, as they are saved. */
+    private void loadOwners() {
+        ReportCustom report = ownersReportField.getValue();
+        ownersFragment.setItems(report == null ? List.of()
+                : ownerMemberService.items(report, report.getBusinessOwner(), false));
+    }
+
+    private void setOwnersReport(@Nullable ReportCustom report) {
+        settingOwnersReport = true;
+        try {
+            ownersReportField.setValue(report);
+        } finally {
+            settingOwnersReport = false;
+        }
+    }
+
+    private void refreshOwnersButtons() {
+        boolean changed = ownersFragment.hasChanges();
+        saveOwnersBtn.setEnabled(changed);
+        cancelOwnersBtn.setEnabled(changed);
+    }
+
+    /** The code and the name: the names of the reports may repeat, the codes do not. */
+    private static String reportCaption(ReportCustom report) {
+        return report.getCode() == null ? Objects.toString(report.getName(), "")
+                : report.getCode() + " — " + Objects.toString(report.getName(), "");
     }
 
     // ---------------------------------------------------------------------
@@ -512,9 +687,12 @@ public class ReportAccessManagementView extends StandardView {
     }
 
     private void loadGrants() {
+        // the grants of the owner lists change on the tab Owners
         grantsDl.setQuery("select g from umida_ReportAccessGrant g where " + ReportAccessService.inForce("g")
+                + " and g.source <> :ownerSource"
                 + managedReportsOnly(grantsDl, "g", " and ") + " order by g.report.name, g.employee.fullName");
         grantsDl.setParameter(TODAY_PARAM, today());
+        grantsDl.setParameter("ownerSource", ReportAccessGrantSource.OWNER.getId());
         grantsDl.load();
     }
 

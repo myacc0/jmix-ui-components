@@ -1,6 +1,7 @@
 package uz.kapitalbank.umida.report;
 
 import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import io.jmix.core.DataManager;
@@ -8,17 +9,16 @@ import io.jmix.core.Metadata;
 import io.jmix.core.security.SystemAuthenticator;
 import io.jmix.flowui.ViewNavigators;
 import io.jmix.flowui.action.entitypicker.EntityLookupAction;
+import io.jmix.flowui.component.UiComponentUtils;
 import io.jmix.flowui.component.checkbox.JmixCheckbox;
 import io.jmix.flowui.component.grid.DataGrid;
 import io.jmix.flowui.component.textfield.TypedTextField;
-import io.jmix.flowui.model.CollectionContainer;
 import io.jmix.flowui.testassist.FlowuiTestAssistConfiguration;
 import io.jmix.flowui.testassist.UiTest;
 import io.jmix.flowui.testassist.UiTestUtils;
 import io.jmix.flowui.util.OperationResult;
 import io.jmix.flowui.component.valuepicker.EntityPicker;
 import io.jmix.flowui.view.LookupView;
-import io.jmix.flowui.view.ViewControllerUtils;
 import io.jmix.reports.ReportsPersistence;
 import io.jmix.reports.ReportsSerialization;
 import io.jmix.reports.entity.Report;
@@ -41,9 +41,11 @@ import uz.kapitalbank.umida.security.ReportAuthorRole;
 import uz.kapitalbank.umida.security.UiMinimalRole;
 import uz.kapitalbank.umida.service.report.ReportAccessService;
 import uz.kapitalbank.umida.service.report.ReportAccessService.OwnerMember;
+import uz.kapitalbank.umida.service.report.ReportAccessService.OwnerMemberChange;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
 import uz.kapitalbank.umida.test_support.ReportTestData;
 import uz.kapitalbank.umida.view.report.ReportCustomDetailView;
+import uz.kapitalbank.umida.view.report.access.ReportOwnerMembersFragment;
 
 import java.util.List;
 import java.util.Map;
@@ -88,6 +90,7 @@ public class ReportOwnerTabUiTest {
     private OrgStructureEmployee newHead;
     private OrgStructureEmployee newMember;
     private OrgStructureSubdivision inactive;
+    private User headUser;
 
     @BeforeEach
     void setUp() {
@@ -102,6 +105,7 @@ public class ReportOwnerTabUiTest {
         newHead = data.createEmployeeIn(newOwner, true);
         newMember = data.createEmployeeIn(newOwner, false);
         inactive = data.createSubdivision(false);
+        headUser = data.createViewer(head);
 
         User author = data.createUser(null);
         data.assignRole(author, UiMinimalRole.CODE, RoleAssignmentRoleType.RESOURCE);
@@ -118,7 +122,7 @@ public class ReportOwnerTabUiTest {
     @Test
     void theTabShowsTheSavedListAndSavesTheTicksWithTheReport() {
         ReportCustomDetailView view = openEditor();
-        DataGrid<ReportOwnerMemberItem> grid = UiTestUtils.getComponent(view, "ownerMembersDataGrid");
+        DataGrid<ReportOwnerMemberItem> grid = inFragment(view, "ownerMembersDataGrid");
         Map<String, ReportOwnerMemberItem> rows = rows(view);
 
         assertEquals(Set.of(head.getId(), member.getId(), other.getId()), rows.keySet());
@@ -140,6 +144,25 @@ public class ReportOwnerTabUiTest {
         assertEquals(Set.of(member.getId(), other.getId()), grants.keySet());
         assertTrue(grants.get(other.getId()).getCanManage());
         assertFalse(view.hasUnsavedChanges(), "the list is saved");
+    }
+
+    @Test
+    void theAuthorSavesTheRowsChangedAndKeepsThoseTheHeadChangedMeanwhile() {
+        ReportCustomDetailView view = openEditor();
+        Map<String, ReportOwnerMemberItem> rows = rows(view);
+
+        // meanwhile the head adds the other employee on the tab Owners of the access management
+        systemAuthenticator.withUser(headUser.getUsername(), () -> {
+            accessService.changeOwnerMembers(report, List.of(new OwnerMemberChange(other, true, false)));
+            return null;
+        });
+        DataGrid<ReportOwnerMemberItem> grid = inFragment(view, "ownerMembersDataGrid");
+        tick(checkbox(grid, "manage", rows.get(member.getId())), true);
+        assertEquals(OperationResult.Status.SUCCESS, view.save().getStatus());
+
+        Map<String, ReportAccessGrant> grants = grants();
+        assertEquals(Set.of(member.getId(), other.getId()), grants.keySet(), "the member of the head stays");
+        assertTrue(grants.get(member.getId()).getCanManage());
     }
 
     @Test
@@ -167,7 +190,7 @@ public class ReportOwnerTabUiTest {
     @Test
     void theSearchNarrowsTheRowsButTheSaveKeepsTheHiddenOnes() {
         ReportCustomDetailView view = openEditor();
-        TypedTextField<String> search = UiTestUtils.getComponent(view, "ownerMembersSearchField");
+        TypedTextField<String> search = inFragment(view, "ownerMembersSearchField");
 
         search.setValue(other.getFullName());
 
@@ -179,7 +202,7 @@ public class ReportOwnerTabUiTest {
     @Test
     void tickAllFollowsTheRowsAndTicksOrUnticksAllButTheHead() {
         ReportCustomDetailView view = openEditor();
-        JmixCheckbox tickAll = UiTestUtils.getComponent(view, "checkAllRunField");
+        JmixCheckbox tickAll = inFragment(view, "checkAllRunField");
         Map<String, ReportOwnerMemberItem> rows = rows(view);
 
         assertFalse(tickAll.getValue());
@@ -198,7 +221,7 @@ public class ReportOwnerTabUiTest {
         assertFalse(rows.get(other.getId()).getRun());
         assertTrue(rows.get(head.getId()).getRun(), "the head keeps the rights");
 
-        DataGrid<ReportOwnerMemberItem> grid = UiTestUtils.getComponent(view, "ownerMembersDataGrid");
+        DataGrid<ReportOwnerMemberItem> grid = inFragment(view, "ownerMembersDataGrid");
         tick(checkbox(grid, "run", rows.get(other.getId())), true);
         assertTrue(tickAll.isIndeterminate(), "a single tick shows on the check box");
 
@@ -239,10 +262,17 @@ public class ReportOwnerTabUiTest {
         return UiTestUtils.getCurrentView();
     }
 
+    /** The rows shown, those the search lets through. */
     private static Map<String, ReportOwnerMemberItem> rows(ReportCustomDetailView view) {
-        CollectionContainer<ReportOwnerMemberItem> container =
-                ViewControllerUtils.getViewData(view).getContainer("ownerMembersDc");
-        return container.getItems().stream().collect(Collectors.toMap(i -> i.getEmployee().getId(), i -> i));
+        DataGrid<ReportOwnerMemberItem> grid = inFragment(view, "ownerMembersDataGrid");
+        return grid.getItems().getItems().stream().collect(Collectors.toMap(i -> i.getEmployee().getId(), i -> i));
+    }
+
+    /** A component of the list of the owner, which lives in a fragment of the tab. */
+    @SuppressWarnings("unchecked")
+    private static <T extends Component> T inFragment(ReportCustomDetailView view, String id) {
+        ReportOwnerMembersFragment fragment = UiTestUtils.getComponent(view, "ownerMembersFragment");
+        return (T) UiComponentUtils.getComponent(fragment, id);
     }
 
     @SuppressWarnings("unchecked")

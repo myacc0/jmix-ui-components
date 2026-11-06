@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<fragment xmlns="http://jmix.io/schema/flowui/fragment">
+    <data>
+        <!-- the rows the search lets through, set by ReportOwnerMembersFragment from the rows the host hands over -->
+        <collection id="ownerMembersDc"
+                    class="uz.kapitalbank.umida.dto.report.ReportOwnerMemberItem"/>
+    </data>
+    <content>
+        <vbox id="ownerMembersRoot" padding="false" width="100%" height="100%">
+            <span id="ownerMembersHint" text="msg://uz.kapitalbank.umida.view.report/ownerMembersHint.text"
+                  classNames="text-secondary text-s"/>
+            <hbox id="ownerMembersButtonsPanel" classNames="buttons-panel" padding="false"
+                  alignItems="CENTER" width="100%">
+                <textField id="ownerMembersSearchField" width="50%"
+                           placeholder="msg://uz.kapitalbank.umida.view.report/ownerMembersSearchField.placeholder"
+                           valueChangeMode="LAZY" clearButtonVisible="true">
+                    <suffix>
+                        <icon icon="SEARCH"/>
+                    </suffix>
+                </textField>
+                <!-- ticks or unticks the right to run for the rows shown, the locked ones aside; follows the
+                     rows, see ReportOwnerMembersFragment#refreshCheckAllRun -->
+                <checkbox id="checkAllRunField" label="msg://uz.kapitalbank.umida.view.report/checkAllRunField.label"/>
+            </hbox>
+            <dataGrid id="ownerMembersDataGrid" dataContainer="ownerMembersDc"
+                      width="100%" height="calc(100% - 40px)" selectionMode="NONE">
+                <columns resizable="true">
+                    <column property="employeeName" flexGrow="2"/>
+                    <column property="positionName" flexGrow="2"/>
+                    <column property="subdivisionName" flexGrow="2"/>
+                    <column property="run" autoWidth="true" flexGrow="0"/>
+                    <column property="manage" autoWidth="true" flexGrow="0"/>
+                </columns>
+            </dataGrid>
+        </vbox>
+    </content>
+</fragment>

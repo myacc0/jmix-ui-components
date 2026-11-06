@@ -30,6 +30,7 @@ import uz.kapitalbank.umida.enums.report.ReportAccessRequestStatus;
 import uz.kapitalbank.umida.service.report.ReportAccessException;
 import uz.kapitalbank.umida.service.report.ReportAccessService;
 import uz.kapitalbank.umida.service.report.ReportAccessService.OwnerMember;
+import uz.kapitalbank.umida.service.report.ReportAccessService.OwnerMemberChange;
 import uz.kapitalbank.umida.test_support.AuthenticatedAsAdmin;
 import uz.kapitalbank.umida.test_support.ReportTestData;
 
@@ -537,6 +538,64 @@ public class ReportAccessServiceTests {
     }
 
     @Test
+    void theHeadAndTheDelegatesChangeTheOwnerListRowByRowButNotTheirOwnRows() {
+        OrgStructureEmployee member = data.createEmployeeIn(owner, false, null);
+        OrgStructureEmployee delegateEmployee = data.createEmployeeIn(owner, false, null);
+        OrgStructureEmployee newcomer = data.createEmployeeIn(owner, false, null);
+        accessService.saveOwnerMembers(report, List.of(new OwnerMember(member, false),
+                new OwnerMember(delegateEmployee, true)));
+        User delegate = data.createUser(delegateEmployee);
+        UUID memberGrantId = grantOf(member).getId();
+
+        as(head, () -> {
+            accessService.changeOwnerMembers(report, List.of(new OwnerMemberChange(newcomer, true, false)));
+            return null;
+        });
+        assertEquals(head.getUsername(), grantOf(newcomer).getCreatedBy(), "the head adds a member");
+        assertEquals(memberGrantId, grantOf(member).getId(), "a row not changed keeps its grant");
+
+        as(delegate, () -> {
+            accessService.changeOwnerMembers(report, List.of(new OwnerMemberChange(member, false, false),
+                    new OwnerMemberChange(newcomer, true, true)));
+            return null;
+        });
+        ReportAccessGrant revoked = dataManager.load(ReportAccessGrant.class).id(memberGrantId).one();
+        assertEquals(delegate.getUsername(), revoked.getRevokedBy(), "the delegate removes a member");
+        assertTrue(grantOf(newcomer).getCanManage(), "and makes another one a delegate");
+        assertEquals(Set.of(delegateEmployee.getId(), newcomer.getId()), ownerMemberIds());
+
+        assertThrows(AccessDeniedException.class, () -> as(delegate, () -> {
+            accessService.changeOwnerMembers(report, List.of(new OwnerMemberChange(delegateEmployee, false, false)));
+            return null;
+        }), "a delegate does not change the own row");
+        assertThrows(AccessDeniedException.class, () -> as(outsider, () -> {
+            accessService.changeOwnerMembers(report, List.of(new OwnerMemberChange(newcomer, false, false)));
+            return null;
+        }));
+        assertTrue(grantOf(delegateEmployee).getCanManage());
+
+        accessService.changeOwnerMembers(report, List.of(new OwnerMemberChange(delegateEmployee, true, false)));
+        assertFalse(grantOf(delegateEmployee).getCanManage(), "the author changes every row");
+        assertFalse(as(delegate, () -> accessService.canManageAccess(report)));
+        assertTrue(as(delegate, () -> accessService.canRun(report)));
+    }
+
+    @Test
+    void theOwnerListsAreKeptForTheReportsWithAnOwnerByTheCode() {
+        ReportCustom second = data.createReport(owner, null);
+        ReportCustom withoutOwner = data.createReport(null, null);
+        jdbcTemplate.update("update REPORT_REPORT set CODE = ? where ID = ?", "ZZ-" + UUID.randomUUID(), report.getId());
+        jdbcTemplate.update("update REPORT_REPORT set CODE = ? where ID = ?", "AA-" + UUID.randomUUID(), second.getId());
+
+        assertEquals(List.of(second.getId(), report.getId()),
+                as(head, () -> accessService.ownerListManagedReports()).stream().map(ReportCustom::getId).toList());
+        assertEquals(List.of(), as(outsider, () -> accessService.ownerListManagedReports()));
+        List<UUID> ofAuthor = accessService.ownerListManagedReports().stream().map(ReportCustom::getId).toList();
+        assertTrue(ofAuthor.containsAll(List.of(report.getId(), second.getId())));
+        assertFalse(ofAuthor.contains(withoutOwner.getId()), "no owner, no list to keep");
+    }
+
+    @Test
     void theOwnerSurvivesTheSerializedStructureOfTheReport() {
         ReportCustom reloaded = dataManager.load(ReportCustom.class).id(report.getId()).fetchPlan("report.edit").one();
         assertEquals(owner.getId(), reloaded.getBusinessOwner().getId());
@@ -603,6 +662,12 @@ public class ReportAccessServiceTests {
                 .filter(grant -> grant.getEmployee().getId().equals(employee.getId()))
                 .findFirst()
                 .orElseThrow();
+    }
+
+    private Set<String> ownerMemberIds() {
+        return accessService.ownerMembers(report).stream()
+                .map(grant -> grant.getEmployee().getId())
+                .collect(java.util.stream.Collectors.toSet());
     }
 
     private ReportAccessGrant createGrant(OrgStructureEmployee employee) {

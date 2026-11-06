@@ -135,6 +135,33 @@ public class ReportOwnerMemberServiceTests {
     }
 
     @Test
+    void theChangedRowsAloneAreSavedAndANewMemberIsAnEmployeeOfTheOwner() {
+        accessService.saveOwnerMembers(report, List.of(new ReportAccessService.OwnerMember(ofOwner, false)));
+        List<ReportOwnerMemberItem> items = ownerMemberService.items(report, owner, false);
+        // meanwhile someone else adds a member: the rows changed here leave it as it is
+        accessService.saveOwnerMembers(report, List.of(new ReportAccessService.OwnerMember(ofOwner, false),
+                new ReportAccessService.OwnerMember(ofGrandchild, false)));
+        ReportOwnerMemberItem child = item(items, ofChild);
+        child.setRun(true);
+        child.setManage(true);
+
+        ownerMemberService.saveChanges(report, List.of(child, item(items, head)));
+
+        Map<String, ReportAccessGrant> grants = accessService.ownerMembers(report).stream()
+                .collect(Collectors.toMap(g -> g.getEmployee().getId(), g -> g));
+        assertEquals(java.util.Set.of(ofOwner.getId(), ofChild.getId(), ofGrandchild.getId()), grants.keySet(),
+                "the member added meanwhile stays, the head gets no grant");
+        assertTrue(grants.get(ofChild.getId()).getCanManage());
+
+        OrgStructureSubdivision elsewhere = data.createSubdivision(true);
+        data.createEmployeeIn(elsewhere, false);
+        ReportOwnerMemberItem foreign = ownerMemberService.employeesOf(elsewhere).getFirst();
+        foreign.setRun(true);
+        assertThrows(io.jmix.core.security.AccessDeniedException.class,
+                () -> ownerMemberService.saveChanges(report, List.of(foreign)), "not an employee of the owner");
+    }
+
+    @Test
     void anEmployeeHoldingSeveralPositionsHasOneRowNamedAfterTheHeadPosition() {
         data.assign(head, data.createSubdivision(owner, true), false);
 

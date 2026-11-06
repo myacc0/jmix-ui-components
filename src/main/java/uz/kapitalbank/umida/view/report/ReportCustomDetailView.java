@@ -1,17 +1,11 @@
 package uz.kapitalbank.umida.view.report;
 
 import com.google.common.base.Strings;
-import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.formlayout.FormLayout;
-import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.tabs.Tab;
-import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.data.renderer.TextRenderer;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import io.jmix.core.Messages;
-import io.jmix.flowui.component.checkbox.JmixCheckbox;
 import io.jmix.flowui.component.grid.DataGrid;
 import io.jmix.flowui.component.grid.DataGridColumn;
 import io.jmix.flowui.component.valuepicker.EntityPicker;
@@ -23,7 +17,6 @@ import io.jmix.flowui.model.CollectionContainer;
 import io.jmix.flowui.model.InstanceContainer;
 import io.jmix.flowui.view.EditedEntityContainer;
 import io.jmix.flowui.view.Subscribe;
-import io.jmix.flowui.view.Supply;
 import io.jmix.flowui.view.Target;
 import io.jmix.flowui.view.ViewComponent;
 import io.jmix.flowui.view.ViewController;
@@ -33,7 +26,6 @@ import io.jmix.reports.entity.ReportInputParameter;
 import io.jmix.reports.entity.ReportValueFormat;
 import io.jmix.reportsflowui.view.report.ReportDetailView;
 import org.springframework.beans.factory.annotation.Autowired;
-import uz.kapitalbank.umida.dto.report.ReportOwnerMemberItem;
 import uz.kapitalbank.umida.entity.dict.DictDataDomain;
 import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.entity.report.ReportCustom;
@@ -41,11 +33,10 @@ import uz.kapitalbank.umida.service.report.ReportCustomService;
 import uz.kapitalbank.umida.service.report.ReportOwnerMemberService;
 import uz.kapitalbank.umida.service.report.ReportSqlEnumerationService;
 import uz.kapitalbank.umida.view.main.MainView;
+import uz.kapitalbank.umida.view.report.access.ReportOwnerMembersFragment;
 import uz.kapitalbank.umida.view.report.access.SubdivisionCaptions;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * The editor of reports of the add-on with the classification of the report data, next to the add-on's
@@ -58,9 +49,11 @@ import java.util.Locale;
  * <p>The code is generated on save, see {@link uz.kapitalbank.umida.service.report.ReportCustomEventListener},
  * so a report only shows it once it has been saved, read-only.
  *
- * <p>The tab Business owner holds the owner subdivision and its list: the employees of the owner and of the
- * subdivisions below it, ticked to run the report and to manage the access to it. Picking another owner
- * ticks everyone to run; the list is saved after the report, see {@link #onAfterSave}. The changes of the
+ * <p>The tab Business owner holds the owner subdivision and its list, {@link ReportOwnerMembersFragment}: the
+ * employees of the owner and of the subdivisions below it, ticked to run the report and to manage the access
+ * to it. Picking another owner ticks everyone to run; the list is saved after the report, see
+ * {@link #onAfterSave}: whole for a new owner or a new report, otherwise the rows changed only, as the head
+ * and the delegates change the list too, on the tab Owners of the access management. The changes of the
  * ticks are not in the data context, so {@link #hasUnsavedChanges()} counts them itself.
  */
 @Route(value = "custom-reports/:id", layout = MainView.class)
@@ -91,11 +84,7 @@ public class ReportCustomDetailView extends ReportDetailView {
     @ViewComponent("businessOwnerField.entityLookupAction")
     private EntityLookupAction<OrgStructureSubdivision> businessOwnerLookupAction;
     @ViewComponent
-    private JmixCheckbox checkAllRunField;
-    @ViewComponent
-    private CollectionContainer<ReportOwnerMemberItem> ownerMembersDc;
-    @ViewComponent
-    private TypedTextField<String> ownerMembersSearchField;
+    private ReportOwnerMembersFragment ownerMembersFragment;
     @Autowired
     private ReportOwnerMemberService ownerMemberService;
     @Autowired
@@ -103,9 +92,10 @@ public class ReportCustomDetailView extends ReportDetailView {
     @Autowired
     private SubdivisionCaptions subdivisionCaptions;
 
-    /** All the rows of the owner list; the container holds those the search lets through. */
-    private List<ReportOwnerMemberItem> ownerMembers = new ArrayList<>();
+    /** The owner was just picked: its list is a change. */
     private boolean ownerMembersChanged;
+    /** The list is to be saved whole: the owner was just picked, or the report is new. */
+    private boolean ownerMembersReplaced;
 
     /** Not on init: the buttons of the tab get the actions of its grids after that, and look the grids up in the view. */
     @Subscribe
@@ -116,6 +106,7 @@ public class ReportCustomDetailView extends ReportDetailView {
         showCustomParameterTypes();
         refreshCodeField();
         refreshSecondaryDomainOptions();
+        ownerMembersFragment.setEditable(!isReadOnly());
         loadOwnerMembers(false);
     }
 
@@ -141,13 +132,17 @@ public class ReportCustomDetailView extends ReportDetailView {
     @Subscribe
     public void onAfterSave(final AfterSaveEvent event) {
         refreshCodeField();
-        ownerMemberService.save(getEditedReport(), ownerMembers);
+        if (ownerMembersReplaced) {
+            ownerMemberService.save(getEditedReport(), ownerMembersFragment.getItems());
+        } else {
+            ownerMemberService.saveChanges(getEditedReport(), ownerMembersFragment.getChangedItems());
+        }
         loadOwnerMembers(false);
     }
 
     @Override
     public boolean hasUnsavedChanges() {
-        return super.hasUnsavedChanges() || ownerMembersChanged;
+        return super.hasUnsavedChanges() || ownerMembersChanged || ownerMembersFragment.hasChanges();
     }
 
     @Subscribe(id = "reportDc", target = Target.DATA_CONTAINER)
@@ -157,57 +152,7 @@ public class ReportCustomDetailView extends ReportDetailView {
             refreshSecondaryDomainOptions();
         } else if ("businessOwner".equals(event.getProperty())) {
             loadOwnerMembers(true);
-            ownerMembersChanged = true;
         }
-    }
-
-    @Subscribe("ownerMembersSearchField")
-    public void onOwnerMembersSearchFieldValueChange(
-            final ComponentValueChangeEvent<TypedTextField<String>, String> event) {
-        showOwnerMembers();
-    }
-
-    /** Ticks or unticks the right to run for the rows shown, the head aside, who keeps it. */
-    @Subscribe("checkAllRunField")
-    public void onCheckAllRunFieldValueChange(final ComponentValueChangeEvent<JmixCheckbox, Boolean> event) {
-        if (!event.isFromClient()) {
-            return;
-        }
-        boolean value = Boolean.TRUE.equals(event.getValue());
-        ownerMembersDc.getItems().stream()
-                .filter(item -> !item.getHead())
-                .forEach(item -> setRight(item, true, value));
-        refreshCheckAllRun();
-    }
-
-    /** The name, marked for the head of the owner. */
-    @Supply(to = "ownerMembersDataGrid.employeeName", subject = "renderer")
-    private Renderer<ReportOwnerMemberItem> ownerMembersDataGridEmployeeNameRenderer() {
-        return new ComponentRenderer<>(item -> {
-            Span name = new Span(Strings.nullToEmpty(item.getEmployeeName()));
-            if (item.getHead()) {
-                name.add(badge(ownerMessage("ownerMembers.head"), "badge success small"));
-            }
-            return name;
-        });
-    }
-
-    /** The subdivision, or a mark for a member who has left the subdivisions of the owner. */
-    @Supply(to = "ownerMembersDataGrid.subdivisionName", subject = "renderer")
-    private Renderer<ReportOwnerMemberItem> ownerMembersDataGridSubdivisionNameRenderer() {
-        return new ComponentRenderer<>(item -> item.getOutside()
-                ? badge(ownerMessage("ownerMembers.outside"), "badge contrast small")
-                : new Span(Strings.nullToEmpty(item.getSubdivisionName())));
-    }
-
-    @Supply(to = "ownerMembersDataGrid.run", subject = "renderer")
-    private Renderer<ReportOwnerMemberItem> ownerMembersDataGridRunRenderer() {
-        return new ComponentRenderer<>(item -> rightCheckbox(item, true));
-    }
-
-    @Supply(to = "ownerMembersDataGrid.manage", subject = "renderer")
-    private Renderer<ReportOwnerMemberItem> ownerMembersDataGridManageRenderer() {
-        return new ComponentRenderer<>(item -> rightCheckbox(item, false));
     }
 
     /**
@@ -271,74 +216,13 @@ public class ReportCustomDetailView extends ReportDetailView {
     private void loadOwnerMembers(boolean defaults) {
         ReportCustom report = getEditedReport();
         boolean saved = !entityStates.isNew(report);
-        ownerMembers = new ArrayList<>(ownerMemberService.items(report, report.getBusinessOwner(), defaults || !saved));
+        ownerMembersFragment.setItems(ownerMemberService.items(report, report.getBusinessOwner(), defaults || !saved));
         ownerMembersChanged = defaults;
-        showOwnerMembers();
-    }
-
-    private void showOwnerMembers() {
-        String search = Strings.nullToEmpty(ownerMembersSearchField.getValue()).trim().toLowerCase(Locale.ROOT);
-        ownerMembersDc.setItems(search.isEmpty() ? ownerMembers : ownerMembers.stream()
-                .filter(item -> Strings.nullToEmpty(item.getEmployeeName()).toLowerCase(Locale.ROOT).contains(search)
-                        || Strings.nullToEmpty(item.getSubdivisionName()).toLowerCase(Locale.ROOT).contains(search)
-                        || Strings.nullToEmpty(item.getPositionName()).toLowerCase(Locale.ROOT).contains(search))
-                .toList());
-        refreshCheckAllRun();
-    }
-
-    /**
-     * The check box "tick all" follows the rows shown, the head aside: ticked when all of them may run, half
-     * ticked when some, and off with nobody to tick.
-     */
-    private void refreshCheckAllRun() {
-        List<ReportOwnerMemberItem> members = ownerMembersDc.getItems().stream()
-                .filter(item -> !item.getHead())
-                .toList();
-        long running = members.stream().filter(item -> Boolean.TRUE.equals(item.getRun())).count();
-        checkAllRunField.setValue(!members.isEmpty() && running == members.size());
-        checkAllRunField.setIndeterminate(running > 0 && running < members.size());
-        checkAllRunField.setEnabled(!members.isEmpty() && !isReadOnly());
+        ownerMembersReplaced = defaults || !saved;
     }
 
     private static boolean isActive(OrgStructureSubdivision subdivision) {
         return subdivision.getIsActive() == null || subdivision.getIsActive() == 1;
-    }
-
-    /** A check box for the right to run, or to manage; the head has both and cannot lose them. */
-    private JmixCheckbox rightCheckbox(ReportOwnerMemberItem item, boolean run) {
-        JmixCheckbox checkbox = uiComponents.create(JmixCheckbox.class);
-        checkbox.setValue(run ? item.getRun() : item.getManage());
-        checkbox.setEnabled(!item.getHead() && !isReadOnly());
-        checkbox.addValueChangeListener(event -> {
-            if (event.isFromClient()) {
-                setRight(item, run, Boolean.TRUE.equals(event.getValue()));
-                refreshCheckAllRun();
-            }
-        });
-        return checkbox;
-    }
-
-    /** Managing the access implies running: unticking run drops manage, ticking manage ticks run. */
-    private void setRight(ReportOwnerMemberItem item, boolean run, boolean value) {
-        if (run) {
-            item.setRun(value);
-            if (!value) {
-                item.setManage(false);
-            }
-        } else {
-            item.setManage(value);
-            if (value) {
-                item.setRun(true);
-            }
-        }
-        ownerMembersChanged = true;
-    }
-
-    private Span badge(String text, String themeNames) {
-        Span badge = new Span(text);
-        badge.getElement().getThemeList().addAll(List.of(themeNames.split(" ")));
-        badge.addClassNames(LumoUtility.Margin.Left.SMALL);
-        return badge;
     }
 
     private String ownerMessage(String key) {

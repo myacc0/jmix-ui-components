@@ -58,8 +58,11 @@ import static uz.kapitalbank.umida.service.orgstructure.OrgStructureJpql.current
  * authors.
  *
  * <p>The list of the business owner — the employees running the report on behalf of the owner, the
- * delegates among them — is kept by the authors alone, as grants of the source {@code OWNER}: the head and
- * the delegates neither change nor revoke them.
+ * delegates among them — is kept as grants of the source {@code OWNER}. The authors set it whole with the
+ * owner in the editor of the report ({@link #saveOwnerMembers}); the authors, the head and the delegates
+ * change it row by row on the tab Owners of the access management ({@link #changeOwnerMembers}), a head or a
+ * delegate all the rows but the own one. Revoking a grant on the tab Access passes over these grants: they
+ * change with the list only.
  *
  * <p>Reads and writes unconstrained: the decision is made here, whatever the roles let the user read, and
  * every operation checks the rights of the current user first.
@@ -71,11 +74,18 @@ public class ReportAccessService {
     public record OwnerMember(OrgStructureEmployee employee, boolean canManage) {
     }
 
+    /**
+     * A row of the list of the business owner as the user changed it: the employee runs the report or not,
+     * manages the access or not. Managing implies running.
+     */
+    public record OwnerMemberChange(OrgStructureEmployee employee, boolean run, boolean canManage) {
+    }
+
     /** The grants given, and how many of the employees were passed over: dismissed, or with access already. */
     public record GrantResult(List<ReportAccessGrant> created, int skipped) {
     }
 
-    /** How many grants were revoked, and how many were passed over: revoked already, or kept by the authors. */
+    /** How many grants were revoked, and how many were passed over: revoked already, or of the owner list. */
     public record RevokeResult(int revoked, int skipped) {
     }
 
@@ -256,6 +266,26 @@ public class ReportAccessService {
                 .query("select r from umida_ReportCustom r where r.id in :ids order by r.name")
                 .parameter("ids", ids)
                 .fetchPlan(FetchPlan.INSTANCE_NAME)
+                .list();
+    }
+
+    /**
+     * The reports whose list of the business owner the current user keeps on the tab Owners, by the code:
+     * those with an owner, every one of them for an author, those managed as the head of their owner or as a
+     * delegate for the others. Loaded with their owner.
+     */
+    public List<ReportCustom> ownerListManagedReports() {
+        Optional<Set<UUID>> managed = managedReportIdsUnlessAuthor();
+        if (managed.isPresent() && managed.get().isEmpty()) {
+            return List.of();
+        }
+        var loader = dataManager.load(ReportCustom.class)
+                .query("select r from umida_ReportCustom r where r.businessOwner is not null"
+                        + (managed.isPresent() ? " and r.id in :ids" : "") + " order by r.code, r.name");
+        managed.ifPresent(ids -> loader.parameter("ids", ids));
+        return loader.fetchPlan(fp -> fp.addFetchPlan(FetchPlan.INSTANCE_NAME)
+                        .add("code")
+                        .add("businessOwner", FetchPlan.INSTANCE_NAME))
                 .list();
     }
 
@@ -559,7 +589,7 @@ public class ReportAccessService {
 
     /**
      * Revokes the grants. Passes over those revoked already and, but for an author, those of the list of the
-     * business owner, which the authors keep.
+     * business owner, which change with the list, see {@link #changeOwnerMembers}.
      */
     public RevokeResult revoke(Collection<ReportAccessGrant> grants, @Nullable String reason) {
         if (grants.isEmpty()) {
@@ -607,7 +637,8 @@ public class ReportAccessService {
     }
 
     /**
-     * Makes the list of the business owner of the report the given one; authors only. A member with an
+     * Makes the list of the business owner of the report the given one, whole, as the editor of the report
+     * does when the owner is picked; authors only. A member with an
      * unchanged right keeps the grant, the others get new grants; the grants of the employees left out, and
      * those whose right changed, are revoked. The report must have its owner saved first, if it has members.
      */
@@ -645,6 +676,82 @@ public class ReportAccessService {
             boolean unchanged = grant != null && canManage == Boolean.TRUE.equals(grant.getCanManage());
             OrgStructureEmployee employee = employees.get(employeeId);
             if (!unchanged && employee != null && !isDismissed(employee)) {
+                saveContext.saving(newGrant(current, employee, positions.get(employeeId), ReportAccessGrantSource.OWNER,
+                        canManage, null));
+            }
+        });
+        if (!saveContext.getEntitiesToSave().isEmpty()) {
+            dataManager.save(saveContext);
+            changed();
+        }
+    }
+
+    /**
+     * Changes the rows of the list of the business owner of the report the user changed, and those alone: the
+     * rows changed by someone else meanwhile stay as they are. A row left with neither right has its grant
+     * revoked; a row whose right to manage changed gets a new grant in place of the old one; a new row gets a
+     * grant, unless the employee is dismissed. A row as it is saved already changes nothing.
+     *
+     * <p>For those who manage the access to the report: an author, the head of the owner, a delegate. A head
+     * or a delegate does not change the own row, as unticking it would take away the very right to manage.
+     * Use {@link ReportOwnerMemberService#saveChanges}, which also keeps the new rows to the employees of the
+     * owner.
+     */
+    public void changeOwnerMembers(ReportCustom report, Collection<OwnerMemberChange> changes) {
+        if (changes.isEmpty()) {
+            return;
+        }
+        requireManaged(report);
+        if (!isAuthor()) {
+            Optional<String> own = currentEmployeeId();
+            if (own.isPresent() && changes.stream().anyMatch(change -> own.get().equals(change.employee().getId()))) {
+                throw new AccessDeniedException("report owner members", String.valueOf(report.getId()), "change own");
+            }
+        }
+        ReportCustom current = dataManager.load(ReportCustom.class)
+                .id(report.getId())
+                .fetchPlan(fp -> fp.add("businessOwner", FetchPlan.INSTANCE_NAME))
+                .one();
+        if (current.getBusinessOwner() == null && changes.stream().anyMatch(OwnerMemberChange::run)) {
+            throw new ReportAccessException(message("noBusinessOwner"));
+        }
+
+        Map<String, ReportAccessGrant> existing = new HashMap<>();
+        ownerMembers(current).forEach(grant -> existing.put(grant.getEmployee().getId(), grant));
+        Map<String, Boolean> wanted = new LinkedHashMap<>();
+        Set<String> dropped = new HashSet<>();
+        changes.forEach(change -> {
+            String employeeId = change.employee().getId();
+            if (change.run() || change.canManage()) {
+                wanted.put(employeeId, change.canManage());
+            } else {
+                dropped.add(employeeId);
+            }
+        });
+
+        SaveContext saveContext = new SaveContext();
+        String reason = message("ownerMembersChanged");
+        dropped.stream().map(existing::get).filter(Objects::nonNull).forEach(grant -> {
+            markRevoked(grant, reason);
+            saveContext.saving(grant);
+        });
+        Map<String, Boolean> granted = new LinkedHashMap<>();
+        wanted.forEach((employeeId, canManage) -> {
+            ReportAccessGrant grant = existing.get(employeeId);
+            if (grant == null || canManage != Boolean.TRUE.equals(grant.getCanManage())) {
+                if (grant != null) {
+                    markRevoked(grant, reason);
+                    saveContext.saving(grant);
+                }
+                granted.put(employeeId, canManage);
+            }
+        });
+        Map<String, OrgStructureEmployee> employees = loadEmployees(granted.keySet()).stream()
+                .collect(Collectors.toMap(OrgStructureEmployee::getId, employee -> employee));
+        Map<String, OrgStructurePosition> positions = currentPositions(employees.keySet());
+        granted.forEach((employeeId, canManage) -> {
+            OrgStructureEmployee employee = employees.get(employeeId);
+            if (employee != null && !isDismissed(employee)) {
                 saveContext.saving(newGrant(current, employee, positions.get(employeeId), ReportAccessGrantSource.OWNER,
                         canManage, null));
             }

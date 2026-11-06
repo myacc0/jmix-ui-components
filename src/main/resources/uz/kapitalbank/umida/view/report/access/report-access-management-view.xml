@@ -42,10 +42,27 @@
             </fetchPlan>
             <loader id="requestsDl" readOnly="true"/>
         </collection>
+        <!-- the reports whose owner list the user keeps, by the code, set by the controller from ReportAccessService -->
+        <collection id="ownerReportsDc" class="uz.kapitalbank.umida.entity.report.ReportCustom"/>
     </data>
     <layout>
         <span id="noAccessText" text="msg://noAccessText.text" visible="false"/>
         <tabSheet id="tabSheet" width="100%" height="100%">
+            <!-- the list of the business owner of one report, changed row by row and saved with the button -->
+            <tab id="ownersTab" label="msg://ownersTab.label">
+                <vbox id="ownersTabContent" padding="false" height="100%">
+                    <span id="ownersNoReportsText" text="msg://ownersNoReportsText.text" visible="false"/>
+                    <entityComboBox id="ownersReportField" metaClass="umida_ReportCustom" itemsContainer="ownerReportsDc"
+                                    width="50%" label="msg://uz.kapitalbank.umida.entity.report/ReportAccessGrant.report"/>
+                    <fragment id="ownersFragment"
+                              class="uz.kapitalbank.umida.view.report.access.ReportOwnerMembersFragment"/>
+                    <hbox id="ownersButtonsPanel" padding="false">
+                        <button id="saveOwnersBtn" icon="CHECK" themeNames="primary" text="msg:///actions.Save"
+                                enabled="false"/>
+                        <button id="cancelOwnersBtn" icon="BAN" text="msg:///actions.Cancel" enabled="false"/>
+                    </hbox>
+                </vbox>
+            </tab>
             <tab id="grantsTab" label="msg://grantsTab.label">
                 <vbox id="grantsTabContent" padding="false" height="100%">
                     <hbox id="grantsButtonsPanel" classNames="buttons-panel" padding="false">

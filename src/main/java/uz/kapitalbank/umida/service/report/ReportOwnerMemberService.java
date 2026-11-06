@@ -4,6 +4,7 @@ import io.jmix.core.FetchPlan;
 import io.jmix.core.Metadata;
 import io.jmix.core.TimeSource;
 import io.jmix.core.UnconstrainedDataManager;
+import io.jmix.core.security.AccessDeniedException;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import uz.kapitalbank.umida.dto.report.ReportOwnerMemberItem;
@@ -14,6 +15,7 @@ import uz.kapitalbank.umida.entity.orgstructure.OrgStructureSubdivision;
 import uz.kapitalbank.umida.entity.report.ReportAccessGrant;
 import uz.kapitalbank.umida.entity.report.ReportCustom;
 import uz.kapitalbank.umida.service.report.ReportAccessService.OwnerMember;
+import uz.kapitalbank.umida.service.report.ReportAccessService.OwnerMemberChange;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -25,8 +27,9 @@ import static uz.kapitalbank.umida.service.orgstructure.OrgStructureJpql.current
 
 /**
  * The list of the business owner of a report as its editor shows it: the employees of the owner subdivision
- * and of every active subdivision below it, one row each, with the rights of the list ticked. Saved through
- * {@link ReportAccessService#saveOwnerMembers}, which keeps it to the authors.
+ * and of every active subdivision below it, one row each, with the rights of the list ticked. Saved whole
+ * when the owner is picked, through {@link ReportAccessService#saveOwnerMembers}, which keeps it to the
+ * authors, and otherwise row by row, the rows changed only, through {@link #saveChanges}.
  */
 @Service
 public class ReportOwnerMemberService {
@@ -128,8 +131,8 @@ public class ReportOwnerMemberService {
     }
 
     /**
-     * Saves the ticked rows as the list of the business owner of the saved report. The head is no member: the
-     * head has the rights anyway. Rows with neither right leave the list.
+     * Saves the ticked rows as the list of the business owner of the saved report, whole: the list of an owner
+     * just picked. The head is no member: the head has the rights anyway. Rows with neither right leave the list.
      */
     public void save(ReportCustom report, Collection<ReportOwnerMemberItem> items) {
         List<OwnerMember> members = items.stream()
@@ -138,6 +141,37 @@ public class ReportOwnerMemberService {
                 .map(item -> new OwnerMember(item.getEmployee(), item.getManage()))
                 .toList();
         accessService.saveOwnerMembers(report, members);
+    }
+
+    /**
+     * Saves the rows the user changed on the list of the business owner of the saved report, and those
+     * alone, see {@link ReportAccessService#changeOwnerMembers}: the rows changed by someone else meanwhile
+     * stay as they are. The head has the rights anyway, so the row of the head changes nothing. A new member
+     * has to be an employee of the owner or of a subdivision below it; one on the list already keeps the
+     * row after leaving them.
+     */
+    public void saveChanges(ReportCustom report, Collection<ReportOwnerMemberItem> changed) {
+        List<ReportOwnerMemberItem> rows = changed.stream().filter(item -> !item.getHead()).toList();
+        if (rows.isEmpty()) {
+            return;
+        }
+        ReportCustom current = dataManager.load(ReportCustom.class)
+                .id(report.getId())
+                .fetchPlan(fp -> fp.add("businessOwner", FetchPlan.INSTANCE_NAME))
+                .one();
+        Set<String> allowed = new HashSet<>();
+        if (current.getBusinessOwner() != null) {
+            allowed.addAll(subtreeEmployeeIds(current.getBusinessOwner()));
+        }
+        accessService.ownerMembers(current).forEach(grant -> allowed.add(grant.getEmployee().getId()));
+        boolean foreign = rows.stream()
+                .anyMatch(item -> (item.getRun() || item.getManage()) && !allowed.contains(item.getEmployee().getId()));
+        if (foreign) {
+            throw new AccessDeniedException("report owner members", String.valueOf(report.getId()), "add foreign");
+        }
+        accessService.changeOwnerMembers(current, rows.stream()
+                .map(item -> new OwnerMemberChange(item.getEmployee(), item.getRun() || item.getManage(), item.getManage()))
+                .toList());
     }
 
     /** The owner and every active subdivision below it, whatever the depth. */
