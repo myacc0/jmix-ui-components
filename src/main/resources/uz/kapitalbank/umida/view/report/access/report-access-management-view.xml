@@ -117,9 +117,9 @@
                             <column property="employee.fullName" header="msg://uz.kapitalbank.umida.entity.report/ReportAccessRequest.employee" autoWidth="true" flexGrow="0"/>
                             <column property="position.jobTitle.name" header="msg://uz.kapitalbank.umida.entity.report/ReportAccessRequest.position" autoWidth="true" flexGrow="0"/>
                             <column property="position.subdivision.name" header="msg://uz.kapitalbank.umida.entity.orgstructure/OrgStructurePosition.subdivision" autoWidth="true" flexGrow="0"/>
-                            <column property="reason" autoWidth="true" flexGrow="0"/>
-                            <column property="createdDate" autoWidth="true" flexGrow="0"/>
                             <column property="status" autoWidth="true" flexGrow="0"/>
+                            <column property="createdDate" autoWidth="true" flexGrow="0"/>
+                            <column property="reason" autoWidth="true" flexGrow="0"/>
                             <column property="decidedBy" filterable="false" autoWidth="true" flexGrow="0"/>
                             <column property="decidedAt" autoWidth="true" flexGrow="0"/>
                             <column property="decisionComment" autoWidth="true" flexGrow="0"/>

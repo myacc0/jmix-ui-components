@@ -414,3 +414,94 @@ givenName: Дилшат
 mail: dilshat.makhripov@gmail.com
 employeeNumber: 0031
 userPassword: password
+
+dn: uid=sardor.abdumalikov,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: sardor.abdumalikov
+cn: Абдумаликов Сардор Акбарович
+sn: Абдумаликов
+givenName: Сардор
+mail: sardor.abdumalikov@gmail.com
+employeeNumber: 0033
+userPassword: password
+
+dn: uid=akbar.sardarov,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: akbar.sardarov
+cn: Сардаров Акбар Хасанович
+sn: Сардаров
+givenName: Акбар
+mail: akbar.sardarov@gmail.com
+employeeNumber: 0034
+userPassword: password
+
+dn: uid=otabek.bahodirov,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: otabek.bahodirov
+cn: Баходиров Отабек Уктамович
+sn: Баходиров
+givenName: Отабек
+mail: otabek.bahodirov@gmail.com
+employeeNumber: 0035
+userPassword: password
+
+dn: uid=shokir.usmanov,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: shokir.usmanov
+cn: Усманов Шокир Бегзодович
+sn: Усманов
+givenName: Шокир
+mail: shokir.usmanov@gmail.com
+employeeNumber: 0036
+userPassword: password
+
+dn: uid=utkir.rixsiyev,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: utkir.rixsiyev
+cn: Рихсиев Уткир Шодиевич
+sn: Рихсиев
+givenName: Уткир
+mail: utkir.rixsiyev@gmail.com
+employeeNumber: 0037
+userPassword: password
+
+dn: uid=shodlik.berdiyev,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: shodlik.berdiyev
+cn: Бердиев Шодлик Хикматович
+sn: Бердиев
+givenName: Шодлик
+mail: shodlik.berdiyev@gmail.com
+employeeNumber: 0038
+userPassword: password
+
+dn: uid=ikrom.soxibov,ou=users,dc=kapitalbank,dc=uz
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: ikrom.soxibov
+cn: Сохибов Икром Давлатович
+sn: Сохибов
+givenName: Икром
+mail: ikrom.soxibov@gmail.com
+employeeNumber: 0039
+userPassword: password
